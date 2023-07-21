@@ -288,6 +288,7 @@ def fine_grained_prune(tensor: torch.Tensor, sparsity : float) -> torch.Tensor:
     return mask
 
 def find_instance(name, obj, upto):
+    global config
     if ( isinstance(obj, nn.Conv2d) or isinstance(obj, nn.Linear) ) :
         if(upto == "prune"):
             config['masks'][name] = fine_grained_prune(obj, config['sparsity_dict'][name]).to('cuda')
