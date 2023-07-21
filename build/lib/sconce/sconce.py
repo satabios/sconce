@@ -299,10 +299,10 @@ def find_instance(name, obj, upto):
     #         find_instance(internal_obj)
     elif (hasattr(obj, '__class__')):
         for name, internal_obj in obj.named_children():
-            find_instance(name, internal_obj)
+            find_instance(name, internal_obj, upto)
     elif isinstance(obj, OrderedDict):
         for key, value in obj.items():
-            find_instance(key, value)
+            find_instance(key, value, upto)
     
 class FineGrainedPruner():
     def __init__(self):
