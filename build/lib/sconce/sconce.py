@@ -287,43 +287,24 @@ def fine_grained_prune(tensor: torch.Tensor, sparsity : float) -> torch.Tensor:
 
     return mask
 
-def find_instance(name, obj, upto):
-    global config
-    if ( isinstance(obj, nn.Conv2d) or isinstance(obj, nn.Linear) ) :
-        if(upto == "prune"):
-            config['masks'][name] = fine_grained_prune(obj, config['sparsity_dict'][name]).to('cuda')
-        elif(upto == "apply"):
-            obj *= config['masks'][name]
-        
-    # elif isinstance(obj, list):                         #Find the use of list with names IDK fix this later
-    #     for internal_obj in obj:
-    #         find_instance(internal_obj)
-    elif (hasattr(obj, '__class__')):
-        for name, internal_obj in obj.named_children():
-            find_instance(name, internal_obj, upto) 
-                                                          
-    elif isinstance(obj, OrderedDict):
-        for key, value in obj.items():
-            find_instance(key, value, upto)
-                                                      
-    
 class FineGrainedPruner():
     def __init__(self):
         global config
-      
-
-
-   
-
     
     @torch.no_grad()
     def apply(self):
-        find_instance("apply", config['model'], "apply")
+        for name, param in config['model'].named_parameters():
+            if name in config['masks']:
+                param *= config['masks'][name]
 
-    # @classmethod
-    # @staticmethod
+    @staticmethod
     @torch.no_grad()
     def prune(self):
-        find_instance("prune",  config['model'], "prune")
+        
+        for name, param in config['model'].named_parameters():
+            if param.dim() > 1: # we only prune conv and fc weights
+                config['masks'][name] = fine_grained_prune(param, config['sparsity_dict'][name])
+
     
+
 
