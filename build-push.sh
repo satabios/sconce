@@ -7,7 +7,9 @@ git push -u origin master
 }
 
 
-# rm ../dist/* -y
+rm ../dist/*
+rm ../build/* 
+rm ../.eggs/*
 python3 setup.py sdist bdist_wheel
 
 echo "Message to Push?"
