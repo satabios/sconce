@@ -1,0 +1,8 @@
+Wheel-Version: 1.0
+Generator: skbuild 0.17.6
+Root-Is-Purelib: false
+
+Tag: py2-none-manylinux2014_x86_64
+Tag: py2-none-manylinux_2_17_x86_64
+Tag: py3-none-manylinux2014_x86_64
+Tag: py3-none-manylinux_2_17_x86_64

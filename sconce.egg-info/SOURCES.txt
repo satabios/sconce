@@ -1,0 +1,12 @@
+LICENSE.txt
+README.md
+pyproject.toml
+setup.cfg
+setup.py
+sconce/__init__.py
+sconce/sconce.py
+sconce.egg-info/PKG-INFO
+sconce.egg-info/SOURCES.txt
+sconce.egg-info/dependency_links.txt
+sconce.egg-info/requires.txt
+sconce.egg-info/top_level.txt

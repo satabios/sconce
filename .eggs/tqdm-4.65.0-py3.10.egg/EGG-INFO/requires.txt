@@ -1,0 +1,14 @@
+
+[dev]
+py-make>=0.1.0
+twine
+wheel
+
+[notebook]
+ipywidgets>=6
+
+[slack]
+slack-sdk
+
+[telegram]
+requests

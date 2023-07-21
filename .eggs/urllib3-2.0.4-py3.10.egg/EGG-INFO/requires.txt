@@ -1,0 +1,16 @@
+
+[brotli]
+brotli>=1.0.9
+
+[secure]
+certifi
+cryptography>=1.9
+idna>=2.0.0
+pyopenssl>=17.1.0
+urllib3-secure-extra
+
+[socks]
+pysocks!=1.5.7,<2.0,>=1.5.6
+
+[zstd]
+zstandard>=0.18.0
