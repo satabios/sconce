@@ -315,12 +315,12 @@ class FineGrainedPruner():
     
     @torch.no_grad()
     def apply(self):
-        find_instance("apply", config['model'], upto="apply")
+        find_instance("apply", config['model'], "apply")
 
     # @classmethod
     # @staticmethod
     @torch.no_grad()
     def prune(self):
-        find_instance("prune",  config['model'], upto="prune")
+        find_instance("prune",  config['model'], "prune")
     
 
