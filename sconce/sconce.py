@@ -316,6 +316,7 @@ class FineGrainedPruner():
     @torch.no_grad()
     def apply(self):
         find_instance("apply", obj, upto="apply")
+        #updated
         # for name, param in config['model'].named_parameters():
         #     if name in config['masks']:
         #         param *= config['masks'][name]
@@ -326,7 +327,6 @@ class FineGrainedPruner():
     def prune(self):
         find_instance("prune", obj, upto="prune")
       
-        
         # for name, param in config['model'].named_parameters():
         #     if param.dim() > 1: # we only prune conv and fc weights
         #         config['masks'][name] = self.fine_grained_prune(param, config['sparsity_dict'][name]).to('cuda')
