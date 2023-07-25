@@ -96,7 +96,7 @@ config['dataloader'] = dataloader
 
 ```
 
-## Sconce:
+## Pipeline using Sconce usage:
 ```python
 
 sconces = sconce()
