@@ -76,7 +76,10 @@ config = {
     'dataloader':None,
     'callbacks':None,
     'sparsity_dict':None,
-    'masks':dict()
+    'masks':dict(),
+
+
+    'device' : None
     
 
     
@@ -85,12 +88,12 @@ config = {
 
 
 
-class sconce():
+class sconce:
     
     def __init__(self):
         
         global config
-        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        # config['device'] = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
        
         
     def train(self) -> None:
@@ -99,7 +102,7 @@ class sconce():
         torch.cuda.empty_cache()
         
         
-        config['model'].to(self.device)
+        config['model'].to(config['device'])
         
         val_acc = 0
         running_loss = 0.0
@@ -111,9 +114,9 @@ class sconce():
                 # Move the data from CPU to GPU
                 if(config['goal'] != 'autoencoder'):
                     inputs, targets = data
-                    inputs, targets = inputs.to(self.device), targets.to(self.device)
+                    inputs, targets = inputs.to(config['device']), targets.to(config['device'])
                 elif(config['goal'] == 'autoencoder'):
-                    inputs, targets = data.to(self.device), data.to(self.device)
+                    inputs, targets = data.to(config['device']), data.to(config['device'])
 
                 # Reset the gradients (from the last iteration)
                 config['optimizer'].zero_grad()
@@ -145,13 +148,13 @@ class sconce():
     
     @torch.inference_mode()
     def evaluate(self):
-        config['model'].to(self.device)
+        config['model'].to(config['device'])
         config['model'].eval()
         with torch.no_grad():
             correct = 0
             total = 0
             for images, labels in config['dataloader']['test']:
-                images, labels = images.to(self.device), labels.to(self.device)
+                images, labels = images.to(config['device']), labels.to(config['device'])
                 outputs = config['model'](images)
                 _, predicted = torch.max(outputs.data, 1)
                 total += labels.size(0)
@@ -253,57 +256,60 @@ class sconce():
 
 
 
-def fine_grained_prune(tensor: torch.Tensor, sparsity : float) -> torch.Tensor:
+import ipdb
 
-    """
-    magnitude-based pruning for single tensor
-    :param tensor: torch.(cuda.)Tensor, weight of conv/fc layer
-    :param sparsity: float, pruning sparsity
-        sparsity = #zeros / #elements = 1 - #nonzeros / #elements
-    :return:
-        torch.(cuda.)Tensor, mask for zeros
-    """
-    sparsity = min(max(0.0, sparsity), 1.0)
-    if sparsity == 1.0:
-        tensor.zero_()
-        return torch.zeros_like(tensor)
-    elif sparsity == 0.0:
-        return torch.ones_like(tensor)
-
-    num_elements = tensor.numel()
-
-
-    # Step 1: calculate the #zeros (please use round())
-    num_zeros = round(num_elements * sparsity)
-    # Step 2: calculate the importance of weight
-    importance = tensor.abs()
-    # Step 3: calculate the pruning threshold
-    threshold = importance.view(-1).kthvalue(num_zeros).values
-    # Step 4: get binary mask (1 for nonzeros, 0 for zeros)
-    mask = torch.gt(importance, threshold)
-
-    # Step 5: apply mask to prune the tensor
-    tensor.mul_(mask)
-
-    return mask
-
-class FineGrainedPruner():
+class FineGrainedPruner:
     def __init__(self):
         global config
+
+    def fine_grained_prune(self, tensor: torch.Tensor, sparsity : float) -> torch.Tensor:
+
+        """
+        magnitude-based pruning for single tensor
+        :param tensor: torch.(cuda.)Tensor, weight of conv/fc layer
+        :param sparsity: float, pruning sparsity
+            sparsity = #zeros / #elements = 1 - #nonzeros / #elements
+        :return:
+            torch.(cuda.)Tensor, mask for zeros
+        """
+        sparsity = min(max(0.0, sparsity), 1.0)
+        if sparsity == 1.0:
+            tensor.zero_()
+            return torch.zeros_like(tensor)
+        elif sparsity == 0.0:
+            return torch.ones_like(tensor)
+
+        num_elements = tensor.numel()
+
+
+        # Step 1: calculate the #zeros (please use round())
+        num_zeros = round(num_elements * sparsity)
+        # Step 2: calculate the importance of weight
+        importance = tensor.abs()
+        # Step 3: calculate the pruning threshold
+        threshold = importance.view(-1).kthvalue(num_zeros).values
+        # Step 4: get binary mask (1 for nonzeros, 0 for zeros)
+        mask = torch.gt(importance, threshold)
+
+        # Step 5: apply mask to prune the tensor
+        tensor.mul_(mask)
+
+        return mask
     
     @torch.no_grad()
     def apply(self):
+
         for name, param in config['model'].named_parameters():
             if name in config['masks']:
-                param *= config['masks'][name]
+                param *= config['masks'][name].to(config['device'])
 
-    @staticmethod
+    # @staticmethod
     @torch.no_grad()
     def prune(self):
-        
         for name, param in config['model'].named_parameters():
             if param.dim() > 1: # we only prune conv and fc weights
-                config['masks'][name] = fine_grained_prune(param, config['sparsity_dict'][name])
+
+                config['masks'][name] = self.fine_grained_prune(param, config['sparsity_dict'][name])
 
     
 

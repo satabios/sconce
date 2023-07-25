@@ -1,6 +1,7 @@
 LICENSE.txt
 README.md
 pyproject.toml
+requirements.txt
 setup.cfg
 setup.py
 sconce/__init__.py
