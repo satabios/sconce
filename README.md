@@ -79,32 +79,40 @@ for split in ['train', 'test']:
 ## Usage:
 ```python
 # Define a cofig of the below parameters
-class config:
-    criterion = nn.CrossEntropyLoss()
-    batch_size= 64
-    evaluate = True
-    save = False
-    goal = 'classficiation'    
-    expt_name = 'test-net'
-    epochs = 10
-    learning_rate = 1e-4
-    prune = True
-    quantization = True
+from sconce import sconce, FineGrainedPruner, config
 
+config['sparsity_dict'] = {
+    'conv1.weight' : 0.90,
+    'conv2.weight' : 0.90,
+    'fc1.weight' : 0.90,
+    'fc2.weight' : 0.90
+}
+
+
+config['model']= Net() # Model Definition
+config['criterion'] = nn.CrossEntropyLoss() # Loss
+config['optimizer'] = optim.Adam(config['model'].parameters(), lr=1e-4)
+config['scheduler'] = optim.lr_scheduler.CosineAnnealingLR(config['optimizer'], T_max=200)
+config['dataloader'] = dataloader
 
 #Import Scone
 
-import sconce
+sconces = sconce()
+print(model_params['model'])
 
-model = Net()
-criterion = nn.CrossEntropyLoss()
-optimizer = optim.Adam(model.parameters(), lr=config.learning_rate)
-scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=200)
- 
-sconce = sconce(model, dataloader, criterion, optimizer, scheduler, config)
-dummy_input = torch.randn(1, 3, 32, 32).to('cpu')
-sconce.train()
-print("Model Latency:",sconce.measure_latency(dummy_input))
+sconces.train()
+print("Model Size:",sconces.get_model_size(count_nonzero_only=True))
+
+
+pruner = FineGrainedPruner()
+pruner.prune()
+print("Model Size:",sconces.get_model_size(count_nonzero_only=True))
+
+config['callbacks'] = [lambda: pruner.apply()]
+if(config['fine_tune']):
+   sconces.train()
+print("Model Size:",sconces.get_model_size(count_nonzero_only=True))
+sconces.evaluate()
 
 ```
 
