@@ -75,7 +75,7 @@ for split in ['train', 'test']:
   )
 ```
 
-## Usage:
+## Config:
 ```python
 # Define a cofig of the below parameters
 from sconce import sconce, FineGrainedPruner, config
@@ -94,7 +94,10 @@ config['optimizer'] = optim.Adam(config['model'].parameters(), lr=1e-4)
 config['scheduler'] = optim.lr_scheduler.CosineAnnealingLR(config['optimizer'], T_max=200)
 config['dataloader'] = dataloader
 
-#Import Scone
+```
+
+## Sconce:
+```python
 
 sconces = sconce()
 print(model_params['model'])
