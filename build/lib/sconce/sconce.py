@@ -256,8 +256,6 @@ class sconce:
 
 
 
-import ipdb
-
 class FineGrainedPruner:
     def __init__(self):
         global config
