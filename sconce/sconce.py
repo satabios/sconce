@@ -31,9 +31,6 @@ from tqdm.auto import tqdm
 
 from torchprofile import profile_macs
 
-assert torch.cuda.is_available(), \
-"The current runtime does not have CUDA support." \
-"Please go to menu bar (Runtime - Change runtime type) and select GPU"
 
 
 
