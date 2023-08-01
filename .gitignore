@@ -1,2 +1,3 @@
 .eggs/
-test/
+test/data/
+test/_pycache_
