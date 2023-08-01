@@ -18,3 +18,5 @@ git_push "$message"
 
 
 
+twine upload dist/* --verbose
+
