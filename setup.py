@@ -9,7 +9,7 @@ with open('README.md') as readme_file:
 import os
 setup_args = dict(
     name='sconce',
-    version='0.0.14',
+    version='0.0.26',
     description='sconce: torch helper',
     long_description_content_type="text/markdown",
     long_description=README + '\n\n',
