@@ -9,7 +9,7 @@ with open('README.md') as readme_file:
 import os
 setup_args = dict(
     name='sconce',
-    version='0.0.12',
+    version='0.0.13',
     description='sconce: torch helper',
     long_description_content_type="text/markdown",
     long_description=README + '\n\n',
@@ -17,7 +17,7 @@ setup_args = dict(
     author='Sathyaprakash Narayanan',
     author_email='snaray17@ucsc.edu',
     url='https://github.com/satabios/sconce',
-    download_url='https://pypi.org/project/torch-sconce/'
+    download_url='https://pypi.org/project/sconce/'
 )
 
 lib_folder = os.path.dirname(os.path.realpath(__file__))
