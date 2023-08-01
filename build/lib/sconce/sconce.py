@@ -65,7 +65,7 @@ config = {
     'quantization':True,
     'num_finetune_epochs':5,
     'best_sparse_model_checkpoint':dict(),
-
+    'degradation_value': 1.2,
     'model':  None,
     'criterion':None,
     'optimizer':None,
@@ -82,17 +82,15 @@ config = {
     
 }
 
-
-
-
 class sconce:
     
     def __init__(self):
         
         global config
-        # config['device'] = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
        
         
+  
     def train(self) -> None:
         
         ## Add torch empty cache
@@ -144,7 +142,7 @@ class sconce:
 
     
     @torch.inference_mode()
-    def evaluate(self):
+    def evaluate(self, verbose=False):
         config['model'].to(config['device'])
         config['model'].eval()
         with torch.no_grad():
@@ -157,14 +155,15 @@ class sconce:
                 total += labels.size(0)
                 correct += (predicted == labels).sum().item()
             acc = 100 * correct / total
-
-            print('Test Accuracy: {} %'.format(acc))
+            if(verbose):
+                print('Test Accuracy: {} %'.format(acc))
             return acc
         
 
 
     ########## Model Profiling ##########
     def get_model_macs(self, inputs) -> int:
+            global config
             return profile_macs(config['model'], inputs)
 
 
@@ -182,6 +181,7 @@ class sconce:
         calculate the sparsity of the given model
             sparsity = #zeros / #elements = 1 - #nonzeros / #elements
         """
+        global config
         num_nonzeros, num_elements = 0, 0
         for param in config['model'].parameters():
             num_nonzeros += param.count_nonzero()
@@ -193,6 +193,7 @@ class sconce:
         calculate the total number of parameters of model
         :param count_nonzero_only: only count nonzero weights
         """
+        global config
         num_counted_elements = 0
         for param in config['model'].parameters():
             if count_nonzero_only:
@@ -208,10 +209,18 @@ class sconce:
         :param data_width: #bits per element
         :param count_nonzero_only: only count nonzero weights
         """
-        size = self.get_num_parameters(count_nonzero_only) * data_width
-        if(size.is_cuda):
-            size = size.cpu().detach()
-        return size.item()
+        global config
+        params = self.get_num_parameters(count_nonzero_only) 
+
+        if(params.is_cuda):
+            params = params.cpu().detach()
+        if(torch.is_tensor(params)):
+            params = params.item()
+            
+
+        size = params* data_width
+
+        return size
     
     @torch.no_grad()
     def measure_latency(self, dummy_input, n_warmup=20, n_test=100):
@@ -250,6 +259,120 @@ class sconce:
         fig.tight_layout()
         fig.subplots_adjust(top=0.925)
         plt.show()
+
+
+    @torch.no_grad()
+    def sensitivity_scan(self, dense_model_accuracy, scan_step=0.1, scan_start=0.3, scan_end=1.1, verbose=True):
+        config['sparsity_dict'] = dict()
+        sparsities = np.arange(start=scan_start, stop=scan_end, step=scan_step)
+        accuracies = []
+        named_conv_weights = [(name, param) for (name, param) \
+                            in config['model'].named_parameters() if param.dim() > 1]
+        for i_layer, (name, param) in enumerate(named_conv_weights):
+            param_clone = param.detach().clone()
+            accuracy = []
+            desc = None
+            if (verbose):
+                desc = f'scanning {i_layer}/{len(named_conv_weights)} weight - {name}'
+                picker = tqdm(sparsities, desc)
+            else:
+                picker = sparsities
+            for sparsity in picker:
+                self.fine_grained_prune(param.detach(), sparsity=sparsity)
+                acc = self.evaluate()
+                if verbose:
+                    print(f'\r    sparsity={sparsity:.2f}: accuracy={acc:.2f}%', end='')
+                # restore
+                param.copy_(param_clone)
+                accuracy.append(acc)
+            if verbose:
+                print(f'\r    sparsity=[{",".join(["{:.2f}".format(x) for x in sparsities])}]: accuracy=[{", ".join(["{:.2f}%".format(x) for x in accuracy])}]', end='')
+            accuracies.append(accuracy)
+            
+            final_values = accuracies - np.asarray(config['degradation_value'])
+            final_values_index_of_interest = np.where(final_values>0, final_values<config['degradation_value'], final_values)
+            if(len(final_values_index_of_interest[final_values_index_of_interest == 1])>1):
+                selected_sparsity =  sparsities[final_values_index_of_interest[final_values_index_of_interest == 1][-1]]
+                config['sparsity_dict'][name] = selected_sparsity
+            else:
+                config['sparsity_dict'][name] = 0.0
+
+
+    
+        if(verbose):
+            lower_bound_accuracy = 100 - (100 - dense_model_accuracy) * 1.5
+            fig, axes = plt.subplots(3, int(math.ceil(len(accuracies) / 3)),figsize=(15,8))
+            axes = axes.ravel()
+            plot_index = 0
+            for name, param in config['model'].named_parameters():
+                if param.dim() > 1:
+                    ax = axes[plot_index]
+                    curve = ax.plot(sparsities, accuracies[plot_index])
+                    line = ax.plot(sparsities, [lower_bound_accuracy] * len(sparsities))
+                    ax.set_xticks(np.arange(start=0.4, stop=1.0, step=0.1))
+                    ax.set_ylim(80, 95)
+                    ax.set_title(name)
+                    ax.set_xlabel('sparsity')
+                    ax.set_ylabel('top-1 accuracy')
+                    ax.legend([
+                        'accuracy after pruning',
+                        f'{lower_bound_accuracy / dense_model_accuracy * 100:.0f}% of dense model accuracy'
+                    ])
+                    ax.grid(axis='x')
+                    plot_index += 1
+            fig.suptitle('Sensitivity Curves: Validation Accuracy vs. Pruning Sparsity')
+            fig.tight_layout()
+            fig.subplots_adjust(top=0.925)
+            plt.show()
+    
+    def fine_grained_prune(self, tensor: torch.Tensor, sparsity : float) -> torch.Tensor:
+
+        """
+        magnitude-based pruning for single tensor
+        :param tensor: torch.(cuda.)Tensor, weight of conv/fc layer
+        :param sparsity: float, pruning sparsity
+            sparsity = #zeros / #elements = 1 - #nonzeros / #elements
+        :return:
+            torch.(cuda.)Tensor, mask for zeros
+        """
+        sparsity = min(max(0.0, sparsity), 1.0)
+        if sparsity == 1.0:
+            tensor.zero_()
+            return torch.zeros_like(tensor)
+        elif sparsity == 0.0:
+            return torch.ones_like(tensor)
+
+        num_elements = tensor.numel()
+
+
+        # Step 1: calculate the #zeros (please use round())
+        num_zeros = round(num_elements * sparsity)
+        # Step 2: calculate the importance of weight
+        importance = tensor.abs()
+        # Step 3: calculate the pruning threshold
+        threshold = importance.view(-1).kthvalue(num_zeros).values
+        # Step 4: get binary mask (1 for nonzeros, 0 for zeros)
+        mask = torch.gt(importance, threshold)
+
+        # Step 5: apply mask to prune the tensor
+        tensor.mul_(mask)
+
+        return mask
+    
+    @torch.no_grad()
+    def apply(self):
+
+        for name, param in config['model'].named_parameters():
+            if name in config['masks']:
+                param *= config['masks'][name].to(config['device'])
+
+    # @staticmethod
+    @torch.no_grad()
+    def prune(self):
+        for name, param in config['model'].named_parameters():
+            if param.dim() > 1: # we only prune conv and fc weights
+
+                config['masks'][name] = self.fine_grained_prune(param, config['sparsity_dict'][name])
 
 
 
@@ -308,4 +431,33 @@ class FineGrainedPruner:
 
     
 
+def train_prune(verbose=True) -> None:
+    global config
+    sconces = sconce()
 
+
+    sconces.train()
+    dense_model_size = sconces.get_model_size( count_nonzero_only=True)
+    print(f"\nDense_model_size model after sensitivity size={dense_model_size / MiB:.2f} MiB")
+    dense_validation_acc = sconces.evaluate(verbose =False)
+    print("Original Model Validation Accuracy:",dense_validation_acc, "%")
+
+    
+    sconces.sensitivity_scan(dense_model_accuracy= dense_validation_acc, verbose=False)
+
+
+
+    sconces.prune()
+    pruned_model_size = sconces.get_model_size(count_nonzero_only=True)
+    validation_acc = sconces.evaluate(verbose =False)
+
+
+    config['callbacks'] = [lambda: sconces.apply()]
+    if(config['fine_tune']):
+        sconces.train()
+    fine_tuned_pruned_model_size = sconces.get_model_size(count_nonzero_only=True)
+    validation_acc = sconces.evaluate(verbose =False)
+    if(verbose):
+        print(f"Fine-Tuned Sparse model has size={fine_tuned_pruned_model_size / MiB:.2f} MiB = {fine_tuned_pruned_model_size / dense_model_size * 100:.2f}% of Original model size")
+        print("Fine-Tuned Pruned Model Validation Accuracy:",validation_acc)
+    
