@@ -1,4 +1,4 @@
 from .sconce import sconce
 from .sconce import config
-from .sconce import train_prune
-__all__ = [ "sconce","train_prune","config"]
+from .sconce import TrainPrune
+__all__ = [ "sconce","TrainPrune","config"]
