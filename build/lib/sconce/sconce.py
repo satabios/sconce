@@ -431,7 +431,7 @@ class FineGrainedPruner:
 
     
 
-def train_prune(verbose=True) -> None:
+def TrainPrune(verbose=True) -> None:
     global config
     sconces = sconce()
 
