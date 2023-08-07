@@ -10,7 +10,7 @@ This is a Pytorch Helper package aimed to aid the workflow of deep learning mode
 
 ```python
 
-pip install git+https://github.com/satabios/sconce
+pip install sconce
 
 ```
 
