@@ -18,11 +18,6 @@ pip install sconce
 ## Define Network and Config's:
 
 ```python
-import torch
-import torchvision
-import torch.nn as nn
-import torch.nn.functional as F
-
 # Define your network
 
 class Net(nn.Module):
@@ -45,7 +40,7 @@ class Net(nn.Module):
         return x
     
 
-# Make a Dict of Dataloader
+# Make a Dict for Dataloader
 
 image_size = 32
 transforms = {
@@ -78,21 +73,16 @@ for split in ['train', 'test']:
 ## Config:
 ```python
 # Define a cofig of the below parameters
-from sconce import sconce, FineGrainedPruner, config
 
-config['sparsity_dict'] = {
-    'conv1.weight' : 0.90,
-    'conv2.weight' : 0.90,
-    'fc1.weight' : 0.90,
-    'fc2.weight' : 0.90
-}
-
+from sconce import sconce, TrainPrune, config
 
 config['model']= Net() # Model Definition
 config['criterion'] = nn.CrossEntropyLoss() # Loss
 config['optimizer'] = optim.Adam(config['model'].parameters(), lr=1e-4)
 config['scheduler'] = optim.lr_scheduler.CosineAnnealingLR(config['optimizer'], T_max=200)
 config['dataloader'] = dataloader
+config['epochs'] = 1 #Number of time we iterate over the data
+
 
 ```
 
@@ -100,21 +90,7 @@ config['dataloader'] = dataloader
 ```python
 
 sconces = sconce()
-print(model_params['model'])
-
-sconces.train()
-print("Model Size:",sconces.get_model_size(count_nonzero_only=True))
-
-
-pruner = FineGrainedPruner()
-pruner.prune()
-print("Model Size:",sconces.get_model_size(count_nonzero_only=True))
-
-config['callbacks'] = [lambda: pruner.apply()]
-if(config['fine_tune']):
-   sconces.train()
-print("Model Size:",sconces.get_model_size(count_nonzero_only=True))
-sconces.evaluate()
+TrainPrune()
 
 ```
 
