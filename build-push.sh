@@ -12,11 +12,11 @@ rm -rf build/
 rm -rf .eggs/
 python3 setup.py clean --all sdist bdist_wheel
 
-echo "Message to Push?"
-read message
-git_push "$message"
+# echo "Message to Push?"
+# read message
+# git_push "$message"
 
 
 
-twine upload dist/* --verbose
+# twine upload dist/* --verbose
 

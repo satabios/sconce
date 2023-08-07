@@ -3,10 +3,11 @@ Name: sconce
 Version: 0.0.30
 Summary: sconce: torch helper
 Home-page: https://github.com/satabios/sconce
-Download-URL: https://pypi.org/project/sconce/
 Author: Sathyaprakash Narayanan
-Author-email: Sathyaprakash Narayanan <snaray17@ucsc.edu>
-Project-URL: code, https://github.com/satabios/sconce
+Author-email: snaray17@ucsc.edu
+License: UNKNOWN
+Download-URL: https://pypi.org/project/sconce/
+Platform: UNKNOWN
 Description-Content-Type: text/markdown
 License-File: LICENSE.txt
 
@@ -142,5 +143,7 @@ sconces.evaluate()
 - [ ] Quantisation
 - [ ] Universal AutoML package
 - [ ] Introduction of Sparsification in Pipeline
+
+
 
 
