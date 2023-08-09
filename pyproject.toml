@@ -1,7 +1,7 @@
 [project]
 name = "sconce"
-version = "0.0.50"
-description = "sconce: torch helper"
+version = "0.0.52"
+description = "sconce: torch pipeliner  "
 authors = [{ name = "Sathyaprakash Narayanan", email = "snaray17@ucsc.edu" }]
 urls = { code = "https://github.com/satabios/sconce" }
 
