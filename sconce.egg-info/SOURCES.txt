@@ -11,3 +11,4 @@ sconce.egg-info/SOURCES.txt
 sconce.egg-info/dependency_links.txt
 sconce.egg-info/requires.txt
 sconce.egg-info/top_level.txt
+test/test_script.py
