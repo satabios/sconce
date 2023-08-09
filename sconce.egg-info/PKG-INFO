@@ -1,7 +1,7 @@
 Metadata-Version: 2.1
 Name: sconce
-Version: 0.0.50
-Summary: sconce: torch helper
+Version: 0.0.52
+Summary: sconce: torch pipeliner  
 Home-page: https://github.com/satabios/sconce
 Download-URL: https://pypi.org/project/sconce/
 Author: Sathyaprakash Narayanan
