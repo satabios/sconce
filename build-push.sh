@@ -1,3 +1,4 @@
+#! /usr/bin/zsh
 
 git_push() {
 
@@ -8,18 +9,21 @@ git push -u origin master
 
 
 rm -rf dist/
-rm -rf build/ 
+rm -rf build/
 rm -rf .eggs/
+
+
+
+echo "Version-To-Update?"
+read value
+version="version = \"${value}\""
+echo "${version}"
+sed -i "3s/.*/$version/" pyproject.toml
+
+
 python3 setup.py clean --all sdist bdist_wheel
+twine upload dist/* --verbose
 
-
- twine upload dist/* --verbose
-
- echo "Message to Push?"
- read message
- git_push "$message"
-
-
-
-
-
+echo "Message to Push?"
+read message
+git_push "$message"
