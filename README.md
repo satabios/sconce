@@ -72,16 +72,19 @@ for split in ['train', 'test']:
 
 ## Config:
 ```python
-# Define a cofig of the below parameters
+# Define all parameters 
 
-from sconce import sconce, TrainPrune, config
+from sconce import sconce
 
-config['model']= Net() # Model Definition
-config['criterion'] = nn.CrossEntropyLoss() # Loss
-config['optimizer'] = optim.Adam(config['model'].parameters(), lr=1e-4)
-config['scheduler'] = optim.lr_scheduler.CosineAnnealingLR(config['optimizer'], T_max=200)
-config['dataloader'] = dataloader
-config['epochs'] = 1 #Number of time we iterate over the data
+
+sconces = sconce()
+sconces.model= Net() # Model Definition
+sconces.criterion = nn.CrossEntropyLoss() # Loss
+sconces.optimizer= optim.Adam(sconces.model.parameters(), lr=1e-4)
+sconces.scheduler = optim.lr_scheduler.CosineAnnealingLR(sconces.optimizer, T_max=200)
+sconces.dataloader = dataloader
+sconces.epochs = 5 #Number of time we iterate over the data
+sconces.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 ```
@@ -89,8 +92,10 @@ config['epochs'] = 1 #Number of time we iterate over the data
 ## Pipeline using Sconce usage:
 ```python
 
-sconces = sconce()
-TrainPrune()
+
+
+sconces.compress()
+
 
 ```
 
