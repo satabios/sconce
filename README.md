@@ -2,6 +2,9 @@
 
 <img align="left" width="100" height="100" src="images/jenga-original.jpg">
 
+<img align="left" width="100" height="100" src="images/jenga-process.gif">
+
+<img align="left" width="100" height="100" src="images/jenga-final.jpg">
 
 This is a Pytorch Helper package aimed to aid the workflow of deep learning model development and deployment. 
 
