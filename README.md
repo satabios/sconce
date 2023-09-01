@@ -1,10 +1,16 @@
 # SCONCE (Make Pytorch Development and Deployment Efficient)
 
+
 <img align="left" width="300" height="300" src="images/jenga-original.jpg">
 <img align="left" width="300" height="300" src="images/jenga-process.gif">
-<img align="left" width="300" height="300" src="images/jenga-final.png">
+<img align="right" width="300" height="300" src="images/jenga-final.png">
 
 <br />
+<br />
+
+<br />
+
+
 This is a Pytorch Helper package aimed to aid the workflow of deep learning model development and deployment. 
 
 
