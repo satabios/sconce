@@ -31,6 +31,13 @@ from tqdm.auto import tqdm
 
 from torchprofile import profile_macs
 
+
+from collections import namedtuple
+from fast_pytorch_kmeans import KMeans
+from torch.nn import parameter
+
+import ipdb
+
 random.seed(321)
 np.random.seed(432)
 torch.manual_seed(223)
@@ -70,6 +77,10 @@ class sconce:
         self.callbacks = None
         self.sparsity_dict = None
         self.masks = dict()
+        self.Codebook = namedtuple('Codebook', ['centroids', 'labels'])
+        self.codebook = None
+
+        self.bitwidth=4
 
         self.device = None
 
@@ -146,7 +157,7 @@ class sconce:
 
     ########## Model Profiling ##########
     def get_model_macs(self, inputs) -> int:
-        global config
+
         return profile_macs(self.model, inputs)
 
     def get_sparsity(self, tensor: torch.Tensor) -> float:
@@ -162,7 +173,7 @@ class sconce:
         calculate the sparsity of the given model
             sparsity = #zeros / #elements = 1 - #nonzeros / #elements
         """
-        global config
+
         num_nonzeros, num_elements = 0, 0
         for param in self.model.parameters():
             num_nonzeros += param.count_nonzero()
@@ -174,7 +185,7 @@ class sconce:
         calculate the total number of parameters of model
         :param count_nonzero_only: only count nonzero weights
         """
-        global config
+
         num_counted_elements = 0
         for param in self.model.parameters():
             if count_nonzero_only:
@@ -189,7 +200,7 @@ class sconce:
         :param data_width: #bits per element
         :param count_nonzero_only: only count nonzero weights
         """
-        global config
+
         params = self.get_num_parameters(count_nonzero_only)
 
         if (params.is_cuda):
@@ -390,4 +401,78 @@ class sconce:
             print(
                 f"Fine-Tuned Sparse model has size={fine_tuned_pruned_model_size / MiB:.2f} MiB = {fine_tuned_pruned_model_size / dense_model_size * 100:.2f}% of Original model size")
             print("Fine-Tuned Pruned Model Validation Accuracy:", validation_acc)
+
+
+
+    def k_means_quantize(self, fp32_tensor: torch.Tensor, bitwidth=4,codebook=None):
+
+        """
+        quantize tensor using k-means clustering
+        :param fp32_tensor:
+        :param bitwidth: [int] quantization bit width, default=4
+        :param codebook: [Codebook] (the cluster centroids, the cluster label tensor)
+        :return:
+            [Codebook = (centroids, labels)]
+                centroids: [torch.(cuda.)FloatTensor] the cluster centroids
+                labels: [torch.(cuda.)LongTensor] cluster label tensor
+        """
+        if self.codebook is None:
+          # get number of clusters based on the quantization precision
+          # hint: one line of code
+          n_clusters = 1 << self.bitwidth
+
+          # use k-means to get the quantization centroids
+          kmeans = KMeans(n_clusters=n_clusters, mode='euclidean', verbose=0)
+          labels = kmeans.fit_predict(fp32_tensor.view(-1, 1)).to(torch.long)
+          centroids = kmeans.centroids.to(torch.float).view(-1)
+          self.codebook = self.Codebook(centroids, labels)
+
+        # decode the codebook into k-means quantized tensor for inference
+        # hint: one line of code
+        ipdb.set_trace()
+        quantized_tensor = self.codebook.centroids[codebook.labels]
+
+        fp32_tensor.set_(quantized_tensor.view_as(fp32_tensor))
+        return self.codebook
+
+
+
+    @torch.no_grad()
+    def quantize(self):
+      self.codebook = dict()
+      if isinstance(self.bitwidth, dict):
+        for name, param in self.model.named_parameters():
+          if name in bitwidth:
+            self.codebook[name] = self.k_means_quantize(param, bitwidth=self.bitwidth[name])
+      else:
+        for name, param in self.model.named_parameters():
+          if param.dim() > 1:
+            self.codebook[name] = self.k_means_quantize(param, bitwidth=self.bitwidth)
+      return codebook
+
+
+
+      @torch.no_grad()
+      def apply_quantization(self,   update_centroids):
+        self.codebook = self.quantize()
+        for name, param in self.model.named_parameters():
+          if name in self.codebook:
+            if update_centroids:
+              update_codebook(param, codebook=self.codebook[name])
+            self.codebook[name] = k_means_quantize(
+              param, codebook=self.codebook[name])
+
+
+    def test_quant(self,):
+      quantizers = dict()
+      for bitwidth in [8, 4, 2]:
+
+        print(f'k-means quantizing model into {self.bitwidth} bits')
+        quantizer = self.quantize()
+        quantized_model_size = get_model_size(model, bitwidth)
+        print(f"    {bitwidth}-bit k-means quantized model has size={quantized_model_size / MiB:.2f} MiB")
+        quantized_model_accuracy = evaluate(model, dataloader['test'])
+        print(f"    {bitwidth}-bit k-means quantized model has accuracy={quantized_model_accuracy:.2f}%")
+        quantizers[bitwidth] = quantizer
+
 
