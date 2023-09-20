@@ -2,9 +2,9 @@
 
 
 <p float="left">
-  <img  width="300" height="300" src="images/jenga-original.jpg"  />
-  <img width="400" height="300" src="images/jenga-process.gif" />
-  <img width="300" height="300" src="images/jenga-final.png" />
+<!--   <img  width="300" height="300" src="images/jenga-original.jpg"  /> -->
+  <img width="900" height="500" src="images/jenga-process.gif" />
+<!--   <img width="300" height="300" src="images/jenga-final.png" /> -->
 </p>
 
 This is a Pytorch Helper package aimed to aid the workflow of deep learning model development and deployment. 
