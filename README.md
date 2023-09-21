@@ -4,7 +4,7 @@
 <p float="left">
   <!-- <img  width="300" height="300" src="images/jenga-original.jpg"  />
   <img width="400" height="300" src="images/jenga-process.gif" /> -->
-  <img width="700" height="300" src="images/final.gif" />
+  <img width="900" height="300" src="images/final.gif" />
 </p>
 
 This is a Pytorch Helper package aimed to aid the workflow of deep learning model development and deployment. 
