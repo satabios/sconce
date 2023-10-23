@@ -115,6 +115,8 @@ sconces.compress()
 - [x] Universal Channel-Wise Pruning
 - [x] Update Tutorials
 - [X] Fine Grained Purning
+- [X] Channel Wise Purning
+- [ ] Spasegpt like Pruning
 - [+] Quantisation (In-Progress)
 - [ ] Universal AutoML package
 - [ ] Introduction of Sparsification in Pipeline
