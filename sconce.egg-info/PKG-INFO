@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: sconce
-Version: 0.0.53
+Version: 0.0.58
 Summary: sconce: torch pipeliner  
 Home-page: https://github.com/satabios/sconce
 Download-URL: https://pypi.org/project/sconce/
@@ -11,6 +11,13 @@ Description-Content-Type: text/markdown
 License-File: LICENSE.txt
 
 # SCONCE (Make Pytorch Development and Deployment Efficient)
+
+
+<p float="left">
+  <!-- <img  width="300" height="300" src="images/jenga-original.jpg"  />
+  <img width="400" height="300" src="images/jenga-process.gif" /> -->
+  <img width="900" height="300" src="images/final.gif" />
+</p>
 
 This is a Pytorch Helper package aimed to aid the workflow of deep learning model development and deployment. 
 
