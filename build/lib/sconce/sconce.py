@@ -126,7 +126,7 @@ class sconce:
                     print(f'Epoch:{epoch + 1} Train Loss: {running_loss / 2000:.5f} Validation Accuracy: {validation_acc:.5f}')
                     torch.save( copy.deepcopy(self.model.state_dict()), self.expt_name + '.pth')
 
-    @torch.inference_mode()
+    @torch.no_grad()
     def evaluate(self, verbose=False):
         self.model.to(self.device)
         self.model.eval()
