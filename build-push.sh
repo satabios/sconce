@@ -18,7 +18,7 @@ echo "Version-To-Update?"
 read value
 version="version = \"${value}\""
 echo "${version}"
-sed -i "3s/.*/$version/" pyproject.toml
+sed -i '' "3s/.*/$version/" pyproject.toml
 
 
 python3 setup.py clean --all sdist bdist_wheel
