@@ -38,6 +38,8 @@ from torch.nn import parameter
 
 import ipdb
 
+from snntorch import functional as SF
+
 random.seed(321)
 np.random.seed(432)
 torch.manual_seed(223)
@@ -56,7 +58,7 @@ class sconce:
         self.validate = True
         self.save = False
         self.goal = 'classficiation'
-        self.expt_name = 'test-net'
+        self.experiment_name = None
         self.epochs = None
         self.learning_rate = 1e-4
         self.dense_model_valid_acc = 0
@@ -82,6 +84,7 @@ class sconce:
         self.codebook = None
         self.channel_pruning_ratio = None
         self.snn = False
+        self.accuracy_function = None
 
         self.bitwidth=4
 
@@ -131,7 +134,8 @@ class sconce:
                 self.model.train()
 
                 validation_acc = 0
-                for data in tqdm(self.dataloader['train'], desc='train', leave=False):
+
+                for i, data in enumerate(tqdm(self.dataloader['train'], desc='train', leave=False)):
                     # Move the data from CPU to GPU
                     if (self.goal != 'autoencoder'):
                         inputs, targets = data
@@ -145,6 +149,8 @@ class sconce:
                     # Forward inference
                     if (self.snn == True):
                         outputs = self.forward_pass_snn(inputs)
+                        SF.accuracy_rate(outputs, targets) / 100
+
                     else:
                         outputs = self.model(inputs)
                     loss = self.criterion(outputs, targets)
@@ -163,12 +169,13 @@ class sconce:
                     running_loss += loss.item()
 
 
+
                 running_loss = 0.0
 
                 validation_acc = self.evaluate()
                 if (validation_acc > val_acc):
                     print(f'Epoch:{epoch + 1} Train Loss: {running_loss / 2000:.5f} Validation Accuracy: {validation_acc:.5f}')
-                    torch.save( copy.deepcopy(self.model.state_dict()), self.expt_name + '.pth')
+                    torch.save( copy.deepcopy(self.model.state_dict()), self.experiment_name + '.pth')
 
     @torch.no_grad()
     def evaluate(self, verbose=False):
@@ -177,12 +184,18 @@ class sconce:
         with torch.no_grad():
             correct = 0
             total = 0
-            for images, labels in self.dataloader['test']:
+            local_acc = []
+            for i, data in enumerate(tqdm(self.dataloader['test'], desc='test', leave=False)):
+                images, labels = data
                 images, labels = images.to(self.device), labels.to(self.device)
-                outputs = self.model(images)
-                _, predicted = torch.max(outputs.data, 1)
-                total += labels.size(0)
-                correct += (predicted == labels).sum().item()
+                if(self.snn):
+                    outputs = self.forward_pass_snn(images, mem_out_rec=None)
+                    correct += SF.accuracy_rate(outputs, labels) / 100
+                else:
+                    outputs = self.model(images)
+                    _, predicted = torch.max(outputs.data, 1)
+                    total += labels.size(0) - 1
+                    correct += (predicted == labels).sum().item()
             acc = 100 * correct / total
             if (verbose):
                 print('Test Accuracy: {} %'.format(acc))
@@ -277,6 +290,7 @@ class sconce:
         named_conv_weights = [(name, param) for (name, param) \
                               in self.model.named_parameters() if param.dim() > 1]
         for i_layer, (name, param) in enumerate(named_conv_weights):
+
             param_clone = param.detach().clone()
             accuracy = []
             desc = None
@@ -413,7 +427,7 @@ class sconce:
           print("Channel-Wise Pruning")
           self.CWP_Pruning()  #Channelwise Pruning
         pruned_model_size = self.get_model_size(model = self.model, count_nonzero_only=True)
-        validation_acc = self.evaluate(verbose=False)
+        # validation_acc = self.evaluate(verbose=False)
         print(f"Pruned model has size={pruned_model_size / MiB:.2f} MiB = {pruned_model_size / dense_model_size * 100:.2f}% of Original model size")
         #### Add Accuracy deviation
 
@@ -425,11 +439,15 @@ class sconce:
         fine_tuned_pruned_model_size = self.get_model_size(model = self.model , count_nonzero_only=True)
         validation_acc = self.evaluate(verbose=False)
         pruned_fine_tuned_model = self.model
+        torch.save(copy.deepcopy(original_dense_model.state_dict()), self.experiment_name + '.pth')
+        torch.save(copy.deepcopy(pruned_fine_tuned_model.state_dict()), self.experiment_name+'_pruned' + '.pth')
+
         self.compare_models(original_dense_model, pruned_fine_tuned_model)
         if (verbose):
             print(
                 f"Fine-Tuned Sparse model has size={fine_tuned_pruned_model_size / MiB:.2f} MiB = {fine_tuned_pruned_model_size / dense_model_size * 100:.2f}% of Original model size")
             print("Fine-Tuned Pruned Model Validation Accuracy:", validation_acc)
+
 
 #make this change to sync the files to beast; did that affect it?
 
