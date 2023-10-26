@@ -1,10 +1,7 @@
-.. sconce documentation master file, created by
-   sphinx-quickstart on Wed Oct 25 20:57:47 2023.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+sconce Documentation
+======================================
 
-Welcome to sconce's documentation!
-==================================
+.. include:: ../README.rst
 
 
 .. toctree::
@@ -13,3 +10,4 @@ Welcome to sconce's documentation!
 
    Pruning
    Usage
+   
