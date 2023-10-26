@@ -5,12 +5,6 @@
 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
-import sphinx_rtd_theme
-
-html_theme = 'sphinx_rtd_theme'
-
-html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
-
 project = 'sconce'
 copyright = '2023, Sathyaprakash Narayanan'
 author = 'Sathyaprakash Narayanan'
