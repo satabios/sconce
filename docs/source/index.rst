@@ -15,6 +15,6 @@ Welcome to sconce's documentation!
 Indices and tables
 ==================
 
-* :ref:`genindex`
-* :ref:`modindex`
+* :ref:`Pruning`
+* :ref:`Usage`
 * :ref:`search`
