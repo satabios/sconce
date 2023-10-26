@@ -6,15 +6,22 @@
 Welcome to sconce's documentation!
 ==================================
 
+.. .. toctree::
+..    :maxdepth: 2
+..    :caption: Contents:
+
+
+
+.. Indices and tables
+.. ==================
+
+.. * :ref:`Pruning`
+.. * :ref:`Usage`
+.. * :ref:`search`
+
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
    :caption: Contents:
 
-
-
-Indices and tables
-==================
-
-* :ref:`Pruning`
-* :ref:`Usage`
-* :ref:`search`
+   Pruning
+   Usage
