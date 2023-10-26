@@ -1,13 +1,14 @@
-sconce Documentation
-======================================
-
-.. include:: ../README.rst
-
+Welcome to sconce's documentation!
+========================================
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
    :caption: Contents:
 
-   Pruning
-   Usage
-   
+   sconce
+
+Indices and tables
+==================
+
+* :ref:`genindex`
+* :ref:`search`
