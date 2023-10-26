@@ -565,79 +565,79 @@ class sconce:
 
 
 
-    def k_means_quantize(self, fp32_tensor: torch.Tensor, bitwidth=4,codebook=None):
+    # def k_means_quantize(self, fp32_tensor: torch.Tensor, bitwidth=4,codebook=None):
+    #
+    #     """
+    #     quantize tensor using k-means clustering
+    #     :param fp32_tensor:
+    #     :param bitwidth: [int] quantization bit width, default=4
+    #     :param codebook: [Codebook] (the cluster centroids, the cluster label tensor)
+    #     :return:
+    #         [Codebook = (centroids, labels)]
+    #             centroids: [torch.(cuda.)FloatTensor] the cluster centroids
+    #             labels: [torch.(cuda.)LongTensor] cluster label tensor
+    #     """
+    #
+    #     if codebook is None:
+    #       # get number of clusters based on the quantization precision
+    #       # hint: one line of code
+    #       n_clusters = 1 << self.bitwidth
+    #
+    #       # use k-means to get the quantization centroids
+    #       kmeans = KMeans(n_clusters=n_clusters, mode='euclidean', verbose=0)
+    #       labels = kmeans.fit_predict(fp32_tensor.view(-1, 1)).to(torch.long)
+    #       centroids = kmeans.centroids.to(torch.float).view(-1)
+    #       self.codebook = self.Codebook(centroids, labels)
+    #
+    #     # decode the codebook into k-means quantized tensor for inference
+    #     # hint: one line of code
+    #     # ipdb.set_trace()
+    #     quantized_tensor = self.codebook.centroids[self.codebook.labels]
+    #
+    #     fp32_tensor.set_(quantized_tensor.view_as(fp32_tensor))
+    #     return codebook
+    #
+    #
+    #
+    # @torch.no_grad()
+    # def kmeansquantize(self):
+    #   """
+    #   Applies k-means quantization to the model's parameters and returns a dictionary of codebooks.
+    #   If the bitwidth is a dictionary, applies quantization to the named parameters in the dictionary.
+    #   Otherwise, applies quantization to all parameters with more than one dimension.
+    #   Returns a dictionary of codebooks, where each key is the name of a parameter and each value is a codebook.
+    #   """
+    #   codebook = {}
+    #   if isinstance(self.bitwidth, dict):
+    #     for name, param in self.model.named_parameters():
+    #       if name in bitwidth:
+    #         codebook[name] = self.k_means_quantize(param, bitwidth=self.bitwidth[name])
+    #   else:
+    #     for name, param in self.model.named_parameters():
+    #       if param.dim() > 1:
+    #         codebook[name] = self.k_means_quantize(param, bitwidth=self.bitwidth)
+    #   return codebook
 
-        """
-        quantize tensor using k-means clustering
-        :param fp32_tensor:
-        :param bitwidth: [int] quantization bit width, default=4
-        :param codebook: [Codebook] (the cluster centroids, the cluster label tensor)
-        :return:
-            [Codebook = (centroids, labels)]
-                centroids: [torch.(cuda.)FloatTensor] the cluster centroids
-                labels: [torch.(cuda.)LongTensor] cluster label tensor
-        """
 
-        if codebook is None:
-          # get number of clusters based on the quantization precision
-          # hint: one line of code
-          n_clusters = 1 << self.bitwidth
-
-          # use k-means to get the quantization centroids
-          kmeans = KMeans(n_clusters=n_clusters, mode='euclidean', verbose=0)
-          labels = kmeans.fit_predict(fp32_tensor.view(-1, 1)).to(torch.long)
-          centroids = kmeans.centroids.to(torch.float).view(-1)
-          self.codebook = self.Codebook(centroids, labels)
-
-        # decode the codebook into k-means quantized tensor for inference
-        # hint: one line of code
-        # ipdb.set_trace()
-        quantized_tensor = self.codebook.centroids[self.codebook.labels]
-
-        fp32_tensor.set_(quantized_tensor.view_as(fp32_tensor))
-        return codebook
-
-
-
-    @torch.no_grad()
-    def kmeansquantize(self):
-      """
-      Applies k-means quantization to the model's parameters and returns a dictionary of codebooks.
-      If the bitwidth is a dictionary, applies quantization to the named parameters in the dictionary.
-      Otherwise, applies quantization to all parameters with more than one dimension.
-      Returns a dictionary of codebooks, where each key is the name of a parameter and each value is a codebook.
-      """
-      codebook = {}
-      if isinstance(self.bitwidth, dict):
-        for name, param in self.model.named_parameters():
-          if name in bitwidth:
-            codebook[name] = self.k_means_quantize(param, bitwidth=self.bitwidth[name])
-      else:
-        for name, param in self.model.named_parameters():
-          if param.dim() > 1:
-            codebook[name] = self.k_means_quantize(param, bitwidth=self.bitwidth)
-      return codebook
-
-
-
-    @torch.no_grad()
-    def apply_quantization(self, update_centroids):
-        """
-        Applies quantization to the model's parameters using k-means clustering.
-
-        Args:
-          update_centroids (bool): Whether to update the codebook centroids.
-
-        Returns:
-          None
-        """
-        self.codebook = self.quantize()
-        for name, param in self.model.named_parameters():
-          if name in self.codebook:
-            if update_centroids:
-              update_codebook(param, codebook=self.codebook[name])
-            self.codebook[name] = k_means_quantize(
-              param, codebook=self.codebook[name])
+    #
+    # @torch.no_grad()
+    # def apply_quantization(self, update_centroids):
+    #     """
+    #     Applies quantization to the model's parameters using k-means clustering.
+    #
+    #     Args:
+    #       update_centroids (bool): Whether to update the codebook centroids.
+    #
+    #     Returns:
+    #       None
+    #     """
+    #     self.codebook = self.quantize()
+    #     for name, param in self.model.named_parameters():
+    #       if name in self.codebook:
+    #         if update_centroids:
+    #           update_codebook(param, codebook=self.codebook[name])
+    #         self.codebook[name] = k_means_quantize(
+    #           param, codebook=self.codebook[name])
 
 
     def compare_models(self, original_dense_model, pruned_fine_tuned_model):
