@@ -1,7 +1,7 @@
 sconce
 ------------------
 
-image:: final.gif
+figure:: final.gif
 
 This is a Pytorch Helper package aimed to aid the workflow of deep learning model development and deployment.
 
