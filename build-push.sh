@@ -17,7 +17,6 @@ rm -rf .eggs/
 echo "Version-To-Update?"
 read value
 version="version = \"${value}\""
-echo "${version}"
 sed -i "3s/.*/$version/" pyproject.toml
 
 
