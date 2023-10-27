@@ -50,6 +50,46 @@ GiB = 1024 * MiB
 class sconce:
 
     def __init__(self):
+          
+        
+        """
+          A class for training and evaluating neural networks with various optimization techniques.
+
+          Attributes:
+          - criterion: loss function used for training the model
+          - batch_size: size of the batch used for training
+          - validate: whether to validate the model during training
+          - save: whether to save the model after training
+          - goal: the goal of the model (e.g. classification)
+          - experiment_name: name of the experiment
+          - epochs: number of epochs for training
+          - learning_rate: learning rate for the optimizer
+          - dense_model_valid_acc: validation accuracy of the dense model
+          - fine_tune_epochs: number of epochs for fine-tuning
+          - fine_tune: whether to fine-tune the model
+          - prune_model: whether to prune the model
+          - prune_mode: mode of pruning (e.g. global, local)
+          - quantization: whether to quantize the model
+          - num_finetune_epochs: number of epochs for fine-tuning after pruning
+          - best_sparse_model_checkpoint: checkpoint for the best sparse model
+          - degradation_value: degradation value for pruning
+          - degradation_value_local: local degradation value for pruning
+          - model: the neural network model
+          - criterion: loss function used for training the model
+          - optimizer: optimizer used for training the model
+          - scheduler: learning rate scheduler
+          - dataloader: data loader for training and validation data
+          - callbacks: callbacks for training the model
+          - sparsity_dict: dictionary of sparsity values for each layer
+          - masks: masks for pruning
+          - Codebook: named tuple for codebook
+          - codebook: codebook for quantization
+          - channel_pruning_ratio: ratio of channels to prune
+          - snn: whether to use spiking neural network
+          - accuracy_function: function for calculating accuracy
+          - bitwidth: bitwidth for quantization
+          - device: device used for training the model
+        """
         self.criterion = nn.CrossEntropyLoss()
         self.batch_size = 64
         self.validate = True
