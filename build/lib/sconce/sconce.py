@@ -546,6 +546,7 @@ class sconce:
             self.masks[name] = self.fine_grained_prune(param, self.sparsity_dict[name])
 
 
+    @classmethod
     def compress(self, verbose=True) -> None:
         """
         Compresses the neural network model using either Granular-Magnitude Pruning (GMP) or Channel-Wise Pruning (CWP).
