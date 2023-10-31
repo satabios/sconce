@@ -83,7 +83,6 @@ for split in ['train', 'test']:
 
 from sconce import sconce
 
-
 sconces = sconce()
 sconces.model= Net() # Model Definition
 sconces.criterion = nn.CrossEntropyLoss() # Loss
@@ -92,17 +91,16 @@ sconces.scheduler = optim.lr_scheduler.CosineAnnealingLR(sconces.optimizer, T_ma
 sconces.dataloader = dataloader
 sconces.epochs = 5 #Number of time we iterate over the data
 sconces.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
+sconces.experiment_name = "vgg-gmp" # Define your experiment name here
+sconces.prune_mode = "GMP" # Prune Mode: Currently supporting "GMP"(Supports Automated Pruning Ratio Detection), "CWP". Future supports for "OBC" and "sparseGPT"
+sconces.channel_pruning_ratio = 0.80 #Pruning Ratio for CWP Pruning
 
 ```
 
 ## Pipeline using Sconce usage:
 ```python
 
-
-
 sconces.compress()
-
 
 ```
 
@@ -116,7 +114,9 @@ sconces.compress()
 - [x] Update Tutorials
 - [X] Fine Grained Purning
 - [X] Channel Wise Purning
-- [ ] Spasegpt like Pruning
+- [+] OBC Compression (In-Progress)
+- [+] Spasegpt like Pruning (In-Progress)
 - [+] Quantisation (In-Progress)
+
 - [ ] Universal AutoML package
 - [ ] Introduction of Sparsification in Pipeline
