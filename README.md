@@ -21,6 +21,33 @@ pip install sconce
 
 ```
 
+## Define your Configurations:
+```python
+# Define all parameters 
+
+from sconce import sconce
+
+sconces = sconce()
+sconces.model= Net() # Model Definition
+sconces.criterion = nn.CrossEntropyLoss() # Loss
+sconces.optimizer= optim.Adam(sconces.model.parameters(), lr=1e-4)
+sconces.scheduler = optim.lr_scheduler.CosineAnnealingLR(sconces.optimizer, T_max=200)
+sconces.dataloader = dataloader
+sconces.epochs = 5 #Number of time we iterate over the data
+sconces.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+sconces.experiment_name = "vgg-gmp" # Define your experiment name here
+sconces.prune_mode = "GMP" # Prune Mode: Currently supporting "GMP"(Supports Automated Pruning Ratio Detection), "CWP". Future supports for "OBC" and "sparseGPT"
+
+```
+
+## One Roof Solution [Train -> Compress -> Deploy]:
+```python
+
+sconces.compress()
+
+```
+
+
 
 ## Define Network and Config's:
 
@@ -79,32 +106,6 @@ for split in ['train', 'test']:
   )
 ```
 
-## Config:
-```python
-# Define all parameters 
-
-from sconce import sconce
-
-sconces = sconce()
-sconces.model= Net() # Model Definition
-sconces.criterion = nn.CrossEntropyLoss() # Loss
-sconces.optimizer= optim.Adam(sconces.model.parameters(), lr=1e-4)
-sconces.scheduler = optim.lr_scheduler.CosineAnnealingLR(sconces.optimizer, T_max=200)
-sconces.dataloader = dataloader
-sconces.epochs = 5 #Number of time we iterate over the data
-sconces.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-sconces.experiment_name = "vgg-gmp" # Define your experiment name here
-sconces.prune_mode = "GMP" # Prune Mode: Currently supporting "GMP"(Supports Automated Pruning Ratio Detection), "CWP". Future supports for "OBC" and "sparseGPT"
-sconces.channel_pruning_ratio = 0.80 #Pruning Ratio for CWP Pruning
-
-```
-
-## Pipeline using Sconce usage:
-```python
-
-sconces.compress()
-
-```
 
 
 
