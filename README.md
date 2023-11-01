@@ -45,9 +45,11 @@ class Net(nn.Module):
         x = F.relu(self.fc1(x))
         x = self.fc2(x)
         return x
-    
+```
 
-# Make a Dict for Dataloader
+## Make a Dict for Dataloader
+
+```python
 
 image_size = 32
 transforms = {
