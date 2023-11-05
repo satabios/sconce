@@ -22,7 +22,7 @@ extensions = [
     'sphinx.ext.intersphinx',
 ]
 
-html_logo = "images/sconce-punch-bk_removed.png"
+html_logo = "https://github.com/satabios/sconce/blob/master/docs/source/images/sconce-punch-bk_removed.png"
 
 intersphinx_mapping = {
     'python': ('https://docs.python.org/3/', None),
