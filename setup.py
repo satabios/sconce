@@ -4,7 +4,7 @@ import os
 os.environ['PIP_DEFAULT_TIMEOUT'] = '100'
 
 
-with open('README.md') as readme_file:
+with open('README.rst') as readme_file:
     README = readme_file.read()
 import os
 setup_args = dict(
