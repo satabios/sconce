@@ -2,8 +2,8 @@ sconce (Model Compression Made Easy)
 -------------------------------------
 
 
-.. image:: https://github.com/satabios/sconce/actions/workflows/build.yml/badge.svg
-        :target: https://sconce.readthedocs.io/en/latest/?badge=latest
+.. .. image:: https://github.com/satabios/sconce/actions/workflows/build.yml/badge.svg
+..         :target: https://sconce.readthedocs.io/en/latest/?badge=latest
 
 .. image:: https://readthedocs.org/projects/sconce/badge/?version=latest
         :target: https://sconce.readthedocs.io/en/latest/?badge=latest
