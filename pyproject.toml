@@ -1,3 +1,8 @@
+[build-system]
+requires = ["flit_core >=3.2,<4"]
+build-backend = "flit_core.buildapi"
+
+
 [project]
 name = "sconce"
 version = "0.57"
@@ -5,7 +10,7 @@ description = "sconce: torch pipeliner  "
 authors = [{ name = "Sathyaprakash Narayanan", email = "snaray17@ucsc.edu" }]
 urls = { code = "https://github.com/satabios/sconce" }
 
-dynamic = ["dependencies" ,"readme"]
+dynamic = ["dependencies" ,"readme", "description"]
 [tool.setuptools.dynamic]
 
 dependencies = {file = ["requirements.txt"]}
