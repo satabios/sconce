@@ -70,10 +70,9 @@ setup(
         "Operating System :: OS Independent",
     ],
     description="Model Compresion Made Easy",
-
+    long_description=readme,
     install_requires=install_requires,
     license="MIT License",
-    long_description=readme,
     include_package_data=True,
     keywords="sconce",
     name="sconce",
