@@ -491,6 +491,7 @@ class sconce:
         :return:
             torch.(cuda.)Tensor, mask for zeros
         """
+
         sparsity = min(max(0.0, sparsity), 1.0)
         if sparsity == 1.0:
             tensor.zero_()

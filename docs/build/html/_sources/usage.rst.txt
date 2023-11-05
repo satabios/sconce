@@ -12,6 +12,8 @@ To use sconce, first install it using pip:
 
    (.venv) $ pip install sconce
 
+Features
+------------
 
 .. automodule:: sconce
     :members:
