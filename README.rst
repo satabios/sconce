@@ -1,5 +1,6 @@
+====================================
 sconce (Model Compression Made Easy)
--------------------------------------
+====================================
 
 
 .. image:: https://readthedocs.org/projects/sconce/badge/?version=latest
