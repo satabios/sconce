@@ -1,5 +1,4 @@
 LICENSE.txt
-README.md
 pyproject.toml
 requirements.txt
 setup.cfg
