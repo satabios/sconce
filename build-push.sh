@@ -20,6 +20,12 @@ version="version = \"${value}\""
 sed -i "3s/.*/$version/" pyproject.toml
 
 
+cd docs/
+make html
+cd ../
+
+
+
 python3 setup.py clean --all sdist bdist_wheel
 twine upload dist/* --verbose
 

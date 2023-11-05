@@ -1,5 +1,3 @@
-"""The setup script."""
-
 from setuptools import setup, find_packages
 
 with open("README.rst", encoding="utf-8") as readme_file:
@@ -51,8 +49,8 @@ setup(
     keywords="sconce",
     name="sconce",
     packages=find_packages(include=["sconce"]),
-    # test_suite="tests",
-    # tests_require=test_requirements,
+    test_suite="tests",
+    tests_require=test_requirements,
     url="https://github.com/satabios/sconce",
     version=__version__,
     zip_safe=False,
