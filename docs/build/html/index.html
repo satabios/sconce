@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>sconce Documentation &mdash; sconce 0.1 documentation</title>
+  <title>sconce Documentation &mdash; sconce 0.57 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/default.css" type="text/css" />
@@ -14,7 +14,7 @@
   
         <script src="_static/jquery.js?v=5d32c60e"></script>
         <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="_static/documentation_options.js?v=2709fde1"></script>
+        <script src="_static/documentation_options.js?v=2fd344d2"></script>
         <script src="_static/doctools.js?v=888ff710"></script>
         <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/js/theme.js"></script>
@@ -33,10 +33,10 @@
           
           <a href="#" class="icon icon-home">
             sconce
-              <img src="https://github.com/satabios/sconce/blob/master/docs/source/images/sconce-punch-bk_removed.png?raw=true" class="logo" alt="Logo"/>
+              <img src="_static/sconce-punch-cool.png" class="logo" alt="Logo"/>
           </a>
               <div class="version">
-                0.1.0
+                0.57.0
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -104,8 +104,6 @@ learning model development, compression and deployment.</p>
 </section>
 <section id="example">
 <h1>Example:<a class="headerlink" href="#example" title="Link to this heading"></a></h1>
-<section id="define-network-and-configs">
-<h2>Define Network and Config’s:<a class="headerlink" href="#define-network-and-configs" title="Link to this heading"></a></h2>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Define your network</span>
 
 <span class="k">class</span> <span class="nc">Net</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
@@ -128,9 +126,6 @@ learning model development, compression and deployment.</p>
         <span class="k">return</span> <span class="n">x</span>
 </pre></div>
 </div>
-</section>
-<section id="make-a-dict-for-dataloader">
-<h2>Make a Dict for Dataloader<a class="headerlink" href="#make-a-dict-for-dataloader" title="Link to this heading"></a></h2>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">image_size</span> <span class="o">=</span> <span class="mi">32</span>
 <span class="n">transforms</span> <span class="o">=</span> <span class="p">{</span>
     <span class="s2">&quot;train&quot;</span><span class="p">:</span> <span class="n">Compose</span><span class="p">([</span>
@@ -159,9 +154,6 @@ learning model development, compression and deployment.</p>
   <span class="p">)</span>
 </pre></div>
 </div>
-</section>
-<section id="define-your-configurations">
-<h2>Define your Configurations:<a class="headerlink" href="#define-your-configurations" title="Link to this heading"></a></h2>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Define all parameters</span>
 
 <span class="kn">from</span> <span class="nn">sconce</span> <span class="kn">import</span> <span class="n">sconce</span>
@@ -178,14 +170,9 @@ learning model development, compression and deployment.</p>
 <span class="n">sconces</span><span class="o">.</span><span class="n">prune_mode</span> <span class="o">=</span> <span class="s2">&quot;GMP&quot;</span> <span class="c1"># Prune Mode: Currently supporting &quot;GMP&quot;(Supports Automated Pruning Ratio Detection), &quot;CWP&quot;. Future supports for &quot;OBC&quot; and &quot;sparseGPT&quot;</span>
 </pre></div>
 </div>
-</section>
-<section id="one-roof-solution-train-compress-deploy">
-<h2>One Roof Solution [Train -&gt; Compress -&gt; Deploy]:<a class="headerlink" href="#one-roof-solution-train-compress-deploy" title="Link to this heading"></a></h2>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">sconces</span><span class="o">.</span><span class="n">compress</span><span class="p">()</span>
 </pre></div>
 </div>
-<section id="to-do">
-<h3>To-Do<a class="headerlink" href="#to-do" title="Link to this heading"></a></h3>
 <ul class="simple">
 <li><p>☒ Universal Channel-Wise Pruning</p></li>
 <li><p>☒ Update Tutorials</p></li>
@@ -212,8 +199,6 @@ learning model development, compression and deployment.</p>
 </li>
 </ul>
 </div>
-</section>
-</section>
 </section>
 
 
