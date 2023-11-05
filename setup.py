@@ -21,6 +21,14 @@ test_requirements = ["pytest>=6"]
 
 version = __version__
 
+lib_folder = os.path.dirname(os.path.realpath(__file__))
+requirement_path = lib_folder + '/requirements.txt'
+install_requires = []
+
+if os.path.isfile(requirement_path):
+    with open(requirement_path) as f:
+        install_requires = f.read().splitlines()
+        
 setup(
     author="Sathyaprakash Narayanan",
     author_email="snaray17@ucsc.edu",
