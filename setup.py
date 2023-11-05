@@ -1,4 +1,6 @@
 from setuptools import setup, find_packages
+import os
+
 
 with open("README.rst", encoding="utf-8") as readme_file:
     readme = readme_file.read()
@@ -28,7 +30,7 @@ install_requires = []
 if os.path.isfile(requirement_path):
     with open(requirement_path) as f:
         install_requires = f.read().splitlines()
-        
+
 setup(
     author="Sathyaprakash Narayanan",
     author_email="snaray17@ucsc.edu",
