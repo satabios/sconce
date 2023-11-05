@@ -4,45 +4,87 @@ import os
 
 
 
-# with open('README.rst') as readme_file:
-#     README = readme_file.read()
-# import os
-# setup_args = dict(
-#     name='sconce',
-#     version='0.0.70',
-#     description='sconce: torch helper',
-#     long_description_content_type="text/markdown",
-#     long_description=README + '\n\n',
-#     packages=['sconce'],
-#     author='Sathyaprakash Narayanan',
-#     author_email='snaray17@ucsc.edu',
-#     url='https://github.com/satabios/sconce',
-#     download_url='https://pypi.org/project/sconce/'
-# )
+# # with open('README.rst') as readme_file:
+# #     README = readme_file.read()
+# # import os
+# # setup_args = dict(
+# #     name='sconce',
+# #     version='0.0.70',
+# #     description='sconce: torch helper',
+# #     long_description_content_type="text/markdown",
+# #     long_description=README + '\n\n',
+# #     packages=['sconce'],
+# #     author='Sathyaprakash Narayanan',
+# #     author_email='snaray17@ucsc.edu',
+# #     url='https://github.com/satabios/sconce',
+# #     download_url='https://pypi.org/project/sconce/'
+# # )
 
 
 
-os.environ['PIP_DEFAULT_TIMEOUT'] = '100'
+# os.environ['PIP_DEFAULT_TIMEOUT'] = '100'
 
-lib_folder = os.path.dirname(os.path.realpath(__file__))
-requirement_path = lib_folder + '/requirements.txt'
-install_requires = []
+# lib_folder = os.path.dirname(os.path.realpath(__file__))
+# requirement_path = lib_folder + '/requirements.txt'
+# install_requires = []
 
-if os.path.isfile(requirement_path):
-    with open(requirement_path) as f:
-        install_requires = f.read().splitlines()
+# if os.path.isfile(requirement_path):
+#     with open(requirement_path) as f:
+#         install_requires = f.read().splitlines()
 
 
+
+# with open("README.rst", encoding="utf-8") as readme_file:
+#     readme = readme_file.read()
+
+# # setup(**setup_args, setup_requires=install_requires, install_requires=install_requires)
+
+
+# # fmt: off
+# __version__ = '0.57'
+# # fmt: on
+
+
+# test_requirements = ["pytest>=6"]
+
+# version = __version__
+
+
+
+
+
+
+
+
+
+
+
+
+
+#!/usr/bin/env python
+
+"""The setup script."""
+
+from setuptools import setup, find_packages
 
 with open("README.rst", encoding="utf-8") as readme_file:
     readme = readme_file.read()
 
-# setup(**setup_args, setup_requires=install_requires, install_requires=install_requires)
-
+# with open("HISTORY.rst") as history_file:
+#     history = history_file.read()
 
 # fmt: off
 __version__ = '0.57'
 # fmt: on
+
+requirements = [
+    "torch>=1.1.0",
+    "pandas",
+    "matplotlib",
+    "numpy>=1.17",
+    "nir",
+    "nirtorch",
+]
 
 
 test_requirements = ["pytest>=6"]
@@ -83,3 +125,4 @@ setup(
     version=__version__,
     zip_safe=False,
 )
+
