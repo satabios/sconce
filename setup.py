@@ -1,7 +1,7 @@
 
 from setuptools import setup, find_packages
 import os
-os.environ['PIP_DEFAULT_TIMEOUT'] = '100'
+
 
 
 # with open('README.rst') as readme_file:
@@ -20,6 +20,10 @@ os.environ['PIP_DEFAULT_TIMEOUT'] = '100'
 #     download_url='https://pypi.org/project/sconce/'
 # )
 
+
+
+os.environ['PIP_DEFAULT_TIMEOUT'] = '100'
+
 lib_folder = os.path.dirname(os.path.realpath(__file__))
 requirement_path = lib_folder + '/requirements.txt'
 install_requires = []
@@ -29,8 +33,6 @@ if os.path.isfile(requirement_path):
         install_requires = f.read().splitlines()
 
 
-
-from setuptools import setup, find_packages
 
 with open("README.rst", encoding="utf-8") as readme_file:
     readme = readme_file.read()
