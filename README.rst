@@ -103,7 +103,7 @@ Quickstart
 
 .. image:: https://colab.research.google.com/assets/colab-badge.svg
         :alt: Open In Colab
-        :target: https://colab.research.google.com/github/satabios/sconce/blob/main/tutorials/Compression%20Pipeline.ipynb
+        :target: https://colab.research.google.com/github/satabios/sconce/blob/main/tutorials/Compression%20Pipeline.ipynb#
 
 
 Here are a few ways you can get started with sconce:
@@ -120,10 +120,12 @@ Here are a few ways you can get started with sconce:
 .. _Tutorials: https://sconce.readthedocs.io/en/latest/tutorials/index.html
 
 Quickstart:
-========
+================
+
 
 Define Network:
 ----------------------------
+
 
 .. code:: python
 
@@ -180,7 +182,7 @@ Make a Dict for Dataloader
      )
 
 Define your Configurations:
----------------------------
+----------------------------
 
 .. code:: python
 
@@ -203,10 +205,13 @@ One Roof Solution [Train -> Compress -> Deploy]:
 ------------------------------------------------
 
 .. code:: python
+
    sconces.compress()
+
 
 Contributing
 ^^^^^^^^^^^^^^^^^^^^^^^^
+
 If you're ready to contribute to sconce, ping on `discord <https://discord.gg/GKwXMrZr>`_ channel.
 
 Acknowledgments
@@ -221,8 +226,8 @@ Special Thanks:
 *  `Neural Magic(Elias Frantar, Denis Kuznedelev, etc...) <https://github.com/neuralmagic/>`_ for `OBC <https://github.com/IST-DASLab/OBC/>`_ and `sparseGPT <https://github.com/IST-DASLab/sparsegpt/>`_.
 
 
-
 License & Copyright
 ^^^^^^^^^^^^^^^^^^^^^^^^
+
 sconce source code is published under the terms of the MIT License. 
 sconce's documentation is licensed under a Creative Commons Attribution-Share Alike 3.0 Unported License (`CC BY-SA 3.0 <https://creativecommons.org/licenses/by-sa/3.0/>`_).

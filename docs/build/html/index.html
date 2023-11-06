@@ -170,7 +170,7 @@ $ python setup.py install
 </section>
 <section id="quickstart">
 <h3>Quickstart<a class="headerlink" href="#quickstart" title="Link to this heading"></a></h3>
-<a class="reference external image-reference" href="https://colab.research.google.com/github/satabios/sconce/blob/main/tutorials/Compression%20Pipeline.ipynb"><img alt="Open In Colab" src="https://colab.research.google.com/assets/colab-badge.svg" /></a>
+<a class="reference external image-reference" href="https://colab.research.google.com/github/satabios/sconce/blob/main/tutorials/Compression%20Pipeline.ipynb#"><img alt="Open In Colab" src="https://colab.research.google.com/assets/colab-badge.svg" /></a>
 <p>Here are a few ways you can get started with sconce:</p>
 <ul class="simple">
 <li><p><a class="reference external" href="https://colab.research.google.com/github/satabios/sconce/blob/main/tutorials/Compression%20Pipeline.ipynb">Quickstart Notebook (Opens in Colab)</a></p></li>
@@ -244,6 +244,9 @@ $ python setup.py install
 <span class="n">sconces</span><span class="o">.</span><span class="n">device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s2">&quot;cuda&quot;</span> <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">()</span> <span class="k">else</span> <span class="s2">&quot;cpu&quot;</span><span class="p">)</span>
 <span class="n">sconces</span><span class="o">.</span><span class="n">experiment_name</span> <span class="o">=</span> <span class="s2">&quot;vgg-gmp&quot;</span> <span class="c1"># Define your experiment name here</span>
 <span class="n">sconces</span><span class="o">.</span><span class="n">prune_mode</span> <span class="o">=</span> <span class="s2">&quot;GMP&quot;</span> <span class="c1"># Prune Mode: Currently supporting &quot;GMP&quot;(Supports Automated Pruning Ratio Detection), &quot;CWP&quot;. Future supports for &quot;OBC&quot; and &quot;sparseGPT&quot;</span>
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">sconces</span><span class="o">.</span><span class="n">compress</span><span class="p">()</span>
 </pre></div>
 </div>
 <p>If you’re ready to contribute to sconce, ping on <a class="reference external" href="https://discord.gg/GKwXMrZr">discord</a> channel.</p>
