@@ -33,7 +33,7 @@ Package install:
 
 
 
-Example:
+Quickstart:
 ========
 
 Define Network and Config’s:
