@@ -224,7 +224,7 @@ sconce is solely being maintained by `Sathyaprakash Narayanan <https://satabios.
 
 Special Thanks:
 
-*  `Jason K. Eshraghian <https://www.jasoneshraghian.com/>`_
+*  `Prof. and Mentor Jason K. Eshraghian <https://www.jasoneshraghian.com/>`_
 *  `Prof. Song Han <https://hanlab.mit.edu/>`_
 *  `Neural Magic(Elias Frantar, Denis Kuznedelev, etc...) <https://github.com/neuralmagic>`_
 
