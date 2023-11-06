@@ -219,7 +219,7 @@ sconce is solely being maintained by `Sathyaprakash Narayanan <https://satabios.
 
 Special Thanks:
 
-*  `Prof. and Mentor Jason K. Eshraghian <https://www.jasoneshraghian.com/>`_ and `snnTorch <https://github.com/jeshraghian/snntorch>`_
+*  `Prof. and Mentor Jason K. Eshraghian <https://www.jasoneshraghian.com/>`_ and his pet `snnTorch <https://github.com/jeshraghian/snntorch>`_ (extensively inspired from snnTorch to build sconce)
 *  `Prof. Song Han <https://hanlab.mit.edu/>`_
 *  `Neural Magic(Elias Frantar, Denis Kuznedelev, etc...) <https://github.com/neuralmagic>`_
 
