@@ -184,10 +184,6 @@ $ python setup.py install
 <li><p><a href="#id3"><span class="problematic" id="id4">`Examples`_</span></a></p></li>
 <li><p><a class="reference external" href="https://sconce.readthedocs.io/en/latest/tutorials/index.html">Tutorials</a></p></li>
 </ul>
-<p>For a quick example to run sconce, see the following snippet, or test the quickstart notebook:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>
-</pre></div>
-</div>
 </section>
 </section>
 </section>
@@ -255,9 +251,6 @@ $ python setup.py install
 <span class="n">sconces</span><span class="o">.</span><span class="n">device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s2">&quot;cuda&quot;</span> <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">()</span> <span class="k">else</span> <span class="s2">&quot;cpu&quot;</span><span class="p">)</span>
 <span class="n">sconces</span><span class="o">.</span><span class="n">experiment_name</span> <span class="o">=</span> <span class="s2">&quot;vgg-gmp&quot;</span> <span class="c1"># Define your experiment name here</span>
 <span class="n">sconces</span><span class="o">.</span><span class="n">prune_mode</span> <span class="o">=</span> <span class="s2">&quot;GMP&quot;</span> <span class="c1"># Prune Mode: Currently supporting &quot;GMP&quot;(Supports Automated Pruning Ratio Detection), &quot;CWP&quot;. Future supports for &quot;OBC&quot; and &quot;sparseGPT&quot;</span>
-</pre></div>
-</div>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">sconces</span><span class="o">.</span><span class="n">compress</span><span class="p">()</span>
 </pre></div>
 </div>
 <p>If you’re ready to contribute to sconce, ping on <a class="reference external" href="https://discord.gg/GKwXMrZr">discord</a> channel.</p>
