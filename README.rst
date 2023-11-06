@@ -9,6 +9,7 @@ Introduction
 .. image:: https://github.com/satabios/sconce/blob/main/docs/source/images/sconce-punch-bk_removed.png?raw=true
         :align: center
         :width: 400
+        :height: 400
 
 Advancement of deep learning has been largely driven by the availability of large datasets and the computational power to train large models.
 The amount of complexity increases with each day passing and it is becoming increasingly difficult to train these models. Neverthless, infer 
@@ -55,8 +56,7 @@ sconce contains the following components:
    * - `sconce.compress <https://sconce.readthedocs.io/en/latest/usage.html#module-sconcel>`_
      - Automated compression pipeline encompassing of Pruning, Quantization, and Sparsification.
   
-
-sconce is designed to be intuitively used with PyTorch, compression for Linear, Convolutional and Attention blocks are supported.
+**sconce** is designed to be intuitively used with PyTorch, compression for Linear, Convolutional and Attention blocks are supported.
 
 At present, we are working on adding support for more compression techniques and more models.
 The package envisions to be a one stop solution for all your compression needs and deployed on resource constrained devices.
@@ -70,11 +70,9 @@ The following packages need to be installed to use sconce:
 
 * torch >= 1.1.0
 * numpy >= 1.17
-* pandas
+* torchprofile
 * matplotlib
-* math
-* nir
-* nirtorch
+* snntorch
 
 They are automatically installed if sconce is installed using the pip command. Ensure the correct version of torch is installed for your system to enable CUDA compatibility. 
 
@@ -210,7 +208,6 @@ One Roof Solution [Train -> Compress -> Deploy]:
 Contributing
 ^^^^^^^^^^^^^^^^^^^^^^^^
 If you're ready to contribute to sconce, ping on `discord <https://discord.gg/GKwXMrZr>`_ channel.
-
 
 Acknowledgments
 ^^^^^^^^^^^^^^^^^^^^^^^^
