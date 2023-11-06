@@ -34,7 +34,7 @@
           
           <a href="index.html" class="icon icon-home">
             sconce
-              <img src="_static/sconce-punch-cool.png" class="logo" alt="Logo"/>
+              <img src="_static/sconce-punch-bk_removed.png" class="logo" alt="Logo"/>
           </a>
               <div class="version">
                 0.57.0
@@ -50,6 +50,11 @@
               <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Usage</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#installation">Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#quick-start">Quick-Start</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#define-network">Define Network:</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#make-a-dict-for-dataloader">Make a Dict for Dataloader</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#define-your-configurations">Define your Configurations:</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#one-roof-solution-train-compress-deploy">One Roof Solution [Train -&gt; Compress -&gt; Deploy]:</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#module-sconce">Features</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#sconce.sconce"><code class="docutils literal notranslate"><span class="pre">sconce</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#sconce.sconce.CWP_Pruning"><code class="docutils literal notranslate"><span class="pre">sconce.CWP_Pruning()</span></code></a></li>
@@ -112,6 +117,88 @@
 <span id="id1"></span><h2>Installation<a class="headerlink" href="#installation" title="Link to this heading"></a></h2>
 <p>To use sconce, first install it using pip:</p>
 <div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp gp-VirtualEnv">(.venv)</span> <span class="gp">$ </span>pip<span class="w"> </span>install<span class="w"> </span>sconce
+</pre></div>
+</div>
+</section>
+<section id="quick-start">
+<h2>Quick-Start<a class="headerlink" href="#quick-start" title="Link to this heading"></a></h2>
+</section>
+<section id="define-network">
+<h2>Define Network:<a class="headerlink" href="#define-network" title="Link to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Net</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">conv1</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bn1</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">BatchNorm2d</span><span class="p">(</span><span class="mi">8</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pool</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">MaxPool2d</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">conv2</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">16</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bn2</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">BatchNorm2d</span><span class="p">(</span><span class="mi">16</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fc1</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="mi">16</span><span class="o">*</span><span class="mi">6</span><span class="o">*</span><span class="mi">6</span><span class="p">,</span> <span class="mi">32</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fc2</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="mi">32</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bn1</span><span class="p">(</span><span class="n">F</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conv1</span><span class="p">(</span><span class="n">x</span><span class="p">))))</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bn2</span><span class="p">(</span><span class="n">F</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conv2</span><span class="p">(</span><span class="n">x</span><span class="p">))))</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fc1</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fc2</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">x</span>
+</pre></div>
+</div>
+</section>
+<section id="make-a-dict-for-dataloader">
+<h2>Make a Dict for Dataloader<a class="headerlink" href="#make-a-dict-for-dataloader" title="Link to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">image_size</span> <span class="o">=</span> <span class="mi">32</span>
+<span class="n">transforms</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;train&quot;</span><span class="p">:</span> <span class="n">Compose</span><span class="p">([</span>
+        <span class="n">RandomCrop</span><span class="p">(</span><span class="n">image_size</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="mi">4</span><span class="p">),</span>
+        <span class="n">RandomHorizontalFlip</span><span class="p">(),</span>
+        <span class="n">ToTensor</span><span class="p">(),</span>
+    <span class="p">]),</span>
+    <span class="s2">&quot;test&quot;</span><span class="p">:</span> <span class="n">ToTensor</span><span class="p">(),</span>
+<span class="p">}</span>
+<span class="n">dataset</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="k">for</span> <span class="n">split</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;train&quot;</span><span class="p">,</span> <span class="s2">&quot;test&quot;</span><span class="p">]:</span>
+  <span class="n">dataset</span><span class="p">[</span><span class="n">split</span><span class="p">]</span> <span class="o">=</span> <span class="n">CIFAR10</span><span class="p">(</span>
+    <span class="n">root</span><span class="o">=</span><span class="s2">&quot;data/cifar10&quot;</span><span class="p">,</span>
+    <span class="n">train</span><span class="o">=</span><span class="p">(</span><span class="n">split</span> <span class="o">==</span> <span class="s2">&quot;train&quot;</span><span class="p">),</span>
+    <span class="n">download</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">transform</span><span class="o">=</span><span class="n">transforms</span><span class="p">[</span><span class="n">split</span><span class="p">],</span>
+  <span class="p">)</span>
+<span class="n">dataloader</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="k">for</span> <span class="n">split</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;train&#39;</span><span class="p">,</span> <span class="s1">&#39;test&#39;</span><span class="p">]:</span>
+  <span class="n">dataloader</span><span class="p">[</span><span class="n">split</span><span class="p">]</span> <span class="o">=</span> <span class="n">DataLoader</span><span class="p">(</span>
+    <span class="n">dataset</span><span class="p">[</span><span class="n">split</span><span class="p">],</span>
+    <span class="n">batch_size</span><span class="o">=</span><span class="mi">512</span><span class="p">,</span>
+    <span class="n">shuffle</span><span class="o">=</span><span class="p">(</span><span class="n">split</span> <span class="o">==</span> <span class="s1">&#39;train&#39;</span><span class="p">),</span>
+    <span class="n">num_workers</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+    <span class="n">pin_memory</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+  <span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="define-your-configurations">
+<h2>Define your Configurations:<a class="headerlink" href="#define-your-configurations" title="Link to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Define all parameters</span>
+
+<span class="kn">from</span> <span class="nn">sconce</span> <span class="kn">import</span> <span class="n">sconce</span>
+
+<span class="n">sconces</span> <span class="o">=</span> <span class="n">sconce</span><span class="p">()</span>
+<span class="n">sconces</span><span class="o">.</span><span class="n">model</span><span class="o">=</span> <span class="n">Net</span><span class="p">()</span> <span class="c1"># Model Definition</span>
+<span class="n">sconces</span><span class="o">.</span><span class="n">criterion</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">CrossEntropyLoss</span><span class="p">()</span> <span class="c1"># Loss</span>
+<span class="n">sconces</span><span class="o">.</span><span class="n">optimizer</span><span class="o">=</span> <span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span><span class="n">sconces</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">(),</span> <span class="n">lr</span><span class="o">=</span><span class="mf">1e-4</span><span class="p">)</span>
+<span class="n">sconces</span><span class="o">.</span><span class="n">scheduler</span> <span class="o">=</span> <span class="n">optim</span><span class="o">.</span><span class="n">lr_scheduler</span><span class="o">.</span><span class="n">CosineAnnealingLR</span><span class="p">(</span><span class="n">sconces</span><span class="o">.</span><span class="n">optimizer</span><span class="p">,</span> <span class="n">T_max</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span>
+<span class="n">sconces</span><span class="o">.</span><span class="n">dataloader</span> <span class="o">=</span> <span class="n">dataloader</span>
+<span class="n">sconces</span><span class="o">.</span><span class="n">epochs</span> <span class="o">=</span> <span class="mi">5</span> <span class="c1">#Number of time we iterate over the data</span>
+<span class="n">sconces</span><span class="o">.</span><span class="n">device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s2">&quot;cuda&quot;</span> <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">()</span> <span class="k">else</span> <span class="s2">&quot;cpu&quot;</span><span class="p">)</span>
+<span class="n">sconces</span><span class="o">.</span><span class="n">experiment_name</span> <span class="o">=</span> <span class="s2">&quot;vgg-gmp&quot;</span> <span class="c1"># Define your experiment name here</span>
+<span class="n">sconces</span><span class="o">.</span><span class="n">prune_mode</span> <span class="o">=</span> <span class="s2">&quot;GMP&quot;</span> <span class="c1"># Prune Mode: Currently supporting &quot;GMP&quot;(Supports Automated Pruning Ratio Detection), &quot;CWP&quot;. Future supports for &quot;OBC&quot; and &quot;sparseGPT&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="one-roof-solution-train-compress-deploy">
+<h2>One Roof Solution [Train -&gt; Compress -&gt; Deploy]:<a class="headerlink" href="#one-roof-solution-train-compress-deploy" title="Link to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">sconces</span><span class="o">.</span><span class="n">compress</span><span class="p">()</span>
 </pre></div>
 </div>
 </section>
