@@ -14,9 +14,9 @@ cd docs/
 make html
 cd ../
 
-# echo "Message to Push?"
-# read message
-# git_push "$message"
+echo "Message to Push?"
+read message
+git_push "$message"
 
 
 
