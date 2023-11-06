@@ -120,8 +120,6 @@ Here are a few ways you can get started with sconce:
 
 * `The API Reference`_ 
 
-* `Examples`_
-
 * `Tutorials`_
 
 .. _Quickstart Notebook (Opens in Colab): https://colab.research.google.com/github/satabios/sconce/blob/main/tutorials/Compression%20Pipeline.ipynb
