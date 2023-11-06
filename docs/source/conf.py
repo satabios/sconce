@@ -40,3 +40,4 @@ html_theme = 'sphinx_rtd_theme'
 epub_show_urls = 'footnote'
 
 
+html_css_files = ['my_theme.css'] 
