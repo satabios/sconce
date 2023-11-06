@@ -9,6 +9,6 @@ sconce/sconce.py
 sconce.egg-info/PKG-INFO
 sconce.egg-info/SOURCES.txt
 sconce.egg-info/dependency_links.txt
+sconce.egg-info/not-zip-safe
 sconce.egg-info/requires.txt
 sconce.egg-info/top_level.txt
-test/test.py

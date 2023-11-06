@@ -36,7 +36,6 @@ setup(
     author_email="snaray17@ucsc.edu",
     python_requires=">=3.7",
     classifiers=[
-        "Development Status :: 0.57 - Pre-Alpha",
         "Intended Audience :: Developers",
         "Intended Audience :: Education",
         "Intended Audience :: Science/Research",
