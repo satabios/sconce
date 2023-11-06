@@ -30,7 +30,7 @@ Quick-Start
 
 
 Define Network:
-----------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code:: python
 
@@ -55,7 +55,7 @@ Define Network:
            return x
 
 Make a Dict for Dataloader
---------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code:: python
 
@@ -88,7 +88,7 @@ Make a Dict for Dataloader
      )
 
 Define your Configurations:
----------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code:: python
 
@@ -110,7 +110,7 @@ Define your Configurations:
 
 
 One Roof Solution [Train -> Compress -> Deploy]:
-------------------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code:: python
 

@@ -50,11 +50,13 @@
               <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Usage</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#installation">Installation</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#quick-start">Quick-Start</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#define-network">Define Network:</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#make-a-dict-for-dataloader">Make a Dict for Dataloader</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#define-your-configurations">Define your Configurations:</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#one-roof-solution-train-compress-deploy">One Roof Solution [Train -&gt; Compress -&gt; Deploy]:</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#quick-start">Quick-Start</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#define-network">Define Network:</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#make-a-dict-for-dataloader">Make a Dict for Dataloader</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#define-your-configurations">Define your Configurations:</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#one-roof-solution-train-compress-deploy">One Roof Solution [Train -&gt; Compress -&gt; Deploy]:</a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="#module-sconce">Features</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#sconce.sconce"><code class="docutils literal notranslate"><span class="pre">sconce</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#sconce.sconce.CWP_Pruning"><code class="docutils literal notranslate"><span class="pre">sconce.CWP_Pruning()</span></code></a></li>
@@ -133,9 +135,8 @@ $ python setup.py install
 </section>
 <section id="quick-start">
 <h2>Quick-Start<a class="headerlink" href="#quick-start" title="Link to this heading"></a></h2>
-</section>
 <section id="define-network">
-<h2>Define Network:<a class="headerlink" href="#define-network" title="Link to this heading"></a></h2>
+<h3>Define Network:<a class="headerlink" href="#define-network" title="Link to this heading"></a></h3>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Net</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
@@ -158,7 +159,7 @@ $ python setup.py install
 </div>
 </section>
 <section id="make-a-dict-for-dataloader">
-<h2>Make a Dict for Dataloader<a class="headerlink" href="#make-a-dict-for-dataloader" title="Link to this heading"></a></h2>
+<h3>Make a Dict for Dataloader<a class="headerlink" href="#make-a-dict-for-dataloader" title="Link to this heading"></a></h3>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">image_size</span> <span class="o">=</span> <span class="mi">32</span>
 <span class="n">transforms</span> <span class="o">=</span> <span class="p">{</span>
     <span class="s2">&quot;train&quot;</span><span class="p">:</span> <span class="n">Compose</span><span class="p">([</span>
@@ -189,7 +190,7 @@ $ python setup.py install
 </div>
 </section>
 <section id="define-your-configurations">
-<h2>Define your Configurations:<a class="headerlink" href="#define-your-configurations" title="Link to this heading"></a></h2>
+<h3>Define your Configurations:<a class="headerlink" href="#define-your-configurations" title="Link to this heading"></a></h3>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Define all parameters</span>
 
 <span class="kn">from</span> <span class="nn">sconce</span> <span class="kn">import</span> <span class="n">sconce</span>
@@ -208,10 +209,11 @@ $ python setup.py install
 </div>
 </section>
 <section id="one-roof-solution-train-compress-deploy">
-<h2>One Roof Solution [Train -&gt; Compress -&gt; Deploy]:<a class="headerlink" href="#one-roof-solution-train-compress-deploy" title="Link to this heading"></a></h2>
+<h3>One Roof Solution [Train -&gt; Compress -&gt; Deploy]:<a class="headerlink" href="#one-roof-solution-train-compress-deploy" title="Link to this heading"></a></h3>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">sconces</span><span class="o">.</span><span class="n">compress</span><span class="p">()</span>
 </pre></div>
 </div>
+</section>
 </section>
 <section id="module-sconce">
 <span id="features"></span><h2>Features<a class="headerlink" href="#module-sconce" title="Link to this heading"></a></h2>
