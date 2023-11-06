@@ -1,3 +1,6 @@
+===============================
+ sconce Pipeline Tutorial
+===============================
 .. code:: ipython3
 
     %pip install sconce -q
