@@ -276,366 +276,6 @@ mode[sconces.prune_mode] above)
     Granular-Magnitude Pruning
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 .. parsed-literal::
 
     Sparsity for each Layer: {'backbone.conv0.weight': 0.20000000000000004, 'backbone.conv1.weight': 0.30000000000000004, 'backbone.conv2.weight': 0.1, 'backbone.conv3.weight': 0.3500000000000001, 'backbone.conv4.weight': 0.3500000000000001, 'backbone.conv5.weight': 0.3500000000000001, 'backbone.conv6.weight': 0.3500000000000001, 'backbone.conv7.weight': 0.3500000000000001, 'classifier.weight': 0.6500000000000001}
@@ -664,24 +304,17 @@ mode[sconces.prune_mode] above)
 
     train:   0%|          | 0/98 [00:00<?, ?it/s]
 
-
-
 .. parsed-literal::
 
     test:   0%|          | 0/20 [00:00<?, ?it/s]
-
 
 .. parsed-literal::
 
     Epoch:2 Train Loss: 0.00000 Validation Accuracy: 93.13627
 
-
-
 .. parsed-literal::
 
     train:   0%|          | 0/98 [00:00<?, ?it/s]
-
-
 
 .. parsed-literal::
 
@@ -692,42 +325,30 @@ mode[sconces.prune_mode] above)
 
     Epoch:3 Train Loss: 0.00000 Validation Accuracy: 93.22645
 
-
-
 .. parsed-literal::
 
     train:   0%|          | 0/98 [00:00<?, ?it/s]
 
-
-
 .. parsed-literal::
 
     test:   0%|          | 0/20 [00:00<?, ?it/s]
-
 
 .. parsed-literal::
 
     Epoch:4 Train Loss: 0.00000 Validation Accuracy: 93.16633
 
-
-
 .. parsed-literal::
 
     train:   0%|          | 0/98 [00:00<?, ?it/s]
 
-
-
 .. parsed-literal::
 
     test:   0%|          | 0/20 [00:00<?, ?it/s]
-
 
 .. parsed-literal::
 
     Epoch:5 Train Loss: 0.00000 Validation Accuracy: 93.19639
 
-
-
 .. parsed-literal::
 
     test:   0%|          | 0/20 [00:00<?, ?it/s]
@@ -735,7 +356,6 @@ mode[sconces.prune_mode] above)
 
 .. parsed-literal::
 
-    /n
                     Original        Pruned          Reduction Ratio
     Latency (ms)    19900.0         19900.0         1.0            
     MACs (M)        606             606             1.0            
