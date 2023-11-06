@@ -215,8 +215,6 @@ Define your Configurations:
    sconces.experiment_name = "vgg-gmp" # Define your experiment name here
    sconces.prune_mode = "GMP" # Prune Mode: Currently supporting "GMP"(Supports Automated Pruning Ratio Detection), "CWP". Future supports for "OBC" and "sparseGPT"
 
-
-
 One Roof Solution [Train -> Compress -> Deploy]:
 ------------------------------------------------
 
@@ -224,10 +222,6 @@ One Roof Solution [Train -> Compress -> Deploy]:
 
 
    sconces.compress()
-
-
-
-
 
 Contributing
 ^^^^^^^^^^^^^^^^^^^^^^^^
