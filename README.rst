@@ -26,7 +26,7 @@ To bridge this gap, this package aids to perform a series of aids:
 * **Quantize** the model to make it more efficient for hardware Deployment/Inferences.
 * Leverage **Sparsity** in the model to make it more efficient for hardware Deployment/Inferences. 
 * **Deployments** of the model on hardware.
-* Support `Spiking Neural Networks(snnTorch) <https://github.com/jeshraghian/snntorch>` in this compression pipeline.
+* Support `Spiking Neural Networks(snnTorch) <https://github.com/jeshraghian/snntorch>`_ in this compression pipeline.
 
 
 
