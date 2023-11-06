@@ -113,7 +113,7 @@ Quickstart
 
 .. image:: https://colab.research.google.com/assets/colab-badge.svg
         :alt: Open In Colab
-        :target: https://colab.research.google.com/github/jeshraghian/snntorch/blob/master/examples/quickstart.ipynb
+        :target: https://colab.research.google.com/github/satabios/sconce/blob/main/tutorials/Compression%20Pipeline.ipynb
 
 
 Here are a few ways you can get started with sconce:
@@ -127,10 +127,9 @@ Here are a few ways you can get started with sconce:
 
 * `Tutorials`_
 
-.. _Quickstart Notebook (Opens in Colab): https://colab.research.google.com/github/jeshraghian/snntorch/blob/master/examples/quickstart.ipynb
-.. _The API Reference: https://snntorch.readthedocs.io/
-.. _Examples: https://snntorch.readthedocs.io/en/latest/examples.html
-.. _Tutorials: https://snntorch.readthedocs.io/en/latest/tutorials/index.html
+.. _Quickstart Notebook (Opens in Colab): https://colab.research.google.com/github/satabios/sconce/blob/main/tutorials/Compression%20Pipeline.ipynb
+.. _The API Reference: https://sconce.readthedocs.io/
+.. _Tutorials: https://sconce.readthedocs.io/en/latest/tutorials/index.html
 
 
 For a quick example to run sconce, see the following snippet, or test the quickstart notebook:
