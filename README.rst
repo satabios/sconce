@@ -128,12 +128,6 @@ Here are a few ways you can get started with sconce:
 .. _The API Reference: https://sconce.readthedocs.io/
 .. _Tutorials: https://sconce.readthedocs.io/en/latest/tutorials/index.html
 
-
-For a quick example to run sconce, see the following snippet, or test the quickstart notebook:
-
-
-.. code-block:: python
-
 Quickstart:
 ========
 
@@ -166,7 +160,6 @@ Make a Dict for Dataloader
 --------------------------
 
 .. code:: python
-
 
    image_size = 32
    transforms = {
@@ -215,14 +208,10 @@ Define your Configurations:
    sconces.experiment_name = "vgg-gmp" # Define your experiment name here
    sconces.prune_mode = "GMP" # Prune Mode: Currently supporting "GMP"(Supports Automated Pruning Ratio Detection), "CWP". Future supports for "OBC" and "sparseGPT"
 
-
-
 One Roof Solution [Train -> Compress -> Deploy]:
 ------------------------------------------------
 
 .. code:: python
-
-
    sconces.compress()
 
 Contributing
