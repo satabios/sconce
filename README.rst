@@ -1,7 +1,6 @@
-====================================
-sconce (Model Compression Made Easy)
-====================================
-
+================
+Introduction
+================
 
 .. image:: https://readthedocs.org/projects/sconce/badge/?version=latest
         :target: https://sconce.readthedocs.io/en/latest/?badge=latest
@@ -9,39 +8,143 @@ sconce (Model Compression Made Easy)
 
 .. image:: https://github.com/satabios/sconce/blob/main/docs/source/images/sconce-punch-bk_removed.png?raw=true
         :align: center
-        :width: 300
+        :width: 400
 
-.. raw:: html
+Advancement of deep learning has been largely driven by the availability of large datasets and the computational power to train large models.
+The amount of complexity increases with each day passing and it is becoming increasingly difficult to train these models. Neverthless, infer 
+the models efficiently on hardware.
 
-   </p>
+However, the brain is able to learn from a few examples and is extremely energy efficient(Psst.. that too sparsely). Humans tend solve problems from their lens of perspective,
+and thus we comprehend the universe through mathematical models. One such ideation is the concept of gradient descent or other optimization techniques
+that we use to train our models. However, the brain does not use gradient descent to learn. It is still a mystery how the brain learns and how it is able to
+solve complex problems with such ease.
 
-This is a Pytorch Helper package aimed to aid the workflow of deep
-learning model development, compression and deployment.
+To bridge this gap, this package aids to perform a series of aids:
 
-- This packages has boiler plate defintions that can ease the development of torch model development
-- This package has a set of compression techniques that can be used to compress the model
-
-NOTE:
-      * Pruning Techniques are imported from Tomoco Package(deperecated)
-      * Model Quantization and Deployment features are in the development pipeline which will be available for use soon. 
-         
-Package install:
-================
-.. code:: python
-
-   pip install sconce
+* Make **Training**, **Testing**, **Inference**, **Model Profiling**, etc.. wrapped. Thus easing your way through development.
+* **Compress** the model through **Pruning**, **Optimal Brain Compression**, etc... This allows lesser usage of CPM(Computation, Power, Memory) and thus making it more efficient.
+* **Quantize** the model to make it more efficient for hardware Deployment/Inferences.
+* Leverage **Sparsity** in the model to make it more efficient for hardware Deployment/Inferences. 
+* **Deployments** of the model on hardware.
+* Support `Spiking Neural Networks(snnTorch) <https://github.com/jeshraghian/snntorch>` in this compression pipeline.
 
 
+
+If you like this project, please consider starring ⭐ this repo as it is the easiest and best way to support it.
+
+If you have issues, comments, or are looking for advice on training spiking neural networks, you can open an issue, a discussion, 
+or chat in our `discord <https://discord.gg/GKwXMrZr>`_ channel.
+
+Let us know if you are using snnTorch in any interesting work, research or blogs, as we would love to hear more about it! Reach out at snntorch@gmail.com.
+
+sconce Structure
+^^^^^^^^^^^^^^^^^^^^^^^^
+sconce contains the following components: 
+
+.. list-table::
+   :widths: 20 60
+   :header-rows: 1
+
+   * - Component
+     - Description
+   * - `sconce.train <https://snntorch.readthedocs.io/en/latest/snntorch.html>`_
+     - a spiking neuron library like torch.nn, deeply integrated with autograd
+   * - `sconce.measure_latency <https://snntorch.readthedocs.io/en/latest/snntorch.export.html>`_
+     - Compares the performance of two PyTorch models: an original dense model and a pruned and fine-tuned model. Prints a table of metrics including latency, MACs, and model size for both models and their reduction ratios.
+   * - `sconce.prune_mode <https://snntorch.readthedocs.io/en/latest/snntorch.html>`_
+     - Currently supporting Gradual Magnitude Pruning(GMP), L1/L2 based Channel Wise Pruning(CWP), OBC, sparsegpt, etc...
+   * - `sconce.quantize <https://snntorch.readthedocs.io/en/latest/snntorch.spikegen.html>`_
+     - Quantize the computations of the model to make it more efficient for hardware Deployment/Inferences.
+   * - `sconce.compress <https://snntorch.readthedocs.io/en/latest/snntorch.functional.html>`_
+     - Automated compression pipeline encompassing of Pruning, Quantization, and Sparsification.
+  
+
+sconce is designed to be intuitively used with PyTorch, compression for Linear, Convolutional and Attention blocks are supported.
+
+At present, we are working on adding support for more compression techniques and more models.
+The package envisions to be a one stop solution for all your compression needs and deployed on resource constrained devices.
+Provided that the network models and tensors are loaded onto CUDA, snnTorch takes advantage of GPU acceleration in the same way as PyTorch. 
+
+sconce is a work in progress, and we welcome contributions from the community.
+
+Requirements 
+^^^^^^^^^^^^^^^^^^^^^^^^
+The following packages need to be installed to use snnTorch:
+
+* torch >= 1.1.0
+* numpy >= 1.17
+* pandas
+* matplotlib
+* math
+* nir
+* nirtorch
+
+They are automatically installed if snnTorch is installed using the pip command. Ensure the correct version of torch is installed for your system to enable CUDA compatibility. 
+
+Installation
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+Run the following to install:
+
+.. code-block:: bash
+
+  $ python
+  $ pip install sconce
+
+To install snnTorch from source instead::
+
+  $ git clone https://github.com/satabios/sconce
+  $ cd sconce
+  $ python setup.py install
+
+
+To install snntorch with conda::
+
+    $ conda install -c conda-forge sconce
+    
+
+API & Examples 
+^^^^^^^^^^^^^^^^^^^^^^^^
+A complete API is available `here <https://sconce.readthedocs.io/>`__. Examples, tutorials and Colab notebooks are provided.
+
+
+Quickstart 
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. image:: https://colab.research.google.com/assets/colab-badge.svg
+        :alt: Open In Colab
+        :target: https://colab.research.google.com/github/satabios/sconce/blob/main/tutorials/Compression%20Pipeline.ipynb
+
+
+Here are a few ways you can get started with sconce:
+
+
+* `Quickstart Notebook (Opens in Colab)`_
+
+* `The API Reference`_ 
+
+* `Examples`_
+
+* `Tutorials`_
+
+.. _Quickstart Notebook (Opens in Colab): https://colab.research.google.com/github/satabios/sconce/blob/main/tutorials/Compression%20Pipeline.ipynb
+.. _The API Reference: https://sconce.readthedocs.io/
+.. _Tutorials: https://sconce.readthedocs.io/en/latest/tutorials/index.html
+
+
+For a quick example to run sconce, see the following snippet, or test the quickstart notebook:
+
+
+.. code-block:: python
 
 Quickstart:
 ========
 
-Define Network and Config’s:
+Define Network:
 ----------------------------
 
 .. code:: python
 
-   # Define your network
 
    class Net(nn.Module):
        def __init__(self):
@@ -125,23 +228,28 @@ One Roof Solution [Train -> Compress -> Deploy]:
 
    sconces.compress()
 
-To-Do
-~~~~~
 
--  ☒ Universal Channel-Wise Pruning
 
--  ☒ Update Tutorials
 
--  ☒ Fine Grained Purning
 
--  ☒ Channel Wise Purning
+Contributing
+^^^^^^^^^^^^^^^^^^^^^^^^
+If you're ready to contribute to sconce, ping on `discord <https://discord.gg/GKwXMrZr>`_ channel.
 
--  [+] OBC Compression (In-Progress)
 
--  [+] Spasegpt like Pruning (In-Progress)
+Acknowledgments
+^^^^^^^^^^^^^^^^^^^^^^^^
 
--  [+] Quantisation (In-Progress)
+sconce is solely being maintained by `Sathyaprakash Narayanan <https://satabios.github.io/portfolio/>`_.
 
--  ☐ Universal AutoML package
+Special Thanks:
+* `Jason K. Eshraghian <https://www.jasoneshraghian.com/>`_
+* `Prof. Song Han <https://hanlab.mit.edu/>`_
+* `Neural Magic(Elias Frantar, Denis Kuznedelev, etc...) <https://github.com/neuralmagic>`_
 
--  ☐ Introduction of Sparsification in Pipeline
+
+
+License & Copyright
+^^^^^^^^^^^^^^^^^^^^^^^^
+sconce source code is published under the terms of the MIT License. 
+sconce's documentation is licensed under a Creative Commons Attribution-Share Alike 3.0 Unported License (`CC BY-SA 3.0 <https://creativecommons.org/licenses/by-sa/3.0/>`_).
