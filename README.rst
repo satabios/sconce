@@ -26,7 +26,7 @@ To bridge this gap, this package aids to perform a series of aids:
 * **Quantize** the model to make it more efficient for hardware Deployment/Inferences.
 * Leverage **Sparsity** in the model to make it more efficient for hardware Deployment/Inferences. 
 * **Deployments** of the model on hardware.
-* Support `Spiking Neural Networks(snnTorch) <https://github.com/jeshraghian/snntorch>`_ in this compression pipeline.
+* Support `Spiking Neural Networks(snnTorch) <https://github.com/jeshraghian/snntorch>`_ in this compression pipeline [Future integerations are expected].
 
 If you like this project, please consider starring ⭐ this repo as it is the easiest and best way to support it.
 
@@ -219,7 +219,7 @@ sconce is solely being maintained by `Sathyaprakash Narayanan <https://satabios.
 
 Special Thanks:
 
-*  `Prof. and Mentor Jason K. Eshraghian <https://www.jasoneshraghian.com/>`_
+*  `Prof. and Mentor Jason K. Eshraghian <https://www.jasoneshraghian.com/>`_ and `snnTorch <https://github.com/jeshraghian/snntorch>`_
 *  `Prof. Song Han <https://hanlab.mit.edu/>`_
 *  `Neural Magic(Elias Frantar, Denis Kuznedelev, etc...) <https://github.com/neuralmagic>`_
 
