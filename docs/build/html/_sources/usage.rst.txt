@@ -6,11 +6,24 @@ Usage
 Installation
 ------------
 
-To use sconce, first install it using pip:
+Run the following to install:
 
-.. code-block:: console
+.. code-block:: bash
 
-   (.venv) $ pip install sconce
+  $ python
+  $ pip install sconce
+
+To install sconce from source instead::
+
+  $ git clone https://github.com/satabios/sconce
+  $ cd sconce
+  $ python setup.py install
+
+
+To install sconce with conda::
+
+    $ conda install -c conda-forge sconce
+    
 
 Quick-Start
 ------------
