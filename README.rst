@@ -32,10 +32,9 @@ To bridge this gap, this package aids to perform a series of aids:
 
 If you like this project, please consider starring ⭐ this repo as it is the easiest and best way to support it.
 
+Let us know if you are using sconce in any interesting work, research or blogs, as we would love to hear more about it! 
 If you have issues, comments, or are looking for advice on training spiking neural networks, you can open an issue, a discussion, 
 or chat in our `discord <https://discord.gg/GKwXMrZr>`_ channel.
-
-Let us know if you are using snnTorch in any interesting work, research or blogs, as we would love to hear more about it! Reach out at snntorch@gmail.com.
 
 sconce Structure
 ^^^^^^^^^^^^^^^^^^^^^^^^
