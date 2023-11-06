@@ -102,7 +102,7 @@ To install sconce with conda::
 
 API & Examples 
 ^^^^^^^^^^^^^^^^^^^^^^^^
-A complete API is available `here <https://sconce.readthedocs.io/>`__. Examples, tutorials and Colab notebooks are provided.
+A complete API is available `here <https://sconce.readthedocs.io/>`_. Examples, tutorials and Colab notebooks are provided.
 
 
 Quickstart 
