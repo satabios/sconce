@@ -280,20 +280,9 @@ mode[sconces.prune_mode] above)
     Sparsity for each Layer: {'backbone.conv0.weight': 0.20000000000000004, 'backbone.conv1.weight': 0.30000000000000004, 'backbone.conv2.weight': 0.1, 'backbone.conv3.weight': 0.3500000000000001, 'backbone.conv4.weight': 0.3500000000000001, 'backbone.conv5.weight': 0.3500000000000001, 'backbone.conv6.weight': 0.3500000000000001, 'backbone.conv7.weight': 0.3500000000000001, 'classifier.weight': 0.6500000000000001}
     Pruned model has size=23.18 MiB = 65.85% of Original model size
 
-
-
-.. parsed-literal::
-
     train:   0%|          | 0/98 [00:00<?, ?it/s]
 
-
-
-.. parsed-literal::
-
     test:   0%|          | 0/20 [00:00<?, ?it/s]
-
-
-.. parsed-literal::
 
     Epoch:1 Train Loss: 0.00000 Validation Accuracy: 93.27655
 

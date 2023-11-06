@@ -4,7 +4,6 @@
 .. code:: ipython3
 
     %pip install sconce -q
-    %pip show sconce
     
     
     from collections import defaultdict, OrderedDict
