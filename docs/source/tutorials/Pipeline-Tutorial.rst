@@ -277,1083 +277,363 @@ mode[sconces.prune_mode] above)
 
 
 
-.. parsed-literal::
 
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
 
 
 
-.. parsed-literal::
 
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
 
 
 
-.. parsed-literal::
 
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
 
 
 
-.. parsed-literal::
 
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
 
 
 
-.. parsed-literal::
 
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
 
 
 
-.. parsed-literal::
 
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
 
 
 
-.. parsed-literal::
 
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
 
 
 
-.. parsed-literal::
 
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
 
 
 
-.. parsed-literal::
 
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
 
 
 
-.. parsed-literal::
 
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
 
 
 
-.. parsed-literal::
 
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
 
 
 
-.. parsed-literal::
 
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
 
 
 
-.. parsed-literal::
 
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
 
 
 
-.. parsed-literal::
 
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
 
 
 
-.. parsed-literal::
 
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
 
 
 
-.. parsed-literal::
 
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
 
 
 
-.. parsed-literal::
 
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
 
 
 
-.. parsed-literal::
 
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
 
 
 
-.. parsed-literal::
 
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
 
 
 
-.. parsed-literal::
 
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
 
 
 
-.. parsed-literal::
 
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
 
 
 
-.. parsed-literal::
 
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
 
 
 
-.. parsed-literal::
 
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
 
 
 
-.. parsed-literal::
 
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
 
 
 
-.. parsed-literal::
 
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
 
 
 
-.. parsed-literal::
 
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
 
 
 
-.. parsed-literal::
 
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
 
 
 
-.. parsed-literal::
 
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
 
 
 
-.. parsed-literal::
 
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
 
 
 
-.. parsed-literal::
 
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
 
 
 
-.. parsed-literal::
 
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
 
 
 
-.. parsed-literal::
 
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
 
 
 
-.. parsed-literal::
 
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
 
 
 
-.. parsed-literal::
 
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
 
 
 
-.. parsed-literal::
 
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
 
 
 
-.. parsed-literal::
 
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
 
 
 
-.. parsed-literal::
 
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
 
 
 
-.. parsed-literal::
 
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
 
 
 
-.. parsed-literal::
 
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
 
 
 
-.. parsed-literal::
 
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
 
 
 
-.. parsed-literal::
 
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
 
 
 
-.. parsed-literal::
 
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
 
 
 
-.. parsed-literal::
 
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
 
 
 
-.. parsed-literal::
 
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
 
 
 
-.. parsed-literal::
 
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
 
 
 
-.. parsed-literal::
 
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
 
 
 
-.. parsed-literal::
 
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
 
 
 
-.. parsed-literal::
 
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
 
 
 
-.. parsed-literal::
 
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
 
 
 
-.. parsed-literal::
 
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
 
 
 
-.. parsed-literal::
 
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
 
 
 
-.. parsed-literal::
 
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
 
 
 
-.. parsed-literal::
 
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
 
 
 
-.. parsed-literal::
 
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
 
 
 
-.. parsed-literal::
 
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
 
 
 
-.. parsed-literal::
 
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
 
 
 
-.. parsed-literal::
 
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
 
 
 
-.. parsed-literal::
 
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
 
 
 
-.. parsed-literal::
 
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
 
 
 
-.. parsed-literal::
 
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
 
 
 
-.. parsed-literal::
 
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
 
 
 
-.. parsed-literal::
 
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
 
 
 
-.. parsed-literal::
 
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
 
 
 
-.. parsed-literal::
 
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
 
 
 
-.. parsed-literal::
 
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
 
 
 
-.. parsed-literal::
 
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
 
 
 
-.. parsed-literal::
 
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
 
 
 
-.. parsed-literal::
 
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
 
 
 
-.. parsed-literal::
 
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
 
 
 
-.. parsed-literal::
 
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
 
 
 
-.. parsed-literal::
 
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
 
 
 
-.. parsed-literal::
 
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
 
 
 
-.. parsed-literal::
 
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
 
 
 
-.. parsed-literal::
 
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
 
 
 
-.. parsed-literal::
 
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
 
 
 
-.. parsed-literal::
 
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
 
 
 
-.. parsed-literal::
 
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
 
 
 
-.. parsed-literal::
 
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
 
 
 
-.. parsed-literal::
 
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
 
 
 
-.. parsed-literal::
 
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
 
 
 
-.. parsed-literal::
 
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
 
 
 
-.. parsed-literal::
 
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
 
 
 
-.. parsed-literal::
 
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
 
 
 
-.. parsed-literal::
 
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
 
 
 
-.. parsed-literal::
 
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
 
 
 
-.. parsed-literal::
 
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
 
 
 
-.. parsed-literal::
 
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
 
 
 
-.. parsed-literal::
 
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
 
 
 
-.. parsed-literal::
 
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
 
 
 
-.. parsed-literal::
 
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
-
-
-
-.. parsed-literal::
-
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
-
-
-
-.. parsed-literal::
-
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
-
-
-
-.. parsed-literal::
-
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
-
-
-
-.. parsed-literal::
-
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
-
-
-
-.. parsed-literal::
-
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
-
-
-
-.. parsed-literal::
-
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
-
-
-
-.. parsed-literal::
-
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
-
-
-
-.. parsed-literal::
-
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
-
-
-
-.. parsed-literal::
-
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
-
-
-
-.. parsed-literal::
-
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
-
-
-
-.. parsed-literal::
-
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
-
-
-
-.. parsed-literal::
-
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
-
-
-
-.. parsed-literal::
-
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
-
-
-
-.. parsed-literal::
-
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
-
-
-
-.. parsed-literal::
-
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
-
-
-
-.. parsed-literal::
-
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
-
-
-
-.. parsed-literal::
-
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
-
-
-
-.. parsed-literal::
-
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
-
-
-
-.. parsed-literal::
-
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
-
-
-
-.. parsed-literal::
-
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
-
-
-
-.. parsed-literal::
-
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
-
-
-
-.. parsed-literal::
-
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
-
-
-
-.. parsed-literal::
-
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
-
-
-
-.. parsed-literal::
-
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
-
-
-
-.. parsed-literal::
-
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
-
-
-
-.. parsed-literal::
-
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
-
-
-
-.. parsed-literal::
-
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
-
-
-
-.. parsed-literal::
-
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
-
-
-
-.. parsed-literal::
-
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
-
-
-
-.. parsed-literal::
-
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
-
-
-
-.. parsed-literal::
-
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
-
-
-
-.. parsed-literal::
-
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
-
-
-
-.. parsed-literal::
-
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
-
-
-
-.. parsed-literal::
-
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
-
-
-
-.. parsed-literal::
-
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
-
-
-
-.. parsed-literal::
-
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
-
-
-
-.. parsed-literal::
-
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
-
-
-
-.. parsed-literal::
-
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
-
-
-
-.. parsed-literal::
-
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
-
-
-
-.. parsed-literal::
-
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
-
-
-
-.. parsed-literal::
-
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
-
-
-
-.. parsed-literal::
-
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
-
-
-
-.. parsed-literal::
-
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
-
-
-
-.. parsed-literal::
-
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
-
-
-
-.. parsed-literal::
-
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
-
-
-
-.. parsed-literal::
-
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
-
-
-
-.. parsed-literal::
-
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
-
-
-
-.. parsed-literal::
-
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
-
-
-
-.. parsed-literal::
-
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
-
-
-
-.. parsed-literal::
-
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
-
-
-
-.. parsed-literal::
-
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
-
-
-
-.. parsed-literal::
-
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
-
-
-
-.. parsed-literal::
-
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
-
-
-
-.. parsed-literal::
-
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
-
-
-
-.. parsed-literal::
-
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
-
-
-
-.. parsed-literal::
-
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
-
-
-
-.. parsed-literal::
-
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
-
-
-
-.. parsed-literal::
-
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
-
-
-
-.. parsed-literal::
-
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
-
-
-
-.. parsed-literal::
-
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
-
-
-
-.. parsed-literal::
-
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
-
-
-
-.. parsed-literal::
-
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
-
-
-
-.. parsed-literal::
-
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
-
-
-
-.. parsed-literal::
-
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
-
-
-
-.. parsed-literal::
-
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
-
-
-
-.. parsed-literal::
-
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
-
-
-
-.. parsed-literal::
-
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
-
-
-
-.. parsed-literal::
-
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
-
-
-
-.. parsed-literal::
-
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
-
-
-
-.. parsed-literal::
-
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
-
-
-
-.. parsed-literal::
-
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
-
-
-
-.. parsed-literal::
-
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
-
-
-
-.. parsed-literal::
-
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
-
-
-
-.. parsed-literal::
-
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
-
-
-
-.. parsed-literal::
-
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
-
-
-
-.. parsed-literal::
-
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
-
-
-
-.. parsed-literal::
-
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
-
-
-
-.. parsed-literal::
-
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
-
-
-
-.. parsed-literal::
-
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
-
-
-
-.. parsed-literal::
-
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
-
-
-
-.. parsed-literal::
-
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
-
-
-
-.. parsed-literal::
-
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
-
-
-
-.. parsed-literal::
-
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
-
-
-
-.. parsed-literal::
-
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
-
-
-
-.. parsed-literal::
-
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
-
-
-
-.. parsed-literal::
-
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
-
-
-
-.. parsed-literal::
-
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
-
-
-
-.. parsed-literal::
-
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
-
-
-
-.. parsed-literal::
-
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
-
-
-
-.. parsed-literal::
-
-    test:   0%|          | 0/20 [00:00<?, ?it/s]
 
 
 .. parsed-literal::
