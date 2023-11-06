@@ -7,7 +7,7 @@ sconce (Model Compression Made Easy)
         :target: https://sconce.readthedocs.io/en/latest/?badge=latest
         :alt: Documentation Status
 
-.. image:: https://github.com/satabios/sconce/blob/master/docs/source/images/sconce-punch-bk_removed.png?raw=true
+.. image:: https://github.com/satabios/sconce/blob/main/docs/source/images/sconce-punch-bk_removed.png?raw=true
         :align: center
         :width: 300
 
