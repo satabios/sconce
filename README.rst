@@ -26,7 +26,7 @@ To bridge this gap, this package aids to perform a series of aids:
 * **Quantize** the model to make it more efficient for hardware Deployment/Inferences.
 * Leverage **Sparsity** in the model to make it more efficient for hardware Deployment/Inferences. 
 * **Deployments** of the model on hardware.
-* Support `Spiking Neural Networks(snnTorch) <https://github.com/jeshraghian/snntorch>`_ in this compression pipeline.
+* Support `Spiking Neural Networks(snnTorch) <https://github.com/jeshraghian/snntorch>` in this compression pipeline.
 
 
 
@@ -46,15 +46,15 @@ sconce contains the following components:
 
    * - Component
      - Description
-   * - `sconce.train <https://snntorch.readthedocs.io/en/latest/snntorch.html>`_
+   * - `sconce.train <https://sconce.readthedocs.io/en/latest/usage.html#module-sconce>`_
      - a spiking neuron library like torch.nn, deeply integrated with autograd
-   * - `sconce.measure_latency <https://snntorch.readthedocs.io/en/latest/snntorch.export.html>`_
+   * - `sconce.measure_latency <https://sconce.readthedocs.io/en/latest/usage.html#module-sconce>`_
      - Compares the performance of two PyTorch models: an original dense model and a pruned and fine-tuned model. Prints a table of metrics including latency, MACs, and model size for both models and their reduction ratios.
-   * - `sconce.prune_mode <https://snntorch.readthedocs.io/en/latest/snntorch.html>`_
+   * - `sconce.prune_mode <https://sconce.readthedocs.io/en/latest/usage.html#module-sconce>`_
      - Currently supporting Gradual Magnitude Pruning(GMP), L1/L2 based Channel Wise Pruning(CWP), OBC, sparsegpt, etc...
-   * - `sconce.quantize <https://snntorch.readthedocs.io/en/latest/snntorch.spikegen.html>`_
+   * - `sconce.quantize <https://sconce.readthedocs.io/en/latest/usage.html#module-sconce>`_
      - Quantize the computations of the model to make it more efficient for hardware Deployment/Inferences.
-   * - `sconce.compress <https://snntorch.readthedocs.io/en/latest/snntorch.functional.html>`_
+   * - `sconce.compress <https://sconce.readthedocs.io/en/latest/usage.html#module-sconcel>`_
      - Automated compression pipeline encompassing of Pruning, Quantization, and Sparsification.
   
 
@@ -62,13 +62,13 @@ sconce is designed to be intuitively used with PyTorch, compression for Linear, 
 
 At present, we are working on adding support for more compression techniques and more models.
 The package envisions to be a one stop solution for all your compression needs and deployed on resource constrained devices.
-Provided that the network models and tensors are loaded onto CUDA, snnTorch takes advantage of GPU acceleration in the same way as PyTorch. 
+Provided that the network models and tensors are loaded onto CUDA, sconce takes advantage of GPU acceleration in the same way as PyTorch. 
 
 sconce is a work in progress, and we welcome contributions from the community.
 
 Requirements 
 ^^^^^^^^^^^^^^^^^^^^^^^^
-The following packages need to be installed to use snnTorch:
+The following packages need to be installed to use sconce:
 
 * torch >= 1.1.0
 * numpy >= 1.17
@@ -78,7 +78,7 @@ The following packages need to be installed to use snnTorch:
 * nir
 * nirtorch
 
-They are automatically installed if snnTorch is installed using the pip command. Ensure the correct version of torch is installed for your system to enable CUDA compatibility. 
+They are automatically installed if sconce is installed using the pip command. Ensure the correct version of torch is installed for your system to enable CUDA compatibility. 
 
 Installation
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -90,14 +90,14 @@ Run the following to install:
   $ python
   $ pip install sconce
 
-To install snnTorch from source instead::
+To install sconce from source instead::
 
   $ git clone https://github.com/satabios/sconce
   $ cd sconce
   $ python setup.py install
 
 
-To install snntorch with conda::
+To install sconce with conda::
 
     $ conda install -c conda-forge sconce
     
