@@ -21,7 +21,7 @@ solve complex problems with such ease.
 
 To bridge this gap, this package aids to perform a series of aids:
 
-* Make **Training**, **Testing**, **Inference**, **Model Profiling**, etc.. wrapped. Thus easing your way through development.
+* Make **Training**, **Testing**, **Inference**, **Model Profiling**, etc.. pipelined. Thus easing your way through research and development.
 * **Compress** the model through **Pruning**, **Optimal Brain Compression**, etc... This allows lesser usage of CPM(Computation, Power, Memory) and thus making it more efficient.
 * **Quantize** the model to make it more efficient for hardware Deployment/Inferences.
 * Leverage **Sparsity** in the model to make it more efficient for hardware Deployment/Inferences. 
