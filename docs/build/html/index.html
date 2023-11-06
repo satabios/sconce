@@ -80,7 +80,7 @@
 <section id="introduction">
 <h2>Introduction<a class="headerlink" href="#introduction" title="Link to this heading"></a></h2>
 <a class="reference external image-reference" href="https://sconce.readthedocs.io/en/latest/?badge=latest"><img alt="Documentation Status" src="https://readthedocs.org/projects/sconce/badge/?version=latest" /></a>
-<a class="reference internal image-reference" href="https://github.com/satabios/sconce/blob/main/docs/source/images/sconce-punch-bk_removed.png?raw=true"><img alt="https://github.com/satabios/sconce/blob/main/docs/source/images/sconce-punch-bk_removed.png?raw=true" class="align-center" src="https://github.com/satabios/sconce/blob/main/docs/source/images/sconce-punch-bk_removed.png?raw=true" style="width: 400px;" /></a>
+<a class="reference internal image-reference" href="https://github.com/satabios/sconce/blob/main/docs/source/images/sconce-punch-bk_removed.png?raw=true"><img alt="https://github.com/satabios/sconce/blob/main/docs/source/images/sconce-punch-bk_removed.png?raw=true" class="align-center" src="https://github.com/satabios/sconce/blob/main/docs/source/images/sconce-punch-bk_removed.png?raw=true" style="width: 400px; height: 400px;" /></a>
 <p>Advancement of deep learning has been largely driven by the availability of large datasets and the computational power to train large models.
 The amount of complexity increases with each day passing and it is becoming increasingly difficult to train these models. Neverthless, infer
 the models efficiently on hardware.</p>
@@ -90,12 +90,12 @@ that we use to train our models. However, the brain does not use gradient descen
 solve complex problems with such ease.</p>
 <p>To bridge this gap, this package aids to perform a series of aids:</p>
 <ul class="simple">
-<li><p>Make <strong>Training</strong>, <strong>Testing</strong>, <strong>Inference</strong>, <strong>Model Profiling</strong>, etc.. wrapped. Thus easing your way through development.</p></li>
+<li><p>Make <strong>Training</strong>, <strong>Testing</strong>, <strong>Inference</strong>, <strong>Model Profiling</strong>, etc.. pipelined. Thus easing your way through research and development.</p></li>
 <li><p><strong>Compress</strong> the model through <strong>Pruning</strong>, <strong>Optimal Brain Compression</strong>, etc… This allows lesser usage of CPM(Computation, Power, Memory) and thus making it more efficient.</p></li>
 <li><p><strong>Quantize</strong> the model to make it more efficient for hardware Deployment/Inferences.</p></li>
 <li><p>Leverage <strong>Sparsity</strong> in the model to make it more efficient for hardware Deployment/Inferences.</p></li>
 <li><p><strong>Deployments</strong> of the model on hardware.</p></li>
-<li><p>Support <a class="reference external" href="https://github.com/jeshraghian/snntorch">Spiking Neural Networks(snnTorch)</a> in this compression pipeline.</p></li>
+<li><p>Support <a class="reference external" href="https://github.com/jeshraghian/snntorch">Spiking Neural Networks(snnTorch)</a> in this compression pipeline [Future integerations are expected].</p></li>
 </ul>
 <p>If you like this project, please consider starring ⭐ this repo as it is the easiest and best way to support it.</p>
 <p>Let us know if you are using sconce in any interesting work, research or blogs, as we would love to hear more about it!
@@ -132,7 +132,7 @@ or chat in our <a class="reference external" href="https://discord.gg/GKwXMrZr">
 </tr>
 </tbody>
 </table>
-<p>sconce is designed to be intuitively used with PyTorch, compression for Linear, Convolutional and Attention blocks are supported.</p>
+<p><strong>sconce</strong> is designed to be intuitively used with PyTorch, compression for Linear, Convolutional and Attention blocks are supported.</p>
 <p>At present, we are working on adding support for more compression techniques and more models.
 The package envisions to be a one stop solution for all your compression needs and deployed on resource constrained devices.
 Provided that the network models and tensors are loaded onto CUDA, sconce takes advantage of GPU acceleration in the same way as PyTorch.</p>
@@ -144,11 +144,9 @@ Provided that the network models and tensors are loaded onto CUDA, sconce takes 
 <ul class="simple">
 <li><p>torch &gt;= 1.1.0</p></li>
 <li><p>numpy &gt;= 1.17</p></li>
-<li><p>pandas</p></li>
+<li><p>torchprofile</p></li>
 <li><p>matplotlib</p></li>
-<li><p>math</p></li>
-<li><p>nir</p></li>
-<li><p>nirtorch</p></li>
+<li><p>snntorch</p></li>
 </ul>
 <p>They are automatically installed if sconce is installed using the pip command. Ensure the correct version of torch is installed for your system to enable CUDA compatibility.</p>
 </section>
@@ -163,10 +161,6 @@ $<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </sp
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ git clone https://github.com/satabios/sconce
 $ cd sconce
 $ python setup.py install
-</pre></div>
-</div>
-<p>To install sconce with conda:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ conda install -c conda-forge sconce
 </pre></div>
 </div>
 </section>
@@ -256,9 +250,9 @@ $ python setup.py install
 <p>sconce is solely being maintained by <a class="reference external" href="https://satabios.github.io/portfolio/">Sathyaprakash Narayanan</a>.</p>
 <p>Special Thanks:</p>
 <ul class="simple">
-<li><p><a class="reference external" href="https://www.jasoneshraghian.com/">Jason K. Eshraghian</a></p></li>
-<li><p><a class="reference external" href="https://hanlab.mit.edu/">Prof. Song Han</a></p></li>
-<li><p><a class="reference external" href="https://github.com/neuralmagic">Neural Magic(Elias Frantar, Denis Kuznedelev, etc…)</a></p></li>
+<li><p><a class="reference external" href="https://www.jasoneshraghian.com/">Prof. and Mentor Jason K. Eshraghian</a> and his pet <a class="reference external" href="https://github.com/jeshraghian/snntorch/">snnTorch</a> (extensively inspired from snnTorch to build and document sconce)</p></li>
+<li><p><a class="reference external" href="https://hanlab.mit.edu/">Prof. Song Han</a> for his coursework MIT6.5940 and many other <a class="reference external" href="https://github.com/mit-han-lab/torchsparse/">torchsparse</a>.</p></li>
+<li><p><a class="reference external" href="https://github.com/neuralmagic/">Neural Magic(Elias Frantar, Denis Kuznedelev, etc…)</a> for <a class="reference external" href="https://github.com/IST-DASLab/OBC/">OBC</a> and <a class="reference external" href="https://github.com/IST-DASLab/sparsegpt/">sparseGPT</a>.</p></li>
 </ul>
 <p>sconce source code is published under the terms of the MIT License.
 sconce’s documentation is licensed under a Creative Commons Attribution-Share Alike 3.0 Unported License (<a class="reference external" href="https://creativecommons.org/licenses/by-sa/3.0/">CC BY-SA 3.0</a>).</p>
@@ -273,7 +267,7 @@ sconce’s documentation is licensed under a Creative Commons Attribution-Share 
 <li class="toctree-l1"><a class="reference internal" href="tutorials/index.html">Tutorials</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="tutorials/Pruning.html">Pruning</a></li>
 <li class="toctree-l2"><a class="reference internal" href="tutorials/Quantization.html">Quantization</a></li>
-<li class="toctree-l2"><a class="reference internal" href="tutorials/Pipeline-Tutorial.html">Pipeline-Tutorial</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials/Pipeline-Tutorial.html">sconce Pipeline Tutorial</a></li>
 </ul>
 </li>
 </ul>
