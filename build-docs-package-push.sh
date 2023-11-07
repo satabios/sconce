@@ -1,5 +1,6 @@
 #! /bin/bash
 
+## add files, commit and push function for git
 git_push() {
 
 git add .
