@@ -222,7 +222,7 @@ sconce is solely being maintained by `Sathyaprakash Narayanan <https://satabios.
 Special Thanks:
 
 *  `Prof. and Mentor Jason K. Eshraghian <https://www.jasoneshraghian.com/>`_ and his pet `snnTorch <https://github.com/jeshraghian/snntorch/>`_ (extensively inspired from snnTorch to build and document sconce)
-*  `Prof. Song Han <https://hanlab.mit.edu/>`_ for his coursework MIT6.5940 and many other `torchsparse <https://github.com/mit-han-lab/torchsparse/>`_. 
+*  `Prof. Song Han <https://hanlab.mit.edu/>`_ for his coursework MIT6.5940 and many other projects like `torchsparse <https://github.com/mit-han-lab/torchsparse/>`_. 
 *  `Neural Magic(Elias Frantar, Denis Kuznedelev, etc...) <https://github.com/neuralmagic/>`_ for `OBC <https://github.com/IST-DASLab/OBC/>`_ and `sparseGPT <https://github.com/IST-DASLab/sparsegpt/>`_.
 
 
