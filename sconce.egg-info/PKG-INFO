@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: sconce
-Version: 0.60
+Version: 0.61
 Summary: sconce: torch pipeliner
 Home-page: https://github.com/satabios/sconce
 Author: Sathyaprakash Narayanan
@@ -16,8 +16,6 @@ Classifier: Natural Language :: English
 Classifier: Topic :: Scientific/Engineering
 Classifier: Topic :: Scientific/Engineering :: Mathematics
 Classifier: Topic :: Scientific/Engineering :: Artificial Intelligence
-Classifier: Programming Language :: Python :: 3.7
-Classifier: Programming Language :: Python :: 3.8
 Classifier: Programming Language :: Python :: 3.9
 Classifier: Programming Language :: Python :: 3.10
 Classifier: Operating System :: OS Independent

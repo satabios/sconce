@@ -1,3 +1,3 @@
 from .sconce import sconce
 
-__all__ = [ "sconce"]
+__all__ = ["sconce"]
