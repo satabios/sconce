@@ -118,6 +118,7 @@ class sconce:
         self.codebook = None
         self.channel_pruning_ratio = None
         self.snn = False
+        self.snn_num_steps = 50
         self.accuracy_function = None
 
         self.bitwidth = 4
@@ -141,9 +142,10 @@ class sconce:
         mem_rec = []
         utils.reset(self.model)  # resets hidden states for all LIF neurons in net
 
-        for step in range(data.size(0)):  # data.size(0) = number of time steps
-            spk_out, mem_out = self.model(data[step])
+        for step in range(self.snn_num_steps):  # data.size(0) = number of time steps
+            spk_out, mem_out = self.model(data)
             spk_rec.append(spk_out)
+            mem_rec.append(mem_out)
             if mem_out_rec is not None:
                 mem_rec.append(mem_out)
         if mem_out_rec is not None:
@@ -241,7 +243,9 @@ class sconce:
                 images, labels = images.to(self.device), labels.to(self.device)
                 if self.snn:
                     outputs = self.forward_pass_snn(images, mem_out_rec=None)
-                    correct += SF.accuracy_rate(outputs, labels) / 100
+                    correct += SF.accuracy_rate(outputs, labels) * outputs.size(1)
+                    total += outputs.size(1)
+
                 else:
                     outputs = self.model(images)
                     _, predicted = torch.max(outputs.data, 1)
@@ -347,11 +351,11 @@ class sconce:
         model.eval()
         # warmup
         for _ in range(n_warmup):
-            _ = self.model(dummy_input)
+            _ = model(dummy_input)
         # real test
         t1 = time.time()
         for _ in range(n_test):
-            _ = self.model(dummy_input)
+            _ = model(dummy_input)
         t2 = time.time()
         return round((t2 - t1) / n_test * 1000, 1)  # average latency in ms
 
