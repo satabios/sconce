@@ -655,13 +655,14 @@ class sconce:
         original_experiment_name = self.experiment_name
         if self.snn:
             original_dense_model = self.model
+
         else:
             original_dense_model = copy.deepcopy(self.model)
+            torch.save(original_dense_model, "original_model.pth")
         torch.save(
             original_dense_model.state_dict(),
             self.experiment_name + "_original_weights.pth",
         )
-        torch.save(original_dense_model, "original_model.pth")
 
         dense_model_size = self.get_model_size(
             model=self.model, count_nonzero_only=True
@@ -725,7 +726,8 @@ class sconce:
             pruned_model.state_dict(),
             self.experiment_name + "_pruned_fine_tuned_weights" + ".pth",
         )
-        torch.save(pruned_model, "pruned_model.pth")
+        if self.snn == False:
+            torch.save(pruned_model, "pruned_model.pth")
         accuracies = [
             dense_validation_acc,
             pruned_validation_acc,
