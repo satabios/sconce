@@ -4,8 +4,8 @@ requires = ["flit_core >=3.2,<4"]
 
 [project]
 name = "sconce"
-version = "0.65"
-description = "sconce: torch pipeliner"
+version = "0.66"
+description = "sconce: Compression and Deployment made Easy"
 authors = [{ name = "Sathyaprakash Narayanan", email = "snaray17@ucsc.edu" }]
 urls = { code = "https://github.com/satabios/sconce" }
 
