@@ -65,6 +65,7 @@
 <li class="toctree-l4"><a class="reference internal" href="#sconce.sconce.GMP_apply"><code class="docutils literal notranslate"><span class="pre">sconce.GMP_apply()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#sconce.sconce.apply_channel_sorting"><code class="docutils literal notranslate"><span class="pre">sconce.apply_channel_sorting()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#sconce.sconce.channel_prune"><code class="docutils literal notranslate"><span class="pre">sconce.channel_prune()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sconce.sconce.channel_prune_layerwise"><code class="docutils literal notranslate"><span class="pre">sconce.channel_prune_layerwise()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#sconce.sconce.compare_models"><code class="docutils literal notranslate"><span class="pre">sconce.compare_models()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#sconce.sconce.compress"><code class="docutils literal notranslate"><span class="pre">sconce.compress()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#sconce.sconce.evaluate"><code class="docutils literal notranslate"><span class="pre">sconce.evaluate()</span></code></a></li>
@@ -271,8 +272,17 @@ numbers to indicate per-layer pruning rate.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="sconce.sconce.channel_prune_layerwise">
+<span class="sig-name descname"><span class="pre">channel_prune_layerwise</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prune_ratio</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.12)"><span class="pre">List</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">i_layer</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Module</span></span></span><a class="headerlink" href="#sconce.sconce.channel_prune_layerwise" title="Link to this definition"></a></dt>
+<dd><p>Apply channel pruning to each of the conv layer in the backbone
+Note that for prune_ratio, we can either provide a floating-point number,
+indicating that we use a uniform pruning rate for all layers, or a list of
+numbers to indicate per-layer pruning rate.</p>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="sconce.sconce.compare_models">
-<span class="sig-name descname"><span class="pre">compare_models</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">original_dense_model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pruned_fine_tuned_model</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sconce.sconce.compare_models" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">compare_models</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">original_dense_model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pruned_fine_tuned_model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">accuracies</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sconce.sconce.compare_models" title="Link to this definition"></a></dt>
 <dd><p>Compares the performance of two PyTorch models: an original dense model and a pruned and fine-tuned model.
 Prints a table of metrics including latency, MACs, and model size for both models and their reduction ratios.</p>
 <p>Args:
@@ -301,7 +311,7 @@ Finally, the validation accuracy and the size of the pruned model are printed.</
 
 <dl class="py method">
 <dt class="sig sig-object py" id="sconce.sconce.evaluate">
-<span class="sig-name descname"><span class="pre">evaluate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sconce.sconce.evaluate" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">evaluate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Tqdm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sconce.sconce.evaluate" title="Link to this definition"></a></dt>
 <dd><p>Evaluates the model on the test dataset and returns the accuracy.</p>
 <dl class="simple">
 <dt>Args:</dt><dd><p>verbose (bool): If True, prints the test accuracy.</p>
@@ -461,7 +471,7 @@ count_nonzero_only (bool): If True, only non-zero weights will be plotted. Defau
 
 <dl class="py method">
 <dt class="sig sig-object py" id="sconce.sconce.sensitivity_scan">
-<span class="sig-name descname"><span class="pre">sensitivity_scan</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dense_model_accuracy</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scan_step</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scan_start</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scan_end</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sconce.sconce.sensitivity_scan" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">sensitivity_scan</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dense_model_accuracy</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scan_step</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scan_start</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scan_end</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sconce.sconce.sensitivity_scan" title="Link to this definition"></a></dt>
 <dd><p>Scans the sensitivity of the model to weight pruning by gradually increasing the sparsity of each layer’s weights
 and measuring the resulting accuracy. Returns a dictionary mapping layer names to the sparsity values that resulted
 in the highest accuracy for each layer.</p>

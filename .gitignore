@@ -1,5 +1,5 @@
 .eggs/
 test/data/
 test/_pycache_/
-test/
+test/*.pth
 .idea/
