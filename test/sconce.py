@@ -26,7 +26,7 @@ from torch.utils.data import DataLoader
 from torchprofile import profile_macs
 from torchvision.datasets import *
 from torchvision.transforms import *
-from tqdm.auto import tqdm
+from tqdm import tqdm
 
 from torchprofile import profile_macs
 
@@ -114,6 +114,7 @@ class sconce:
         self.callbacks = None
         self.sparsity_dict = None
         self.masks = {}
+        self.comparison = True
         self.Codebook = namedtuple("Codebook", ["centroids", "labels"])
         self.codebook = None
         self.channel_pruning_ratio = None
@@ -219,7 +220,7 @@ class sconce:
                 )
 
     @torch.no_grad()
-    def evaluate(self, verbose=False):
+    def evaluate(self, Tqdm=True, verbose=False):
         """
         Evaluates the model on the test dataset and returns the accuracy.
 
@@ -236,9 +237,11 @@ class sconce:
             correct = 0
             total = 0
             local_acc = []
-            for i, data in enumerate(
-                tqdm(self.dataloader["test"], desc="test", leave=False)
-            ):
+            if Tqdm:
+                loader = tqdm(self.dataloader["test"], desc="test", leave=False)
+            else:
+                loader = self.dataloader["test"]
+            for i, data in enumerate(loader):
                 images, labels = data
                 images, labels = images.to(self.device), labels.to(self.device)
                 if self.snn:
@@ -347,8 +350,11 @@ class sconce:
         Returns:
           float: The average latency of the model in milliseconds.
         """
-        model.to("cpu")
+        model = model.to("cpu")
         model.eval()
+
+        dummy_input = dummy_input.to("cpu")
+
         # warmup
         for _ in range(n_warmup):
             _ = model(dummy_input)
@@ -402,7 +408,7 @@ class sconce:
         dense_model_accuracy,
         scan_step=0.05,
         scan_start=0.1,
-        scan_end=1.1,
+        scan_end=1.0,
         verbose=True,
     ):
         """
@@ -419,14 +425,26 @@ class sconce:
         """
 
         self.sparsity_dict = {}
-        sparsities = np.arange(start=scan_start, stop=scan_end, step=scan_step)
+        sparsities = np.flip(np.arange(start=scan_start, stop=scan_end, step=scan_step))
         accuracies = []
         named_conv_weights = [
             (name, param)
             for (name, param) in self.model.named_parameters()
             if param.dim() > 1
         ]
-        for i_layer, (name, param) in enumerate(named_conv_weights):
+        original_model = copy.deepcopy(self.model)
+        original_dense_model_accuracy = self.evaluate()
+        conv_layers = [
+            module for module in self.model.modules() if (isinstance(module, nn.Conv2d))
+        ]
+        linear_layers = [
+            module for module in self.model.modules() if (isinstance(module, nn.Linear))
+        ]
+
+        if self.prune_mode == "CWP":
+            sorted_model = copy.deepcopy(self.apply_channel_sorting())
+        layer_iter = tqdm(named_conv_weights, desc="layer", leave=False)
+        for i_layer, (name, param) in enumerate(layer_iter):
             param_clone = param.detach().clone()
             accuracy = []
             desc = None
@@ -435,80 +453,108 @@ class sconce:
                 picker = tqdm(sparsities, desc)
             else:
                 picker = sparsities
+            hit_flag = False
             for sparsity in picker:
-                self.fine_grained_prune(param.detach(), sparsity=sparsity)
-                acc = self.evaluate()
-                if verbose:
-                    print(f"\r    sparsity={sparsity:.2f}: accuracy={acc:.2f}%", end="")
-                # restore
-                param.copy_(param_clone)
-                accuracy.append(acc)
-            if verbose:
-                print(
-                    f'\r    sparsity=[{",".join(["{:.2f}".format(x) for x in sparsities])}]: accuracy=[{", ".join(["{:.2f}%".format(x) for x in accuracy])}]',
-                    end="",
-                )
-            accuracies.append(accuracy)
-
-            self.degradation_value_local = self.degradation_value
-
-            final_values_test = accuracies - np.asarray(self.dense_model_valid_acc)
-            # print("Initial:", self.degradation_value_local)
-            while len(final_values_test[final_values_test > 0]) == 0:
-                # print("Updated:", self.degradation_value_local)
-                self.degradation_value_local += (
-                    0.5  # Small Increment to get a good degradation level
-                )
-                if self.degradation_value_local > 15:  # Max Slack for Sparsity Value
-                    break
-                final_values_test = accuracies - np.asarray(self.dense_model_valid_acc)
-
-            final_values = accuracies - np.asarray(self.dense_model_valid_acc)
-            final_values_index_of_interest = np.where(
-                final_values > 0,
-                final_values < self.degradation_value_local,
-                final_values,
-            )
-            if (
-                len(final_values_index_of_interest[final_values_index_of_interest == 1])
-                >= 1
-            ):
-                selected_sparsity = sparsities[
-                    np.where(final_values_index_of_interest == 1)[1][-1]
-                ]
-                self.sparsity_dict[name] = selected_sparsity
-            else:
-                self.sparsity_dict[name] = 0.0
-
-        if verbose:
-            lower_bound_accuracy = 100 - (100 - dense_model_accuracy) * 1.5
-            fig, axes = plt.subplots(
-                3, int(math.ceil(len(accuracies) / 3)), figsize=(15, 8)
-            )
-            axes = axes.ravel()
-            plot_index = 0
-            for name, param in self.model.named_parameters():
-                if param.dim() > 1:
-                    ax = axes[plot_index]
-                    curve = ax.plot(sparsities, accuracies[plot_index])
-                    line = ax.plot(sparsities, [lower_bound_accuracy] * len(sparsities))
-                    ax.set_xticks(np.arange(start=0.4, stop=1.0, step=0.1))
-                    ax.set_ylim(80, 95)
-                    ax.set_title(name)
-                    ax.set_xlabel("sparsity")
-                    ax.set_ylabel("top-1 accuracy")
-                    ax.legend(
-                        [
-                            "accuracy after pruning",
-                            f"{lower_bound_accuracy / dense_model_accuracy * 100:.0f}% of dense model accuracy",
-                        ]
+                if self.prune_mode == "GMP":
+                    self.fine_grained_prune(param.detach(), sparsity=sparsity)
+                    hit_flag = True
+                elif (
+                    self.prune_mode == "CWP"
+                    and len(param.shape) > 2
+                    and i_layer < (len(conv_layers) - 1)
+                ):
+                    self.model = sorted_model
+                    self.model = self.channel_prune_layerwise(
+                        sorted_model, sparsity, i_layer
                     )
-                    ax.grid(axis="x")
-                    plot_index += 1
-            fig.suptitle("Sensitivity Curves: Validation Accuracy vs. Pruning Sparsity")
-            fig.tight_layout()
-            fig.subplots_adjust(top=0.925)
-            plt.show()
+                    hit_flag = True
+                ## TODO:
+                ## Add conv CWP and linear CWP
+
+                if hit_flag == True:
+                    acc = self.evaluate(Tqdm=False) - original_dense_model_accuracy
+                    if abs(acc) <= self.degradation_value:
+                        self.sparsity_dict[name] = sparsity
+                        break
+                    elif sparsity == scan_start:
+                        accuracy = np.asarray(accuracy)
+                        best_possible_sparsity = sparsities[
+                            np.where(accuracy == np.max(accuracy))[0][0]
+                        ]
+                        self.sparsity_dict[name] = best_possible_sparsity
+                    else:
+                        # restore
+                        param.copy_(param_clone)
+                        accuracy.append(acc)
+                        hit_flag = False
+        self.model = original_model
+
+        #     if verbose:
+        #         print(
+        #             f'\r    sparsity=[{",".join(["{:.2f}".format(x) for x in sparsities])}]: accuracy=[{", ".join(["{:.2f}%".format(x) for x in accuracy])}]',
+        #             end="",
+        #         )
+        #     accuracies.append(accuracy)
+        #
+        #     self.degradation_value_local = self.degradation_value
+        #
+        #     final_values_test = accuracies - np.asarray(self.dense_model_valid_acc)
+        #     # print("Initial:", self.degradation_value_local)
+        #     while len(final_values_test[final_values_test > 0]) == 0:
+        #         # print("Updated:", self.degradation_value_local)
+        #         self.degradation_value_local += (
+        #             0.5  # Small Increment to get a good degradation level
+        #         )
+        #         if self.degradation_value_local > 15:  # Max Slack for Sparsity Value
+        #             break
+        #         final_values_test = accuracies - np.asarray(self.dense_model_valid_acc)
+        #
+        #     final_values = accuracies - np.asarray(self.dense_model_valid_acc)
+        #     final_values_index_of_interest = np.where(
+        #         final_values > 0,
+        #         final_values < self.degradation_value_local,
+        #         final_values,
+        #     )
+        #     if (
+        #         len(final_values_index_of_interest[final_values_index_of_interest == 1])
+        #         >= 1
+        #     ):
+        #         selected_sparsity = sparsities[
+        #             np.where(final_values_index_of_interest == 1)[1][-1]
+        #         ]
+        #         self.sparsity_dict[name] = selected_sparsity
+        #     else:
+        #         self.sparsity_dict[name] = 0.0
+        #
+        # if verbose:
+        #     lower_bound_accuracy = 100 - (100 - dense_model_accuracy) * 1.5
+        #     fig, axes = plt.subplots(
+        #         3, int(math.ceil(len(accuracies) / 3)), figsize=(15, 8)
+        #     )
+        #     axes = axes.ravel()
+        #     plot_index = 0
+        #     for name, param in self.model.named_parameters():
+        #         if param.dim() > 1:
+        #             ax = axes[plot_index]
+        #             curve = ax.plot(sparsities, accuracies[plot_index])
+        #             line = ax.plot(sparsities, [lower_bound_accuracy] * len(sparsities))
+        #             ax.set_xticks(np.arange(start=0.4, stop=1.0, step=0.1))
+        #             ax.set_ylim(80, 95)
+        #             ax.set_title(name)
+        #             ax.set_xlabel("sparsity")
+        #             ax.set_ylabel("top-1 accuracy")
+        #             ax.legend(
+        #                 [
+        #                     "accuracy after pruning",
+        #                     f"{lower_bound_accuracy / dense_model_accuracy * 100:.0f}% of dense model accuracy",
+        #                 ]
+        #             )
+        #             ax.grid(axis="x")
+        #             plot_index += 1
+        #     fig.suptitle("Sensitivity Curves: Validation Accuracy vs. Pruning Sparsity")
+        #     fig.tight_layout()
+        #     fig.subplots_adjust(top=0.925)
+        #     plt.show()
 
     def fine_grained_prune(self, tensor: torch.Tensor, sparsity: float) -> torch.Tensor:
         """
@@ -591,15 +637,17 @@ class sconce:
         Returns:
           None
         """
-        original_dense_model = self.model
-        # self.train()
+        original_experiment_name = self.experiment_name
+        original_dense_model = copy.deepcopy(self.model)
+        torch.save(
+            copy.deepcopy(original_dense_model.state_dict()),
+            self.experiment_name + ".pth",
+        )
 
         dense_model_size = self.get_model_size(
             model=self.model, count_nonzero_only=True
         )
-        print(
-            f"\nDense_model_size model after sensitivity size={dense_model_size / MiB:.2f} MiB"
-        )
+        print(f"\nOrigianl Dense Model Size Model={dense_model_size / MiB:.2f} MiB")
         dense_validation_acc = self.evaluate(verbose=False)
         print("Original Model Validation Accuracy:", dense_validation_acc, "%")
         self.dense_model_valid_acc = dense_validation_acc
@@ -609,50 +657,74 @@ class sconce:
             self.sensitivity_scan(
                 dense_model_accuracy=dense_validation_acc, verbose=False
             )
+            # self.sparsity_dict = {'backbone.conv0.weight': 0.20000000000000004, 'backbone.conv1.weight': 0.45000000000000007, 'backbone.conv2.weight': 0.25000000000000006, 'backbone.conv3.weight': 0.25000000000000006, 'backbone.conv4.weight': 0.25000000000000006, 'backbone.conv5.weight': 0.25000000000000006, 'backbone.conv6.weight': 0.3500000000000001, 'backbone.conv7.weight': 0.3500000000000001, 'classifier.weight': 0.7000000000000002}
+
             self.GMP_Pruning()  # FineGrained Pruning
             self.callbacks = [lambda: self.GMP_apply()]
             print(f"Sparsity for each Layer: {self.sparsity_dict}")
+            self.fine_tune = True
+
         elif self.prune_mode == "CWP":
+            self.sensitivity_scan(
+                dense_model_accuracy=dense_validation_acc, verbose=False
+            )
             print("Channel-Wise Pruning")
+            # self.sparsity_dict = {'backbone.conv0.weight': 0.15000000000000002, 'backbone.conv1.weight': 0.15, 'backbone.conv2.weight': 0.15, 'backbone.conv3.weight': 0.15000000000000002, 'backbone.conv4.weight': 0.20000000000000004, 'backbone.conv5.weight': 0.20000000000000004, 'backbone.conv6.weight': 0.45000000000000007}
+            print(f"Sparsity for each Layer: {self.sparsity_dict}")
             self.CWP_Pruning()  # Channelwise Pruning
+
+            self.fine_tune = True
+
+        pruned_model = copy.deepcopy(self.model)
         pruned_model_size = self.get_model_size(
-            model=self.model, count_nonzero_only=True
+            model=pruned_model, count_nonzero_only=True
         )
-        # validation_acc = self.evaluate(verbose=False)
+        pruned_validation_acc = self.evaluate(verbose=False)
+        torch.save(
+            copy.deepcopy(pruned_model.state_dict()),
+            self.experiment_name + "_pruned" + ".pth",
+        )
         print(
-            f"Pruned model has size={pruned_model_size / MiB:.2f} MiB = {pruned_model_size / dense_model_size * 100:.2f}% of Original model size"
+            f"\nPruned model has size={pruned_model_size / MiB:.2f} MiB = {pruned_model_size / dense_model_size * 100:.2f}% of Original model size"
         )
         #### Add Accuracy deviation
 
-        self.fine_tune = True
         if self.fine_tune:
             self.optimizer = torch.optim.SGD(
-                self.model.parameters(), lr=0.01, momentum=0.9, weight_decay=1e-4
+                self.model.parameters(), lr=0.0001, momentum=0.9, weight_decay=1e-4
             )
             self.scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
                 self.optimizer, self.num_finetune_epochs
             )
+            self.experiment_name = self.experiment_name + "_pruned_" + "fine_tuning"
+            self.model = pruned_model
             self.train()
-        fine_tuned_pruned_model_size = self.get_model_size(
-            model=self.model, count_nonzero_only=True
-        )
-        validation_acc = self.evaluate(verbose=False)
-        pruned_fine_tuned_model = self.model
-        torch.save(
-            copy.deepcopy(original_dense_model.state_dict()),
-            self.experiment_name + ".pth",
-        )
-        torch.save(
-            copy.deepcopy(pruned_fine_tuned_model.state_dict()),
-            self.experiment_name + "_pruned" + ".pth",
-        )
+            pruned_model = copy.deepcopy(self.model)
 
-        self.compare_models(original_dense_model, pruned_fine_tuned_model)
+        fine_tuned_pruned_model_size = self.get_model_size(
+            model=pruned_model, count_nonzero_only=True
+        )
+        fine_tuned_validation_acc = self.evaluate(verbose=False)
+
+        torch.save(
+            copy.deepcopy(pruned_model.state_dict()),
+            self.experiment_name + "_fine_tuned_pruned" + ".pth",
+        )
+        accuracies = [
+            dense_validation_acc,
+            pruned_validation_acc,
+            fine_tuned_validation_acc,
+        ]
+        self.compare_models(original_dense_model, pruned_model, accuracies)
+
         if verbose:
             print(
                 f"Fine-Tuned Sparse model has size={fine_tuned_pruned_model_size / MiB:.2f} MiB = {fine_tuned_pruned_model_size / dense_model_size * 100:.2f}% of Original model size"
             )
-            print("Fine-Tuned Pruned Model Validation Accuracy:", validation_acc)
+            print(
+                "Fine-Tuned Pruned Model Validation Accuracy:",
+                fine_tuned_validation_acc,
+            )
 
     # def k_means_quantize(self, fp32_tensor: torch.Tensor, bitwidth=4,codebook=None):
     #
@@ -727,7 +799,7 @@ class sconce:
     #         self.codebook[name] = k_means_quantize(
     #           param, codebook=self.codebook[name])
 
-    def compare_models(self, original_dense_model, pruned_fine_tuned_model):
+    def compare_models(self, original_dense_model, pruned_fine_tuned_model, accuracies):
         """
         Compares the performance of two PyTorch models: an original dense model and a pruned and fine-tuned model.
         Prints a table of metrics including latency, MACs, and model size for both models and their reduction ratios.
@@ -738,18 +810,20 @@ class sconce:
 
         Returns: None
         """
-
+        accuracies = accuracies
         input_shape = list(next(iter(self.dataloader["test"]))[0].size())
         input_shape[0] = 1
         dummy_input = torch.randn(input_shape).to("cpu")
-        pruned_model = pruned_fine_tuned_model.to("cpu")
-        model = original_dense_model.to("cpu")
-
-        pruned_latency = self.measure_latency(
-            model=pruned_model, dummy_input=dummy_input
+        pruned_fine_tuned_model = pruned_fine_tuned_model.to("cpu")
+        original_dense_model = original_dense_model.to("cpu")
+        original_latency = self.measure_latency(
+            model=original_dense_model, dummy_input=dummy_input
         )
-        original_latency = self.measure_latency(model=model, dummy_input=dummy_input)
-        print("/n")
+        pruned_latency = self.measure_latency(
+            model=pruned_fine_tuned_model, dummy_input=dummy_input
+        )
+
+        print("\n ................. Comparison Table  .................")
         table_template = "{:<15} {:<15} {:<15} {:<15}"
         print(table_template.format("", "Original", "Pruned", "Reduction Ratio"))
         print(
@@ -762,8 +836,8 @@ class sconce:
         )
 
         # 2. measure the computation (MACs)
-        original_macs = self.get_model_macs(model, dummy_input)
-        pruned_macs = self.get_model_macs(pruned_model, dummy_input)
+        original_macs = self.get_model_macs(original_dense_model, dummy_input)
+        pruned_macs = self.get_model_macs(pruned_fine_tuned_model, dummy_input)
         table_template = "{:<15} {:<15} {:<15} {:<15}"
         print(
             table_template.format(
@@ -775,8 +849,12 @@ class sconce:
         )
 
         # 3. measure the model size (params)
-        original_param = self.get_num_parameters(model)
-        pruned_param = self.get_num_parameters(pruned_model)
+        original_param = self.get_num_parameters(
+            original_dense_model, count_nonzero_only=True
+        ).item()
+        pruned_param = self.get_num_parameters(
+            pruned_fine_tuned_model, count_nonzero_only=True
+        ).item()
         print(
             table_template.format(
                 "Param (M)",
@@ -786,9 +864,20 @@ class sconce:
             )
         )
 
+        # 4. Accuracies
+
+        print(
+            table_template.format(
+                "Accuracies (%)",
+                round(accuracies[0], 3),
+                round(accuracies[-1], 3),
+                str(round(accuracies[-1] - accuracies[0], 3)),
+            )
+        )
+
         # put model back to cuda
-        pruned_model = pruned_model.to("cuda")
-        model = model.to("cuda")
+        # pruned_model = pruned_fine_tuned_model.to("cuda")
+        # model = original_dense_model.to("cuda")
 
     def CWP_Pruning(self):
         """
@@ -796,7 +885,9 @@ class sconce:
         Returns the pruned model.
         """
         sorted_model = self.apply_channel_sorting()
-        self.model = self.channel_prune(sorted_model, self.channel_pruning_ratio)
+        # self.model = self.channel_prune(sorted_model, self.channel_pruning_ratio)
+        self.sparsity_dict = [value for key, value in self.sparsity_dict.items()]
+        self.model = self.channel_prune(sorted_model, self.sparsity_dict)
 
     def get_input_channel_importance(self, weight):
         """
@@ -857,36 +948,35 @@ class sconce:
         find_instance(obj=model, object_of_importance=nn.Conv2d)
         find_instance(obj=model, object_of_importance=nn.BatchNorm2d)
 
-        # iterate through conv layers
-        for i_conv in range(len(all_convs) - 1):
-            # each channel sorting index, we need to apply it to:
-            # - the output dimension of the previous conv
-            # - the previous BN layer
-            # - the input dimension of the next conv (we compute importance here)
-            prev_conv = all_convs[i_conv]
-            prev_bn = all_bns[i_conv]
-            next_conv = all_convs[i_conv + 1]
-            # note that we always compute the importance according to input channels
-            importance = self.get_input_channel_importance(next_conv.weight)
-            # sorting from large to small
-            sort_idx = torch.argsort(importance, descending=True)
-
-            # apply to previous conv and its following bn
-            prev_conv.weight.copy_(
-                torch.index_select(prev_conv.weight.detach(), 0, sort_idx)
-            )
-            for tensor_name in ["weight", "bias", "running_mean", "running_var"]:
-                tensor_to_apply = getattr(prev_bn, tensor_name)
-                tensor_to_apply.copy_(
-                    torch.index_select(tensor_to_apply.detach(), 0, sort_idx)
-                )
-
-            # apply to the next conv input (hint: one line of code)
-            ##################### YOUR CODE STARTS HERE #####################
-            next_conv.weight.copy_(
-                torch.index_select(next_conv.weight.detach(), 1, sort_idx)
-            )
-            ##################### YOUR CODE ENDS HERE #####################
+        # # iterate through conv layers
+        # for i_conv in range(len(all_convs) - 1):
+        #     # each channel sorting index, we need to apply it to:
+        #     # - the output dimension of the previous conv
+        #     # - the previous BN layer
+        #     # - the input dimension of the next conv (we compute importance here)
+        #     prev_conv = all_convs[i_conv]
+        #     prev_bn = all_bns[i_conv]
+        #     next_conv = all_convs[i_conv + 1]
+        #     # note that we always compute the importance according to input channels
+        #     importance = self.get_input_channel_importance(next_conv.weight)
+        #     # sorting from large to small
+        #     sort_idx = torch.argsort(importance, descending=True)
+        #
+        #     # apply to previous conv and its following bn
+        #     prev_conv.weight.copy_(
+        #         torch.index_select(prev_conv.weight.detach(), 0, sort_idx)
+        #     )
+        #     for tensor_name in ["weight", "bias", "running_mean", "running_var"]:
+        #         tensor_to_apply = getattr(prev_bn, tensor_name)
+        #         tensor_to_apply.copy_(
+        #             torch.index_select(tensor_to_apply.detach(), 0, sort_idx)
+        #         )
+        #
+        #     # apply to the next conv input (hint: one line of code)
+        #     ##################### YOUR CODE STARTS HERE #####################
+        #     next_conv.weight.copy_(
+        #         torch.index_select(next_conv.weight.detach(), 1, sort_idx)
+        #     )
 
         return model
 
@@ -905,6 +995,72 @@ class sconce:
         ##################### YOUR CODE STARTS HERE #####################
         return int(round(channels * (1.0 - prune_ratio)))
         ##################### YOUR CODE ENDS HERE #####################
+
+    @torch.no_grad()
+    def channel_prune_layerwise(
+        self, model: nn.Module, prune_ratio: Union[List, float], i_layer
+    ) -> nn.Module:
+        """Apply channel pruning to each of the conv layer in the backbone
+        Note that for prune_ratio, we can either provide a floating-point number,
+        indicating that we use a uniform pruning rate for all layers, or a list of
+        numbers to indicate per-layer pruning rate.
+        """
+        # sanity check of provided prune_ratio
+        assert isinstance(prune_ratio, (float, list))
+
+        all_convs = []
+        all_bns = []
+
+        # Universal Layer Seeking by Parsing
+        def find_instance(obj, object_of_importance):
+            if isinstance(obj, object_of_importance):
+                if object_of_importance == nn.Conv2d:
+                    all_convs.append(obj)
+                elif object_of_importance == nn.BatchNorm2d:
+                    all_bns.append(obj)
+                return None
+            elif isinstance(obj, list):
+                for internal_obj in obj:
+                    find_instance(internal_obj, object_of_importance)
+            elif hasattr(obj, "__class__"):
+                for internal_obj in obj.children():
+                    find_instance(internal_obj, object_of_importance)
+            elif isinstance(obj, OrderedDict):
+                for key, value in obj.items():
+                    find_instance(value, object_of_importance)
+
+        # we prune the convs in the backbone with a uniform ratio
+        new_model = copy.deepcopy(model)  # prevent overwrite
+        find_instance(obj=new_model, object_of_importance=nn.Conv2d)
+        find_instance(obj=new_model, object_of_importance=nn.BatchNorm2d)
+        n_conv = len(all_convs)
+        # note that for the ratios, it affects the previous conv output and next
+        # conv input, i.e., conv0 - ratio0 - conv1 - ratio1-...
+
+        # we only apply pruning to the backbone features
+
+        # apply pruning. we naively keep the first k channels
+        assert len(all_convs) == len(all_bns)
+        # for i_ratio, p_ratio in enumerate(prune_ratio):
+        prev_conv = all_convs[i_layer]
+        prev_bn = all_bns[i_layer]
+        next_conv = all_convs[i_layer + 1]
+        original_channels = prev_conv.out_channels  # same as next_conv.in_channels
+        n_keep = self.get_num_channels_to_keep(original_channels, prune_ratio)
+
+        # prune the output of the previous conv and bn
+        prev_conv.weight.set_(prev_conv.weight.detach()[:n_keep])
+        prev_bn.weight.set_(prev_bn.weight.detach()[:n_keep])
+        prev_bn.bias.set_(prev_bn.bias.detach()[:n_keep])
+        prev_bn.running_mean.set_(prev_bn.running_mean.detach()[:n_keep])
+        prev_bn.running_var.set_(prev_bn.running_var.detach()[:n_keep])
+
+        # prune the input of the next conv (hint: just one line of code)
+        ##################### YOUR CODE STARTS HERE #####################
+        next_conv.weight.set_(next_conv.weight.detach()[:, :n_keep])
+        ##################### YOUR CODE ENDS HERE #####################
+
+        return new_model
 
     @torch.no_grad()
     def channel_prune(
@@ -975,6 +1131,3 @@ class sconce:
             ##################### YOUR CODE ENDS HERE #####################
 
         return new_model
-
-
-
