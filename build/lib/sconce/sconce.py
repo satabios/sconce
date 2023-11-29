@@ -35,6 +35,7 @@ from collections import namedtuple
 from fast_pytorch_kmeans import KMeans
 from torch.nn import parameter
 import ipdb
+import snntorch
 from snntorch import functional as SF
 
 random.seed(321)
@@ -45,6 +46,8 @@ Byte = 8
 KiB = 1024 * Byte
 MiB = 1024 * KiB
 GiB = 1024 * MiB
+
+torch.cuda.synchronize()
 
 
 class sconce:
@@ -351,9 +354,21 @@ class sconce:
           float: The average latency of the model in milliseconds.
         """
         model = model.to("cpu")
+
         model.eval()
 
         dummy_input = dummy_input.to("cpu")
+
+        if self.snn:
+            if isinstance(model, nn.Sequential):
+                for layer_id in range(len(model)):
+                    layer = model[layer_id]
+                    if isinstance((layer), snntorch._neurons.leaky.Leaky):
+                        layer.mem = layer.mem.to("cpu")
+            else:
+                for module in model.modules():
+                    if isinstance((module), snntorch._neurons.leaky.Leaky):
+                        module.mem = module.mem.to("cpu")
 
         # warmup
         for _ in range(n_warmup):
@@ -463,7 +478,7 @@ class sconce:
                     and len(param.shape) > 2
                     and i_layer < (len(conv_layers) - 1)
                 ):
-                    self.model = sorted_model
+                    # self.model = sorted_model
                     self.model = self.channel_prune_layerwise(
                         sorted_model, sparsity, i_layer
                     )
@@ -487,7 +502,7 @@ class sconce:
                         param.copy_(param_clone)
                         accuracy.append(acc)
                         hit_flag = False
-        self.model = original_model
+        # self.model = original_model
 
         #     if verbose:
         #         print(
@@ -638,16 +653,20 @@ class sconce:
           None
         """
         original_experiment_name = self.experiment_name
-        original_dense_model = copy.deepcopy(self.model)
+        if self.snn:
+            original_dense_model = self.model
+        else:
+            original_dense_model = copy.deepcopy(self.model)
         torch.save(
-            copy.deepcopy(original_dense_model.state_dict()),
-            self.experiment_name + ".pth",
+            original_dense_model.state_dict(),
+            self.experiment_name + "_original_weights.pth",
         )
+        torch.save(original_dense_model, "original_model.pth")
 
         dense_model_size = self.get_model_size(
             model=self.model, count_nonzero_only=True
         )
-        print(f"\nOrigianl Dense Model Size Model={dense_model_size / MiB:.2f} MiB")
+        print(f"\nOriginal Dense Model Size Model={dense_model_size / MiB:.2f} MiB")
         dense_validation_acc = self.evaluate(verbose=False)
         print("Original Model Validation Accuracy:", dense_validation_acc, "%")
         self.dense_model_valid_acc = dense_validation_acc
@@ -657,6 +676,7 @@ class sconce:
             self.sensitivity_scan(
                 dense_model_accuracy=dense_validation_acc, verbose=False
             )
+            # self.sparsity_dict = {'0.weight': 0.6500000000000001, '3.weight': 0.5000000000000001, '7.weight': 0.7000000000000002}
             # self.sparsity_dict = {'backbone.conv0.weight': 0.20000000000000004, 'backbone.conv1.weight': 0.45000000000000007, 'backbone.conv2.weight': 0.25000000000000006, 'backbone.conv3.weight': 0.25000000000000006, 'backbone.conv4.weight': 0.25000000000000006, 'backbone.conv5.weight': 0.25000000000000006, 'backbone.conv6.weight': 0.3500000000000001, 'backbone.conv7.weight': 0.3500000000000001, 'classifier.weight': 0.7000000000000002}
 
             self.GMP_Pruning()  # FineGrained Pruning
@@ -668,7 +688,7 @@ class sconce:
             self.sensitivity_scan(
                 dense_model_accuracy=dense_validation_acc, verbose=False
             )
-            print("Channel-Wise Pruning")
+            print("\n Channel-Wise Pruning")
             # self.sparsity_dict = {'backbone.conv0.weight': 0.15000000000000002, 'backbone.conv1.weight': 0.15, 'backbone.conv2.weight': 0.15, 'backbone.conv3.weight': 0.15000000000000002, 'backbone.conv4.weight': 0.20000000000000004, 'backbone.conv5.weight': 0.20000000000000004, 'backbone.conv6.weight': 0.45000000000000007}
             print(f"Sparsity for each Layer: {self.sparsity_dict}")
             self.CWP_Pruning()  # Channelwise Pruning
@@ -680,14 +700,10 @@ class sconce:
             model=pruned_model, count_nonzero_only=True
         )
         pruned_validation_acc = self.evaluate(verbose=False)
-        torch.save(
-            copy.deepcopy(pruned_model.state_dict()),
-            self.experiment_name + "_pruned" + ".pth",
-        )
+
         print(
-            f"\nPruned model has size={pruned_model_size / MiB:.2f} MiB = {pruned_model_size / dense_model_size * 100:.2f}% of Original model size"
+            f"\nPruned Model has size={pruned_model_size / MiB:.2f} MiB(non-zeros) = {pruned_model_size / dense_model_size * 100:.2f}% of Original model size"
         )
-        #### Add Accuracy deviation
 
         if self.fine_tune:
             self.optimizer = torch.optim.SGD(
@@ -697,7 +713,6 @@ class sconce:
                 self.optimizer, self.num_finetune_epochs
             )
             self.experiment_name = self.experiment_name + "_pruned_" + "fine_tuning"
-            self.model = pruned_model
             self.train()
             pruned_model = copy.deepcopy(self.model)
 
@@ -707,9 +722,10 @@ class sconce:
         fine_tuned_validation_acc = self.evaluate(verbose=False)
 
         torch.save(
-            copy.deepcopy(pruned_model.state_dict()),
-            self.experiment_name + "_fine_tuned_pruned" + ".pth",
+            pruned_model.state_dict(),
+            self.experiment_name + "_pruned_fine_tuned_weights" + ".pth",
         )
+        torch.save(pruned_model, "pruned_model.pth")
         accuracies = [
             dense_validation_acc,
             pruned_validation_acc,
@@ -810,11 +826,25 @@ class sconce:
 
         Returns: None
         """
-        accuracies = accuracies
+        # accuracies = accuracies
         input_shape = list(next(iter(self.dataloader["test"]))[0].size())
         input_shape[0] = 1
         dummy_input = torch.randn(input_shape).to("cpu")
         pruned_fine_tuned_model = pruned_fine_tuned_model.to("cpu")
+
+        # Parse through snn model and send to cpu
+        if self.snn:
+            for model in [original_dense_model, pruned_fine_tuned_model]:
+                if isinstance(model, nn.Sequential):
+                    for layer_id in range(len(original_dense_model)):
+                        layer = original_dense_model[layer_id]
+                        if isinstance((layer), snntorch._neurons.leaky.Leaky):
+                            layer.mem = layer.mem.to("cpu")
+                else:
+                    for module in model.modules():
+                        if isinstance((layer), snntorch._neurons.leaky.Leaky):
+                            layer.mem = layer.mem.to("cpu")
+
         original_dense_model = original_dense_model.to("cpu")
         original_latency = self.measure_latency(
             model=original_dense_model, dummy_input=dummy_input
@@ -1040,20 +1070,22 @@ class sconce:
         # we only apply pruning to the backbone features
 
         # apply pruning. we naively keep the first k channels
-        assert len(all_convs) == len(all_bns)
+        # assert len(all_convs) == len(all_bns)
         # for i_ratio, p_ratio in enumerate(prune_ratio):
         prev_conv = all_convs[i_layer]
-        prev_bn = all_bns[i_layer]
+        if self.snn == False:
+            prev_bn = all_bns[i_layer]
         next_conv = all_convs[i_layer + 1]
         original_channels = prev_conv.out_channels  # same as next_conv.in_channels
         n_keep = self.get_num_channels_to_keep(original_channels, prune_ratio)
 
         # prune the output of the previous conv and bn
         prev_conv.weight.set_(prev_conv.weight.detach()[:n_keep])
-        prev_bn.weight.set_(prev_bn.weight.detach()[:n_keep])
-        prev_bn.bias.set_(prev_bn.bias.detach()[:n_keep])
-        prev_bn.running_mean.set_(prev_bn.running_mean.detach()[:n_keep])
-        prev_bn.running_var.set_(prev_bn.running_var.detach()[:n_keep])
+        if self.snn == False:
+            prev_bn.weight.set_(prev_bn.weight.detach()[:n_keep])
+            prev_bn.bias.set_(prev_bn.bias.detach()[:n_keep])
+            prev_bn.running_mean.set_(prev_bn.running_mean.detach()[:n_keep])
+            prev_bn.running_var.set_(prev_bn.running_var.detach()[:n_keep])
 
         # prune the input of the next conv (hint: just one line of code)
         ##################### YOUR CODE STARTS HERE #####################

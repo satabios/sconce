@@ -1,7 +1,7 @@
 Metadata-Version: 2.1
 Name: sconce
-Version: 0.65
-Summary: sconce: torch pipeliner
+Version: 0.66
+Summary: sconce: Compression and Deployment made Easy
 Home-page: https://github.com/satabios/sconce
 Author: Sathyaprakash Narayanan
 Author-email: Sathyaprakash Narayanan <snaray17@ucsc.edu>
