@@ -128,6 +128,7 @@ class sconce:
         self.layer_of_interest = []
         self.conv_layer = []
         self.linear_layer = []
+        self.handles = []
 
         self.bitwidth = 4
 
@@ -382,7 +383,7 @@ class sconce:
         for _ in range(n_test):
             _ = model(dummy_input)
         t2 = time.time()
-        return round((t2 - t1) / n_test * 1000, 1)  # average latency in ms
+        return round((t2 - t1) / n_test, 1)  # average latency in ms
 
     def plot_weight_distribution(self, bins=256, count_nonzero_only=False):
         """
@@ -692,10 +693,10 @@ class sconce:
 
         return prune
 
-    def find_instance(self, obj, object_of_importance):
+    def find_instance(self, obj, object_of_importance=(nn.Conv2d, nn.Linear)):
         if isinstance(obj, object_of_importance):
             if(self.prune_mode == "venum"):
-                obj.register_forward_hook(self.venum())
+                self.handles.append(obj.register_forward_hook(self.venum()))
             #Add Wanda and SparseGPT here
             else:
                 if object_of_importance == nn.Conv2d:
@@ -776,12 +777,14 @@ class sconce:
             self.CWP_Pruning()  # Channelwise Pruning
 
             self.fine_tune = True
-        # elif self.prune_mode == "venum":
-            #Find all conv/linear layers
-            #Attach forward hooks
-            #Run calibirated data
-            #Prune
-            #Remove Hooks
+        elif self.prune_mode == "venum":
+            self.find_instance(obj=self.model)
+            handles = self.handles
+
+
+            for handle in self.handles:
+                handle.remove()
+
 
         pruned_model = copy.deepcopy(self.model)
         pruned_model_size = self.get_model_size(
