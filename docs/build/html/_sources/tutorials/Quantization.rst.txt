@@ -1,3 +1,5 @@
+##%% md # Quantization
+
 Goals
 -----
 
@@ -596,7 +598,7 @@ applying the function above on a dummy tensor.
 
 
 
-.. image:: Quantization_files/Quantization_30_1.png
+.. image:: Quantization_files/Quantization_31_1.png
 
 
 The last code cell performs 2-bit k-means quantization and plots the
@@ -1056,7 +1058,7 @@ applying the function above on a dummy tensor.
 
 
 
-.. image:: Quantization_files/Quantization_48_1.png
+.. image:: Quantization_files/Quantization_49_1.png
 
 
 Now we have to determine the scaling factor :math:`S` and zero point
@@ -1190,7 +1192,7 @@ Let’s first see the distribution of weight values.
 
 
 
-.. image:: Quantization_files/Quantization_59_0.png
+.. image:: Quantization_files/Quantization_60_0.png
 
 
 As we can see from the histograms above, the distribution of weight
@@ -1287,11 +1289,11 @@ applying linear quantization on weights with different bitwidths.
 
 
 
-.. image:: Quantization_files/Quantization_65_0.png
+.. image:: Quantization_files/Quantization_66_0.png
 
 
 
-.. image:: Quantization_files/Quantization_65_1.png
+.. image:: Quantization_files/Quantization_66_1.png
 
 
 Quantized Inference
@@ -1484,7 +1486,7 @@ layer.
 
 
 
-.. image:: Quantization_files/Quantization_76_1.png
+.. image:: Quantization_files/Quantization_77_1.png
 
 
 Quantized Convolution

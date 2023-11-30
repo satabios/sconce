@@ -1,3 +1,6 @@
+Pruning
+-------
+
 .. code:: ipython3
 
     print('Installing torchprofile...')
@@ -433,7 +436,7 @@ in the dense model.
 
 
 
-.. image:: Pruning_files/Pruning_21_0.png
+.. image:: Pruning_files/Pruning_22_0.png
 
 
 Fine-grained Pruning
@@ -549,7 +552,7 @@ applying the function above on a dummy tensor.
 
 
 
-.. image:: Pruning_files/Pruning_29_0.png
+.. image:: Pruning_files/Pruning_30_0.png
 
 
 .. parsed-literal::
@@ -576,7 +579,7 @@ are only 10 nonzeros in the sparse tensor after pruning.
 
 
 
-.. image:: Pruning_files/Pruning_31_0.png
+.. image:: Pruning_files/Pruning_32_0.png
 
 
 .. parsed-literal::
@@ -798,7 +801,7 @@ take around 2 minutes to finish.
 
 
 
-.. image:: Pruning_files/Pruning_41_0.png
+.. image:: Pruning_files/Pruning_42_0.png
 
 
 #Parameters of each layer
@@ -831,7 +834,7 @@ Please run the following code cell to plot the distribution of
 
 
 
-.. image:: Pruning_files/Pruning_43_0.png
+.. image:: Pruning_files/Pruning_44_0.png
 
 
 Select Sparsity Based on Sensitivity Curves and #Parameters Distribution
@@ -914,7 +917,7 @@ defined ``sparsity_dict``, and print the information of sparse model.
 
 
 
-.. image:: Pruning_files/Pruning_47_3.png
+.. image:: Pruning_files/Pruning_48_3.png
 
 
 Finetune the fine-grained pruned model
