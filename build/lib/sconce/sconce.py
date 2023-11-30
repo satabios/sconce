@@ -378,7 +378,7 @@ class sconce:
         for _ in range(n_test):
             _ = model(dummy_input)
         t2 = time.time()
-        return round((t2 - t1) / n_test * 1000, 1)  # average latency in ms
+        return round((t2 - t1) / n_test, 1)  # average latency in ms
 
     def plot_weight_distribution(self, bins=256, count_nonzero_only=False):
         """
