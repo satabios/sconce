@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Pruning &mdash; sconce 0.57 documentation</title>
+  <title>Let’s First Evaluate the Accuracy and Model Size of Dense Model &mdash; sconce 0.57 documentation</title>
       <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
       <link rel="stylesheet" href="../_static/my_theme.css" type="text/css" />
@@ -22,7 +22,7 @@
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Quantization" href="Quantization.html" />
+    <link rel="next" title="Goals" href="Quantization.html" />
     <link rel="prev" title="Tutorials" href="index.html" /> 
 </head>
 
@@ -52,23 +52,28 @@
               <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../usage.html">Usage</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="index.html">Tutorials</a><ul class="current">
-<li class="toctree-l2 current"><a class="current reference internal" href="#">Pruning</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#lets-first-evaluate-the-accuracy-and-model-size-of-dense-model">Let’s First Evaluate the Accuracy and Model Size of Dense Model</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#lets-see-the-distribution-of-weight-values">Let’s see the distribution of weight values</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#fine-grained-pruning">Fine-grained Pruning</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Let’s First Evaluate the Accuracy and Model Size of Dense Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#lets-see-the-distribution-of-weight-values">Let’s see the distribution of weight values</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#fine-grained-pruning">Fine-grained Pruning</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#magnitude-based-pruning">Magnitude-based Pruning</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#sensitivity-scan">Sensitivity Scan</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#parameters-of-each-layer">#Parameters of each layer</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#select-sparsity-based-on-sensitivity-curves-and-parameters-distribution">Select Sparsity Based on Sensitivity Curves and #Parameters Distribution</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#finetune-the-fine-grained-pruned-model">Finetune the fine-grained pruned model</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#channel-pruning">Channel Pruning</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#channel-pruning">Channel Pruning</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#remove-channel-weights">Remove Channel Weights</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#ranking-channels-by-importance">Ranking Channels by Importance</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#measure-acceleration-from-pruning">Measure acceleration from pruning</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="Quantization.html">Quantization</a></li>
-<li class="toctree-l2"><a class="reference internal" href="Pipeline-Tutorial.html">sconce Pipeline Tutorial</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Quantization.html">Goals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Quantization.html#k-means-quantization-on-whole-model">K-Means Quantization on Whole Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Quantization.html#trained-k-means-quantization">Trained K-Means Quantization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Quantization.html#n-bit-integer"><em>n</em>-bit Integer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Quantization.html#special-case-linear-quantization-on-weight-tensor">Special case: linear quantization on weight tensor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Quantization.html#quantized-inference">Quantized Inference</a></li>
 </ul>
 </li>
 </ul>
@@ -88,7 +93,7 @@
   <ul class="wy-breadcrumbs">
       <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
           <li class="breadcrumb-item"><a href="index.html">Tutorials</a></li>
-      <li class="breadcrumb-item active">Pruning</li>
+      <li class="breadcrumb-item active">Let’s First Evaluate the Accuracy and Model Size of Dense Model</li>
       <li class="wy-breadcrumbs-aside">
             <a href="../_sources/tutorials/Pruning.rst.txt" rel="nofollow"> View page source</a>
       </li>
@@ -98,9 +103,7 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="pruning">
-<h1>Pruning<a class="headerlink" href="#pruning" title="Link to this heading"></a></h1>
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Installing torchprofile...&#39;</span><span class="p">)</span>
+  <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Installing torchprofile...&#39;</span><span class="p">)</span>
 <span class="o">!</span>pip<span class="w"> </span>install<span class="w"> </span>torchprofile<span class="w"> </span><span class="m">1</span>&gt;/dev/null
 <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;All required packages have been successfully installed!&#39;</span><span class="p">)</span>
 </pre></div>
@@ -426,7 +429,7 @@ All required packages have been successfully installed!
 </pre></div>
 </div>
 <section id="lets-first-evaluate-the-accuracy-and-model-size-of-dense-model">
-<h2>Let’s First Evaluate the Accuracy and Model Size of Dense Model<a class="headerlink" href="#lets-first-evaluate-the-accuracy-and-model-size-of-dense-model" title="Link to this heading"></a></h2>
+<h1>Let’s First Evaluate the Accuracy and Model Size of Dense Model<a class="headerlink" href="#lets-first-evaluate-the-accuracy-and-model-size-of-dense-model" title="Link to this heading"></a></h1>
 <p>Neural networks have become ubiquitous in many applications. Here we
 have loaded a pretrained VGG model for classifying images in CIFAR10
 dataset.</p>
@@ -456,7 +459,7 @@ and transmission of mobile applications incorporating DNNs.</p>
 accuracy.</p>
 </section>
 <section id="lets-see-the-distribution-of-weight-values">
-<h2>Let’s see the distribution of weight values<a class="headerlink" href="#lets-see-the-distribution-of-weight-values" title="Link to this heading"></a></h2>
+<h1>Let’s see the distribution of weight values<a class="headerlink" href="#lets-see-the-distribution-of-weight-values" title="Link to this heading"></a></h1>
 <p>Before we jump into pruning, let’s see the distribution of weight values
 in the dense model.</p>
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">plot_weight_distribution</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="mi">256</span><span class="p">,</span> <span class="n">count_nonzero_only</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
@@ -488,7 +491,7 @@ in the dense model.</p>
 <img alt="../_images/Pruning_21_0.png" src="../_images/Pruning_21_0.png" />
 </section>
 <section id="fine-grained-pruning">
-<h2>Fine-grained Pruning<a class="headerlink" href="#fine-grained-pruning" title="Link to this heading"></a></h2>
+<h1>Fine-grained Pruning<a class="headerlink" href="#fine-grained-pruning" title="Link to this heading"></a></h1>
 <p>In this section, we will implement and perform fine-grained pruning.</p>
 <p>Fine-grained pruning removes the synapses with lowest importance. The
 weight tensor <span class="math notranslate nohighlight">\(W\)</span> will become sparse after fine-grained pruning,
@@ -509,7 +512,6 @@ removed weight:</p>
 <span class="math notranslate nohighlight">\(W\)</span>, <span class="math notranslate nohighlight">\(\texttt{kthvalue}(X, k)\)</span> finds the <span class="math notranslate nohighlight">\(k\)</span>-th
 smallest value of tensor <span class="math notranslate nohighlight">\(X\)</span>, <span class="math notranslate nohighlight">\(v_{\mathrm{thr}}\)</span> is the
 threshold value.</p>
-</section>
 <section id="magnitude-based-pruning">
 <h2>Magnitude-based Pruning<a class="headerlink" href="#magnitude-based-pruning" title="Link to this heading"></a></h2>
 <p>For fine-grained pruning, a widely-used importance is the magnitude of
@@ -971,8 +973,9 @@ model.</p>
 </pre></div>
 </div>
 </section>
+</section>
 <section id="channel-pruning">
-<h2>Channel Pruning<a class="headerlink" href="#channel-pruning" title="Link to this heading"></a></h2>
+<h1>Channel Pruning<a class="headerlink" href="#channel-pruning" title="Link to this heading"></a></h1>
 <p>In this section, we will implement the channel pruning. Channel pruning
 removes an entire channel, so that it can achieve inference speed up on
 existing hardware like GPUs. Similarly, we remove the channels whose
@@ -990,7 +993,6 @@ weights are of smaller magnitudes (measured by Frobenius norm).</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">dense</span> <span class="n">model</span> <span class="n">has</span> <span class="n">accuracy</span><span class="o">=</span><span class="mf">92.95</span><span class="o">%</span>
 </pre></div>
 </div>
-</section>
 <section id="remove-channel-weights">
 <h2>Remove Channel Weights<a class="headerlink" href="#remove-channel-weights" title="Link to this heading"></a></h2>
 <p>Unlike fine-grained pruning, we can remove the weights entirely from the
@@ -1382,7 +1384,7 @@ the model size, computation, and latency of the pruned model.</p>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="index.html" class="btn btn-neutral float-left" title="Tutorials" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="Quantization.html" class="btn btn-neutral float-right" title="Quantization" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="Quantization.html" class="btn btn-neutral float-right" title="Goals" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>
