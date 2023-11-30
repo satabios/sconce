@@ -1,31 +1,7 @@
-.. code:: ipython3
+Compression Pipeline
+--------------------
 
-    !pip install sconce -q
-
-
-.. parsed-literal::
-
-    [2K     [90m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m [32m153.0/153.0 kB[0m [31m3.8 MB/s[0m eta [36m0:00:00[0m
-    [?25h  Installing build dependencies ... [?25l[?25hdone
-      Getting requirements to build wheel ... [?25l[?25hdone
-      Installing backend dependencies ... [?25l[?25hdone
-      Preparing metadata (pyproject.toml) ... [?25l[?25hdone
-    [2K     [90m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m [32m11.6/11.6 MB[0m [31m24.8 MB/s[0m eta [36m0:00:00[0m
-    [2K     [90m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m [32m18.2/18.2 MB[0m [31m51.3 MB/s[0m eta [36m0:00:00[0m
-    [2K     [90m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m [32m3.6/3.6 MB[0m [31m69.5 MB/s[0m eta [36m0:00:00[0m
-    [2K     [90m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m [32m109.0/109.0 kB[0m [31m14.6 MB/s[0m eta [36m0:00:00[0m
-    [2K     [90m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m [32m53.1/53.1 kB[0m [31m7.1 MB/s[0m eta [36m0:00:00[0m
-    [2K     [90m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m [32m1.6/1.6 MB[0m [31m81.1 MB/s[0m eta [36m0:00:00[0m
-    [?25h  Building wheel for lit (pyproject.toml) ... [?25l[?25hdone
-    [31mERROR: pip's dependency resolver does not currently take into account all the packages that are installed. This behaviour is the source of the following dependency conflicts.
-    lida 0.0.10 requires fastapi, which is not installed.
-    lida 0.0.10 requires kaleido, which is not installed.
-    lida 0.0.10 requires python-multipart, which is not installed.
-    lida 0.0.10 requires uvicorn, which is not installed.
-    cupy-cuda11x 11.0.0 requires numpy<1.26,>=1.20, but you have numpy 1.26.2 which is incompatible.
-    imageio 2.31.6 requires pillow<10.1.0,>=8.3.2, but you have pillow 10.1.0 which is incompatible.
-    tensorflow-probability 0.22.0 requires typing-extensions<4.6.0, but you have typing-extensions 4.8.0 which is incompatible.[0m[31m
-    [0m
+!pip install sconce -q
 
 .. code:: ipython3
 

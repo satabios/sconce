@@ -22,8 +22,7 @@
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="&lt;no title&gt;" href="Compression-Pipeline.html" />
-    <link rel="prev" title="Let’s First Evaluate the Accuracy and Model Size of Dense Model" href="Pruning.html" /> 
+    <link rel="prev" title="Pruning" href="Pruning.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -52,10 +51,16 @@
               <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../usage.html">Usage</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="index.html">Tutorials</a><ul class="current">
-<li class="toctree-l2"><a class="reference internal" href="Pruning.html">Let’s First Evaluate the Accuracy and Model Size of Dense Model</a></li>
-<li class="toctree-l2"><a class="reference internal" href="Pruning.html#lets-see-the-distribution-of-weight-values">Let’s see the distribution of weight values</a></li>
-<li class="toctree-l2"><a class="reference internal" href="Pruning.html#fine-grained-pruning">Fine-grained Pruning</a></li>
-<li class="toctree-l2"><a class="reference internal" href="Pruning.html#channel-pruning">Channel Pruning</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Compression-Pipeline.html">Compression Pipeline</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Pruning.html">Pruning</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Pruning.html#magnitude-based-pruning">Magnitude-based Pruning</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Pruning.html#sensitivity-scan">Sensitivity Scan</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Pruning.html#parameters-of-each-layer">#Parameters of each layer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Pruning.html#select-sparsity-based-on-sensitivity-curves-and-parameters-distribution">Select Sparsity Based on Sensitivity Curves and #Parameters Distribution</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Pruning.html#finetune-the-fine-grained-pruned-model">Finetune the fine-grained pruned model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Pruning.html#remove-channel-weights">Remove Channel Weights</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Pruning.html#ranking-channels-by-importance">Ranking Channels by Importance</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Pruning.html#measure-acceleration-from-pruning">Measure acceleration from pruning</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Goals</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#setup">Setup</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#lets-first-evaluate-the-accuracy-and-model-size-of-the-fp32-model">Let’s First Evaluate the Accuracy and Model Size of the FP32 Model</a></li>
@@ -99,7 +104,8 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="goals">
+  <p>##%% md # Quantization</p>
+<section id="goals">
 <h1>Goals<a class="headerlink" href="#goals" title="Link to this heading"></a></h1>
 <ul class="simple">
 <li><p>Understand the basic concept of <strong>quantization</strong></p></li>
@@ -644,7 +650,7 @@ applying the function above on a dummy tensor.</p>
 <span class="o">*</span> <span class="n">Test</span> <span class="n">passed</span><span class="o">.</span>
 </pre></div>
 </div>
-<img alt="../_images/Quantization_30_1.png" src="../_images/Quantization_30_1.png" />
+<img alt="../_images/Quantization_31_1.png" src="../_images/Quantization_31_1.png" />
 <p>The last code cell performs 2-bit k-means quantization and plots the
 tensor before and after the quantization. Each cluster is rendered with
 a unique color. There are 4 unique colors rendered in the quantized
@@ -992,7 +998,7 @@ applying the function above on a dummy tensor.</p>
 <span class="o">*</span> <span class="n">Test</span> <span class="n">passed</span><span class="o">.</span>
 </pre></div>
 </div>
-<img alt="../_images/Quantization_48_1.png" src="../_images/Quantization_48_1.png" />
+<img alt="../_images/Quantization_49_1.png" src="../_images/Quantization_49_1.png" />
 <p>Now we have to determine the scaling factor <span class="math notranslate nohighlight">\(S\)</span> and zero point
 <span class="math notranslate nohighlight">\(Z\)</span> for linear quantization.</p>
 <p>Recall that <a class="reference external" href="https://arxiv.org/pdf/1712.05877.pdf">linear
@@ -1107,7 +1113,7 @@ relationship between <span class="math notranslate nohighlight">\(r_{\mathrm{min
 <span class="n">plot_weight_distribution</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
 </pre></div>
 </div>
-<img alt="../_images/Quantization_59_0.png" src="../_images/Quantization_59_0.png" />
+<img alt="../_images/Quantization_60_0.png" src="../_images/Quantization_60_0.png" />
 <p>As we can see from the histograms above, the distribution of weight
 values are nearly symmetric about 0 (except for the classifier in this
 case). Therefore, we usually make zero point <span class="math notranslate nohighlight">\(Z=0\)</span> when
@@ -1186,8 +1192,8 @@ applying linear quantization on weights with different bitwidths.</p>
 <span class="n">peek_linear_quantization</span><span class="p">()</span>
 </pre></div>
 </div>
-<img alt="../_images/Quantization_65_0.png" src="../_images/Quantization_65_0.png" />
-<img alt="../_images/Quantization_65_1.png" src="../_images/Quantization_65_1.png" />
+<img alt="../_images/Quantization_66_0.png" src="../_images/Quantization_66_0.png" />
+<img alt="../_images/Quantization_66_1.png" src="../_images/Quantization_66_1.png" />
 </section>
 <section id="quantized-inference">
 <h1>Quantized Inference<a class="headerlink" href="#quantized-inference" title="Link to this heading"></a></h1>
@@ -1356,7 +1362,7 @@ layer.</p>
 <span class="o">*</span> <span class="n">Test</span> <span class="n">passed</span><span class="o">.</span>
 </pre></div>
 </div>
-<img alt="../_images/Quantization_76_1.png" src="../_images/Quantization_76_1.png" />
+<img alt="../_images/Quantization_77_1.png" src="../_images/Quantization_77_1.png" />
 <p>For quantized convolution layer, we first precompute
 <span class="math notranslate nohighlight">\(Q_{\mathrm{bias}}\)</span>. Recall that
 <span class="math notranslate nohighlight">\(Q_{\mathrm{bias}} = q_{\mathrm{bias}} - \mathrm{CONV}[Z_{\mathrm{input}}, q_{\mathrm{weight}}]\)</span>.</p>
@@ -1751,8 +1757,7 @@ accuracy as the <code class="docutils literal notranslate"><span class="pre">fp3
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="Pruning.html" class="btn btn-neutral float-left" title="Let’s First Evaluate the Accuracy and Model Size of Dense Model" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="Compression-Pipeline.html" class="btn btn-neutral float-right" title="&lt;no title&gt;" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="Pruning.html" class="btn btn-neutral float-left" title="Pruning" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
     </div>
 
   <hr/>
