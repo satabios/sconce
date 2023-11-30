@@ -21,7 +21,7 @@
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="=============================== ## Compression Pipeline" href="Compression-Pipeline.html" />
+    <link rel="next" title="&lt;no title&gt;" href="Compression-Pipeline.html" />
     <link rel="prev" title="Usage" href="../usage.html" /> 
 </head>
 
@@ -51,17 +51,16 @@
               <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../usage.html">Usage</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Tutorials</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="Compression-Pipeline.html">=============================== ## Compression Pipeline</a></li>
-<li class="toctree-l2"><a class="reference internal" href="Pruning.html">=============================== ## Pruning</a></li>
-<li class="toctree-l2"><a class="reference internal" href="Pruning.html#lets-first-evaluate-the-accuracy-and-model-size-of-dense-model">Let’s First Evaluate the Accuracy and Model Size of Dense Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Pruning.html">Let’s First Evaluate the Accuracy and Model Size of Dense Model</a></li>
 <li class="toctree-l2"><a class="reference internal" href="Pruning.html#lets-see-the-distribution-of-weight-values">Let’s see the distribution of weight values</a></li>
 <li class="toctree-l2"><a class="reference internal" href="Pruning.html#fine-grained-pruning">Fine-grained Pruning</a></li>
 <li class="toctree-l2"><a class="reference internal" href="Pruning.html#channel-pruning">Channel Pruning</a></li>
-<li class="toctree-l2"><a class="reference internal" href="Quantization.html">=============================== ## Quantization</a></li>
-<li class="toctree-l2"><a class="reference internal" href="Quantization.html#setup">Setup</a></li>
-<li class="toctree-l2"><a class="reference internal" href="Quantization.html#lets-first-evaluate-the-accuracy-and-model-size-of-the-fp32-model">Let’s First Evaluate the Accuracy and Model Size of the FP32 Model</a></li>
-<li class="toctree-l2"><a class="reference internal" href="Quantization.html#k-means-quantization">K-Means Quantization</a></li>
-<li class="toctree-l2"><a class="reference internal" href="Quantization.html#linear-quantization">Linear Quantization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Quantization.html">Goals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Quantization.html#k-means-quantization-on-whole-model">K-Means Quantization on Whole Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Quantization.html#trained-k-means-quantization">Trained K-Means Quantization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Quantization.html#n-bit-integer"><em>n</em>-bit Integer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Quantization.html#special-case-linear-quantization-on-weight-tensor">Special case: linear quantization on weight tensor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Quantization.html#quantized-inference">Quantized Inference</a></li>
 </ul>
 </li>
 </ul>
@@ -94,17 +93,16 @@
 <h1>Tutorials<a class="headerlink" href="#tutorials" title="Link to this heading"></a></h1>
 <div class="toctree-wrapper compound">
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="Compression-Pipeline.html">=============================== ## Compression Pipeline</a></li>
-<li class="toctree-l1"><a class="reference internal" href="Pruning.html">=============================== ## Pruning</a></li>
-<li class="toctree-l1"><a class="reference internal" href="Pruning.html#lets-first-evaluate-the-accuracy-and-model-size-of-dense-model">Let’s First Evaluate the Accuracy and Model Size of Dense Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Pruning.html">Let’s First Evaluate the Accuracy and Model Size of Dense Model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Pruning.html#lets-see-the-distribution-of-weight-values">Let’s see the distribution of weight values</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Pruning.html#fine-grained-pruning">Fine-grained Pruning</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Pruning.html#channel-pruning">Channel Pruning</a></li>
-<li class="toctree-l1"><a class="reference internal" href="Quantization.html">=============================== ## Quantization</a></li>
-<li class="toctree-l1"><a class="reference internal" href="Quantization.html#setup">Setup</a></li>
-<li class="toctree-l1"><a class="reference internal" href="Quantization.html#lets-first-evaluate-the-accuracy-and-model-size-of-the-fp32-model">Let’s First Evaluate the Accuracy and Model Size of the FP32 Model</a></li>
-<li class="toctree-l1"><a class="reference internal" href="Quantization.html#k-means-quantization">K-Means Quantization</a></li>
-<li class="toctree-l1"><a class="reference internal" href="Quantization.html#linear-quantization">Linear Quantization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Quantization.html">Goals</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Quantization.html#k-means-quantization-on-whole-model">K-Means Quantization on Whole Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Quantization.html#trained-k-means-quantization">Trained K-Means Quantization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Quantization.html#n-bit-integer"><em>n</em>-bit Integer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Quantization.html#special-case-linear-quantization-on-weight-tensor">Special case: linear quantization on weight tensor</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Quantization.html#quantized-inference">Quantized Inference</a></li>
 </ul>
 </div>
 </section>
@@ -114,7 +112,7 @@
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="../usage.html" class="btn btn-neutral float-left" title="Usage" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="Compression-Pipeline.html" class="btn btn-neutral float-right" title="=============================== ## Compression Pipeline" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="Compression-Pipeline.html" class="btn btn-neutral float-right" title="&lt;no title&gt;" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>
