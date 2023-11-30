@@ -8,6 +8,7 @@ Tutorials
     :titlesonly:
     :glob:
 
+    Compression-Pipeline
     Pruning
     Quantization
-    Compression-Pipeline
+    
