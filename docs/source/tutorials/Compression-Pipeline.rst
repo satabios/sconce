@@ -1,5 +1,6 @@
-Compression Pipeline
---------------------
+=============================== 
+   Compression Pipeline
+===============================
 
 !pip install sconce -q
 
