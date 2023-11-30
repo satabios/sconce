@@ -21,7 +21,7 @@
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Pruning" href="Pruning.html" />
+    <link rel="next" title="Let’s First Evaluate the Accuracy and Model Size of Dense Model" href="Pruning.html" />
     <link rel="prev" title="Usage" href="../usage.html" /> 
 </head>
 
@@ -51,9 +51,16 @@
               <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../usage.html">Usage</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Tutorials</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="Pruning.html">Pruning</a></li>
-<li class="toctree-l2"><a class="reference internal" href="Quantization.html">Quantization</a></li>
-<li class="toctree-l2"><a class="reference internal" href="Pipeline-Tutorial.html">sconce Pipeline Tutorial</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Pruning.html">Let’s First Evaluate the Accuracy and Model Size of Dense Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Pruning.html#lets-see-the-distribution-of-weight-values">Let’s see the distribution of weight values</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Pruning.html#fine-grained-pruning">Fine-grained Pruning</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Pruning.html#channel-pruning">Channel Pruning</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Quantization.html">Goals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Quantization.html#k-means-quantization-on-whole-model">K-Means Quantization on Whole Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Quantization.html#trained-k-means-quantization">Trained K-Means Quantization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Quantization.html#n-bit-integer"><em>n</em>-bit Integer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Quantization.html#special-case-linear-quantization-on-weight-tensor">Special case: linear quantization on weight tensor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Quantization.html#quantized-inference">Quantized Inference</a></li>
 </ul>
 </li>
 </ul>
@@ -84,55 +91,18 @@
              
   <section id="tutorials">
 <h1>Tutorials<a class="headerlink" href="#tutorials" title="Link to this heading"></a></h1>
-<p>The tutorial consists of a series of Google Colab notebooks. Static non-editable versions are also available.</p>
-<table class="docutils align-default">
-<colgroup>
-<col style="width: 18%" />
-<col style="width: 55%" />
-<col style="width: 27%" />
-</colgroup>
-<thead>
-<tr class="row-odd"><th class="head"><p>Tutorial</p></th>
-<th class="head"><p>Title</p></th>
-<th class="head"><p>Colab Link</p></th>
-</tr>
-</thead>
-<tbody>
-<tr class="row-even"><td><p><a class="reference external" href="https://sconce.readthedocs.io/en/latest/tutorials/Pruning.html">Pruning</a></p></td>
-<td><p>Pruning</p></td>
-<td><a class="reference external image-reference" href="https://colab.research.google.com/github/satabios/sconce/blob/master/tutorials/Pruning.ipynb"><img alt="Open In Colab" src="https://colab.research.google.com/assets/colab-badge.svg" /></a>
-</td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference external" href="https://sconce.readthedocs.io/en/latest/tutorials/Quantization.html">Quantization</a></p></td>
-<td><p>Quantization</p></td>
-<td><a class="reference external image-reference" href="https://colab.research.google.com/github/satabios/sconce/blob/master/tutorials/Quantization.ipynb"><img alt="Open In Colab" src="https://colab.research.google.com/assets/colab-badge.svg" /></a>
-</td>
-</tr>
-</tbody>
-</table>
-<table class="docutils align-default">
-<colgroup>
-<col style="width: 69%" />
-<col style="width: 31%" />
-</colgroup>
-<thead>
-<tr class="row-odd"><th class="head"><p>Pipeline</p></th>
-<th class="head"><p>Colab Link</p></th>
-</tr>
-</thead>
-<tbody>
-<tr class="row-even"><td><p><a class="reference external" href="https://sconce.readthedocs.io/en/latest/tutorials/Pipeline-Tutorial.html">Compression Pipeline</a></p></td>
-<td><a class="reference external image-reference" href="https://colab.research.google.com/github/satabios/sconce/blob/master/tutorials/Tutorial.ipynb"><img alt="Open In Colab" src="https://colab.research.google.com/assets/colab-badge.svg" /></a>
-</td>
-</tr>
-</tbody>
-</table>
-<p>Future tutorials on Pytorch Pipeliners, Model Compression and Efficient Inference are under development.</p>
 <div class="toctree-wrapper compound">
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="Pruning.html">Pruning</a></li>
-<li class="toctree-l1"><a class="reference internal" href="Quantization.html">Quantization</a></li>
-<li class="toctree-l1"><a class="reference internal" href="Pipeline-Tutorial.html">sconce Pipeline Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Pruning.html">Let’s First Evaluate the Accuracy and Model Size of Dense Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Pruning.html#lets-see-the-distribution-of-weight-values">Let’s see the distribution of weight values</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Pruning.html#fine-grained-pruning">Fine-grained Pruning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Pruning.html#channel-pruning">Channel Pruning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Quantization.html">Goals</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Quantization.html#k-means-quantization-on-whole-model">K-Means Quantization on Whole Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Quantization.html#trained-k-means-quantization">Trained K-Means Quantization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Quantization.html#n-bit-integer"><em>n</em>-bit Integer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Quantization.html#special-case-linear-quantization-on-weight-tensor">Special case: linear quantization on weight tensor</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Quantization.html#quantized-inference">Quantized Inference</a></li>
 </ul>
 </div>
 </section>
@@ -142,7 +112,7 @@
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="../usage.html" class="btn btn-neutral float-left" title="Usage" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="Pruning.html" class="btn btn-neutral float-right" title="Pruning" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="Pruning.html" class="btn btn-neutral float-right" title="Let’s First Evaluate the Accuracy and Model Size of Dense Model" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>
