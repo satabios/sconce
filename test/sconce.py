@@ -27,7 +27,7 @@ from torchprofile import profile_macs
 from torchvision.datasets import *
 from torchvision.transforms import *
 from tqdm import tqdm
-
+import gc
 from torchprofile import profile_macs
 
 from snntorch import utils
@@ -124,6 +124,10 @@ class sconce:
         self.snn = False
         self.snn_num_steps = 50
         self.accuracy_function = None
+
+        self.layer_of_interest = []
+        self.conv_layer = []
+        self.linear_layer = []
 
         self.bitwidth = 4
 
@@ -636,6 +640,83 @@ class sconce:
                     param, self.sparsity_dict[name]
                 )
 
+    def venum_prune(W, X, s, in_channel=0, kernel_size=0, cnn=False):
+
+        metric = W.abs() * X.norm(p=2, dim=0)  # get the venum pruning metric
+        _, sorted_idx = torch.sort(metric, dim=1)  # sort the weights per output
+        del metric
+        pruned_idx = sorted_idx[:, :int(in_channel * s)]  # get the indices of the weights to be pruned
+        zeros_tensor = torch.zeros_like(W)
+        # Use scatter_ to set the pruned indices to zero
+        with torch.no_grad():
+            W.scatter_(dim=1, index=pruned_idx, src=zeros_tensor)
+        if (cnn):
+            W = W.unflatten(dim=1, sizes=(in_channel, kernel_size[0], kernel_size[1]))
+
+        del X
+        gc.collect()
+        torch.cuda.empty_cache()
+
+        return W
+
+    def venum(self):
+        def prune(module, inp, out):
+
+            if (isinstance(module, nn.Conv2d)):
+
+                in_channel = module.in_channels
+                kernel_size = module.kernel_size
+                weights = module.weight.flatten(1).clone()
+
+                unfold = nn.Unfold(
+                    module.kernel_size,
+                    dilation=module.dilation,
+                    padding=module.padding,
+                    stride=module.stride
+                )
+                torch.cuda.empty_cache()
+                inp_unfolded = unfold(inp[0])
+                inp_unfolded = inp_unfolded.permute([1, 0, 2])
+                inp_unfolded = inp_unfolded.flatten(1).T
+
+                with torch.no_grad():
+                    module.weight.data = self.venum_prune(weights, inp_unfolded, self.channel_pruning_ratio, in_channel, kernel_size, cnn=True)
+                    del inp_unfolded, weights
+
+            elif (isinstance(module, nn.Linear)):
+                weights = module.weight
+                module.weight.data = self.venum_prune(W=weights, X=inp[0], s=self.channel_pruning_ratio, cnn=False)
+
+            gc.collect()
+            torch.cuda.empty_cache()
+
+        return prune
+
+    def find_instance(self, obj, object_of_importance):
+        if isinstance(obj, object_of_importance):
+            if(self.prune_mode == "venum"):
+                obj.register_forward_hook(self.venum())
+            #Add Wanda and SparseGPT here
+            else:
+                if object_of_importance == nn.Conv2d:
+                    self.conv_layer.append(obj)
+                elif object_of_importance == nn.BatchNorm2d:
+                    self.linear_layer.append(obj)
+            return
+
+        elif isinstance(obj, nn.Sequential):
+            for layer_id in range(len(obj)):
+                internal_obj = obj[layer_id]
+                self.find_instance(internal_obj, object_of_importance)
+        elif isinstance(obj, list):
+            for internal_obj in obj:
+                self.find_instance(internal_obj, object_of_importance)
+        elif hasattr(obj, "__class__"):
+            for internal_obj in obj.children():
+                self.find_instance(internal_obj, object_of_importance)
+        elif isinstance(obj, OrderedDict):
+            for key, value in obj.items():
+                self.find_instance(value, object_of_importance)
     def compress(self, verbose=True) -> None:
         """
         Compresses the neural network model using either Granular-Magnitude Pruning (GMP) or Channel-Wise Pruning (CWP).
@@ -655,13 +736,14 @@ class sconce:
         original_experiment_name = self.experiment_name
         if self.snn:
             original_dense_model = self.model
+
         else:
             original_dense_model = copy.deepcopy(self.model)
+            torch.save(original_dense_model, "original_model.pth")
         torch.save(
             original_dense_model.state_dict(),
             self.experiment_name + "_original_weights.pth",
         )
-        torch.save(original_dense_model, "original_model.pth")
 
         dense_model_size = self.get_model_size(
             model=self.model, count_nonzero_only=True
@@ -694,6 +776,12 @@ class sconce:
             self.CWP_Pruning()  # Channelwise Pruning
 
             self.fine_tune = True
+        # elif self.prune_mode == "venum":
+            #Find all conv/linear layers
+            #Attach forward hooks
+            #Run calibirated data
+            #Prune
+            #Remove Hooks
 
         pruned_model = copy.deepcopy(self.model)
         pruned_model_size = self.get_model_size(
@@ -725,7 +813,8 @@ class sconce:
             pruned_model.state_dict(),
             self.experiment_name + "_pruned_fine_tuned_weights" + ".pth",
         )
-        torch.save(pruned_model, "pruned_model.pth")
+        if self.snn == False:
+            torch.save(pruned_model, "pruned_model.pth")
         accuracies = [
             dense_validation_acc,
             pruned_validation_acc,
