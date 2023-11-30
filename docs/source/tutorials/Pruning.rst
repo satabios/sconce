@@ -1,7 +1,3 @@
-================
- Pruning
-================
-
 .. code:: ipython3
 
     print('Installing torchprofile...')
@@ -361,7 +357,7 @@ Load the pretrained model and the CIFAR-10 dataset.
 
 
 Let’s First Evaluate the Accuracy and Model Size of Dense Model
-----------------------------------------------------------------
+===============================================================
 
 Neural networks have become ubiquitous in many applications. Here we
 have loaded a pretrained VGG model for classifying images in CIFAR10
@@ -403,7 +399,7 @@ The goal of pruning is to reduce the model size while maintaining the
 accuracy.
 
 Let’s see the distribution of weight values
-----------------------------------------------------------------
+===========================================
 
 Before we jump into pruning, let’s see the distribution of weight values
 in the dense model.
@@ -441,7 +437,7 @@ in the dense model.
 
 
 Fine-grained Pruning
-----------------------------------------------------------------
+====================
 
 In this section, we will implement and perform fine-grained pruning.
 
@@ -1076,7 +1072,7 @@ model.
 
 
 Channel Pruning
-------------------
+===============
 
 In this section, we will implement the channel pruning. Channel pruning
 removes an entire channel, so that it can achieve inference speed up on

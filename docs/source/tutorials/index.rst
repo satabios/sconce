@@ -10,4 +10,4 @@ Tutorials
 
     Pruning
     Quantization
-    Pipeline-Tutorial
+    Compression-Pipeline

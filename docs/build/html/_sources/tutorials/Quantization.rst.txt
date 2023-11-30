@@ -1,8 +1,3 @@
-===================
-Quantization
-===================
-
-
 Goals
 -----
 
@@ -19,7 +14,7 @@ Goals
    approaches
 
 Setup
---------
+=====
 
 First, install the required packages and download the datasets and
 pretrained model. Here we use CIFAR10 dataset and VGG network which is
@@ -489,7 +484,7 @@ Load Pretrained Model
 
 
 Let’s First Evaluate the Accuracy and Model Size of the FP32 Model
-------------------------------------------------------------------
+==================================================================
 
 .. code:: ipython3
 
@@ -512,7 +507,7 @@ Let’s First Evaluate the Accuracy and Model Size of the FP32 Model
 
 
 K-Means Quantization
-----------------------------------------------------------------
+====================
 
 Network quantization compresses the network by reducing the bits per
 weight required to represent the deep network. The quantized network can
@@ -948,7 +943,7 @@ is less than 0.5.
 
 
 Linear Quantization
-------------------------
+===================
 
 In this section, we will implement and perform linear quantization.
 

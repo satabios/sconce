@@ -22,6 +22,15 @@ read value
 version="version = \"${value}\""
 sed -i "7s/.*/$version/" pyproject.toml
 
+
+#Generate rst for tutorials
+#Generate rst files
+tutorials_folder_path="tutorials"
+for file in "$tutorials_folder_path"/*.ipynb; do
+  jupyter nbconvert --to rst --output-dir="docs/source/tutorials/" "$file"
+done
+
+
 #Build Docs
 cd docs/
 make html
