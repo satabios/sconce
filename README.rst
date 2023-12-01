@@ -28,6 +28,8 @@ To bridge this gap, this package aids to perform a series of aids:
 * Leverage **Sparsity** in the model to make it more efficient for hardware Deployment/Inferences. 
 * **Deployments** of the model on hardware.
 * Support `Spiking Neural Networks(snnTorch) <https://github.com/jeshraghian/snntorch>`_ in this compression pipeline [Future integerations are expected].
+* **Auto-Sensitivity Scan**: Each model would require a set of ingredients of its own to make it efficient. sconce enables an auto-search algorithm that picks the best possible solution from a corpus amount of possible techniques in the fastest manner possible with the least amount of human intervention.
+
 
 If you like this project, please consider starring ⭐ this repo as it is the easiest and best way to support it.
 
