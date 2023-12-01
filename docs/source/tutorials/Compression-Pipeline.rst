@@ -138,7 +138,7 @@ Setup the Dataset
 
 .. parsed-literal::
 
-    100%|██████████| 170498071/170498071 [00:03<00:00, 48771323.02it/s]
+    100%|██████████| 170498071/170498071 [00:10<00:00, 16502419.73it/s]
 
 
 .. parsed-literal::
@@ -377,6 +377,80 @@ Benchmarking on RTX4090
 
 The catch is that GMP stores the zeros in the weight, which contributes
 to the higher values of model size.
+
+**Venum Pruning a better version of Wanda Pruning**
+
+.. code:: ipython3
+
+    from sconce import sconce
+    
+    sconces = sconce()
+    sconces.model = model
+    sconces.criterion = nn.CrossEntropyLoss()  # Loss
+    sconces.optimizer = optim.Adam(sconces.model.parameters(), lr=1e-4)
+    sconces.scheduler = optim.lr_scheduler.CosineAnnealingLR(sconces.optimizer, T_max=200)
+    sconces.dataloader = dataloader
+    sconces.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    sconces.experiment_name = "vgg-venum"
+    sconces.prune_mode = "venum"  # Supports Automated Pruning Ratio Detection
+    sconces.compress()
+
+
+.. parsed-literal::
+
+    
+    Original Dense Model Size Model=35.20 MiB
+
+
+.. parsed-literal::
+
+                                                         
+
+.. parsed-literal::
+
+    Original Model Validation Accuracy: 93.13627254509018 %
+    
+     Venum Pruning
+
+
+.. parsed-literal::
+
+                                                        
+
+.. parsed-literal::
+
+    Sensitivity Scan Time(secs): 114.05389285087585
+    Sparsity for each Layer: {'backbone.conv0.weight': 0.30000000000000004, 'backbone.conv1.weight': 0.45000000000000007, 'backbone.conv2.weight': 0.45000000000000007, 'backbone.conv3.weight': 0.5500000000000002, 'backbone.conv4.weight': 0.6000000000000002, 'backbone.conv5.weight': 0.7000000000000002, 'backbone.conv6.weight': 0.7500000000000002, 'backbone.conv7.weight': 0.8500000000000002, 'classifier.weight': 0.9500000000000003}
+    Pruning Time Consumed (secs): 1701416101.321775
+    Total Pruning Time Consumed (mins): 2.8907041509946185
+
+
+.. parsed-literal::
+
+                                                         
+
+.. parsed-literal::
+
+    
+    Pruned Model has size=9.94 MiB(non-zeros) = 28.22% of Original model size
+
+
+.. parsed-literal::
+
+                                                         
+
+.. parsed-literal::
+
+    
+     ................. Comparison Table  .................
+                    Original        Pruned          Reduction Ratio
+    Latency (ms)    5.9             5.8             1.0            
+    MACs (M)        606             606             1.0            
+    Param (M)       9.23            2.6             3.5            
+    Accuracies (%)  93.136          87.735          -5.401         
+    Fine-Tuned Sparse model has size=9.94 MiB = 28.22% of Original model size
+    Fine-Tuned Pruned Model Validation Accuracy: 87.73547094188376
+
 
 Spiking Neural Network Compression
 
