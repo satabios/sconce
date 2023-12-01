@@ -41,6 +41,10 @@ python3 setup.py clean --all sdist bdist_wheel
 twine upload dist/* --verbose
 
 #Push to GitHub
+
+git pull
+
+
 echo "Message to Push?"
 read message
 git_push "$message"
