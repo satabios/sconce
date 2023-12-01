@@ -207,7 +207,7 @@
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Downloading</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">www</span><span class="o">.</span><span class="n">cs</span><span class="o">.</span><span class="n">toronto</span><span class="o">.</span><span class="n">edu</span><span class="o">/~</span><span class="n">kriz</span><span class="o">/</span><span class="n">cifar</span><span class="o">-</span><span class="mi">10</span><span class="o">-</span><span class="n">python</span><span class="o">.</span><span class="n">tar</span><span class="o">.</span><span class="n">gz</span> <span class="n">to</span> <span class="n">data</span><span class="o">/</span><span class="n">cifar10</span><span class="o">/</span><span class="n">cifar</span><span class="o">-</span><span class="mi">10</span><span class="o">-</span><span class="n">python</span><span class="o">.</span><span class="n">tar</span><span class="o">.</span><span class="n">gz</span>
 </pre></div>
 </div>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>100%|██████████| 170498071/170498071 [00:03&lt;00:00, 48771323.02it/s]
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>100%|██████████| 170498071/170498071 [00:10&lt;00:00, 16502419.73it/s]
 </pre></div>
 </div>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Extracting</span> <span class="n">data</span><span class="o">/</span><span class="n">cifar10</span><span class="o">/</span><span class="n">cifar</span><span class="o">-</span><span class="mi">10</span><span class="o">-</span><span class="n">python</span><span class="o">.</span><span class="n">tar</span><span class="o">.</span><span class="n">gz</span> <span class="n">to</span> <span class="n">data</span><span class="o">/</span><span class="n">cifar10</span>
@@ -376,6 +376,48 @@ curacies
 </table>
 <p>The catch is that GMP stores the zeros in the weight, which contributes
 to the higher values of model size.</p>
+<p><strong>Venum Pruning a better version of Wanda Pruning</strong></p>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">sconce</span> <span class="kn">import</span> <span class="n">sconce</span>
+
+<span class="n">sconces</span> <span class="o">=</span> <span class="n">sconce</span><span class="p">()</span>
+<span class="n">sconces</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
+<span class="n">sconces</span><span class="o">.</span><span class="n">criterion</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">CrossEntropyLoss</span><span class="p">()</span>  <span class="c1"># Loss</span>
+<span class="n">sconces</span><span class="o">.</span><span class="n">optimizer</span> <span class="o">=</span> <span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span><span class="n">sconces</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">(),</span> <span class="n">lr</span><span class="o">=</span><span class="mf">1e-4</span><span class="p">)</span>
+<span class="n">sconces</span><span class="o">.</span><span class="n">scheduler</span> <span class="o">=</span> <span class="n">optim</span><span class="o">.</span><span class="n">lr_scheduler</span><span class="o">.</span><span class="n">CosineAnnealingLR</span><span class="p">(</span><span class="n">sconces</span><span class="o">.</span><span class="n">optimizer</span><span class="p">,</span> <span class="n">T_max</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span>
+<span class="n">sconces</span><span class="o">.</span><span class="n">dataloader</span> <span class="o">=</span> <span class="n">dataloader</span>
+<span class="n">sconces</span><span class="o">.</span><span class="n">device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s2">&quot;cuda&quot;</span> <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">()</span> <span class="k">else</span> <span class="s2">&quot;cpu&quot;</span><span class="p">)</span>
+<span class="n">sconces</span><span class="o">.</span><span class="n">experiment_name</span> <span class="o">=</span> <span class="s2">&quot;vgg-venum&quot;</span>
+<span class="n">sconces</span><span class="o">.</span><span class="n">prune_mode</span> <span class="o">=</span> <span class="s2">&quot;venum&quot;</span>  <span class="c1"># Supports Automated Pruning Ratio Detection</span>
+<span class="n">sconces</span><span class="o">.</span><span class="n">compress</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Original</span> <span class="n">Dense</span> <span class="n">Model</span> <span class="n">Size</span> <span class="n">Model</span><span class="o">=</span><span class="mf">35.20</span> <span class="n">MiB</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Original</span> <span class="n">Model</span> <span class="n">Validation</span> <span class="n">Accuracy</span><span class="p">:</span> <span class="mf">93.13627254509018</span> <span class="o">%</span>
+
+ <span class="n">Venum</span> <span class="n">Pruning</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Sensitivity</span> <span class="n">Scan</span> <span class="n">Time</span><span class="p">(</span><span class="n">secs</span><span class="p">):</span> <span class="mf">114.05389285087585</span>
+<span class="n">Sparsity</span> <span class="k">for</span> <span class="n">each</span> <span class="n">Layer</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;backbone.conv0.weight&#39;</span><span class="p">:</span> <span class="mf">0.30000000000000004</span><span class="p">,</span> <span class="s1">&#39;backbone.conv1.weight&#39;</span><span class="p">:</span> <span class="mf">0.45000000000000007</span><span class="p">,</span> <span class="s1">&#39;backbone.conv2.weight&#39;</span><span class="p">:</span> <span class="mf">0.45000000000000007</span><span class="p">,</span> <span class="s1">&#39;backbone.conv3.weight&#39;</span><span class="p">:</span> <span class="mf">0.5500000000000002</span><span class="p">,</span> <span class="s1">&#39;backbone.conv4.weight&#39;</span><span class="p">:</span> <span class="mf">0.6000000000000002</span><span class="p">,</span> <span class="s1">&#39;backbone.conv5.weight&#39;</span><span class="p">:</span> <span class="mf">0.7000000000000002</span><span class="p">,</span> <span class="s1">&#39;backbone.conv6.weight&#39;</span><span class="p">:</span> <span class="mf">0.7500000000000002</span><span class="p">,</span> <span class="s1">&#39;backbone.conv7.weight&#39;</span><span class="p">:</span> <span class="mf">0.8500000000000002</span><span class="p">,</span> <span class="s1">&#39;classifier.weight&#39;</span><span class="p">:</span> <span class="mf">0.9500000000000003</span><span class="p">}</span>
+<span class="n">Pruning</span> <span class="n">Time</span> <span class="n">Consumed</span> <span class="p">(</span><span class="n">secs</span><span class="p">):</span> <span class="mf">1701416101.321775</span>
+<span class="n">Total</span> <span class="n">Pruning</span> <span class="n">Time</span> <span class="n">Consumed</span> <span class="p">(</span><span class="n">mins</span><span class="p">):</span> <span class="mf">2.8907041509946185</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Pruned</span> <span class="n">Model</span> <span class="n">has</span> <span class="n">size</span><span class="o">=</span><span class="mf">9.94</span> <span class="n">MiB</span><span class="p">(</span><span class="n">non</span><span class="o">-</span><span class="n">zeros</span><span class="p">)</span> <span class="o">=</span> <span class="mf">28.22</span><span class="o">%</span> <span class="n">of</span> <span class="n">Original</span> <span class="n">model</span> <span class="n">size</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span> <span class="o">.................</span> <span class="n">Comparison</span> <span class="n">Table</span>  <span class="o">.................</span>
+                <span class="n">Original</span>        <span class="n">Pruned</span>          <span class="n">Reduction</span> <span class="n">Ratio</span>
+<span class="n">Latency</span> <span class="p">(</span><span class="n">ms</span><span class="p">)</span>    <span class="mf">5.9</span>             <span class="mf">5.8</span>             <span class="mf">1.0</span>
+<span class="n">MACs</span> <span class="p">(</span><span class="n">M</span><span class="p">)</span>        <span class="mi">606</span>             <span class="mi">606</span>             <span class="mf">1.0</span>
+<span class="n">Param</span> <span class="p">(</span><span class="n">M</span><span class="p">)</span>       <span class="mf">9.23</span>            <span class="mf">2.6</span>             <span class="mf">3.5</span>
+<span class="n">Accuracies</span> <span class="p">(</span><span class="o">%</span><span class="p">)</span>  <span class="mf">93.136</span>          <span class="mf">87.735</span>          <span class="o">-</span><span class="mf">5.401</span>
+<span class="n">Fine</span><span class="o">-</span><span class="n">Tuned</span> <span class="n">Sparse</span> <span class="n">model</span> <span class="n">has</span> <span class="n">size</span><span class="o">=</span><span class="mf">9.94</span> <span class="n">MiB</span> <span class="o">=</span> <span class="mf">28.22</span><span class="o">%</span> <span class="n">of</span> <span class="n">Original</span> <span class="n">model</span> <span class="n">size</span>
+<span class="n">Fine</span><span class="o">-</span><span class="n">Tuned</span> <span class="n">Pruned</span> <span class="n">Model</span> <span class="n">Validation</span> <span class="n">Accuracy</span><span class="p">:</span> <span class="mf">87.73547094188376</span>
+</pre></div>
+</div>
 <p>Spiking Neural Network Compression</p>
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">!</span>pip<span class="w"> </span>install<span class="w"> </span>snntorch<span class="w"> </span>-q
 </pre></div>
