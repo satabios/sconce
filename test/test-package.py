@@ -146,5 +146,6 @@ sconces.epochs = 1  # Number of time we iterate over the data
 sconces.num_finetune_epochs = 1
 sconces.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 sconces.experiment_name = "vgg-venum"
+self.fine_tune=True
 sconces.prune_mode = "venum"  # Supports Automated Pruning Ratio Detection
 sconces.compress()
