@@ -69,6 +69,7 @@
 <li class="toctree-l4"><a class="reference internal" href="#sconce.sconce.compare_models"><code class="docutils literal notranslate"><span class="pre">sconce.compare_models()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#sconce.sconce.compress"><code class="docutils literal notranslate"><span class="pre">sconce.compress()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#sconce.sconce.evaluate"><code class="docutils literal notranslate"><span class="pre">sconce.evaluate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sconce.sconce.find_instance"><code class="docutils literal notranslate"><span class="pre">sconce.find_instance()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#sconce.sconce.fine_grained_prune"><code class="docutils literal notranslate"><span class="pre">sconce.fine_grained_prune()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#sconce.sconce.forward_pass_snn"><code class="docutils literal notranslate"><span class="pre">sconce.forward_pass_snn()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#sconce.sconce.get_input_channel_importance"><code class="docutils literal notranslate"><span class="pre">sconce.get_input_channel_importance()</span></code></a></li>
@@ -82,6 +83,8 @@
 <li class="toctree-l4"><a class="reference internal" href="#sconce.sconce.plot_weight_distribution"><code class="docutils literal notranslate"><span class="pre">sconce.plot_weight_distribution()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#sconce.sconce.sensitivity_scan"><code class="docutils literal notranslate"><span class="pre">sconce.sensitivity_scan()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#sconce.sconce.train"><code class="docutils literal notranslate"><span class="pre">sconce.train()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sconce.sconce.venum"><code class="docutils literal notranslate"><span class="pre">sconce.venum()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sconce.sconce.venum_prune"><code class="docutils literal notranslate"><span class="pre">sconce.venum_prune()</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -322,6 +325,11 @@ Finally, the validation accuracy and the size of the pruned model are printed.</
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="sconce.sconce.find_instance">
+<span class="sig-name descname"><span class="pre">find_instance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obj</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">object_of_importance=(&lt;class</span> <span class="pre">'torch.nn.modules.conv.Conv2d'&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;class</span> <span class="pre">'torch.nn.modules.linear.Linear'&gt;)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sparsity=None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sconce.sconce.find_instance" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="sconce.sconce.fine_grained_prune">
 <span class="sig-name descname"><span class="pre">fine_grained_prune</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tensor</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sparsity</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="headerlink" href="#sconce.sconce.fine_grained_prune" title="Link to this definition"></a></dt>
 <dd><p>magnitude-based pruning for single tensor
@@ -498,6 +506,16 @@ in the highest accuracy for each layer.</p>
 If fine-tuning is enabled, the number of epochs is set to <cite>num_finetune_epochs</cite>.
 The function also saves the model state after each epoch if the validation accuracy improves.</p>
 </dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sconce.sconce.venum">
+<span class="sig-name descname"><span class="pre">venum</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sparstiy</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sconce.sconce.venum" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sconce.sconce.venum_prune">
+<span class="sig-name descname"><span class="pre">venum_prune</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">W</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">s</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">in_channel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cnn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sconce.sconce.venum_prune" title="Link to this definition"></a></dt>
+<dd></dd></dl>
 
 </dd></dl>
 

@@ -1,3 +1,4 @@
+import copy
 from collections import defaultdict, OrderedDict
 
 import numpy as np
@@ -94,77 +95,49 @@ for split in ["train", "test"]:
     )
 
 
-from sconce import sconce
+from sconcevenum import sconce
 
-#
-# model = torch.load('/home/sathya/Downloads/sconce/test/data/CWP/pruned_model.pth')
-# sconces = sconce()
-# sconces.model = model
-# sconces.criterion = nn.CrossEntropyLoss()  # Loss
-# sconces.optimizer = optim.Adam(sconces.model.parameters(), lr=1e-4)
-# sconces.scheduler = optim.lr_scheduler.CosineAnnealingLR(sconces.optimizer, T_max=200)
-# sconces.dataloader = dataloader
-# sconces.epochs = 1  # Number of time we iterate over the data
-# sconces.num_finetune_epochs = 5
-# sconces.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-# sconces.experiment_name = "cwp-gmp"
-# sconces.prune_mode = "GMP"  # Supports Automated Pruning Ratio Detection
-# Compress the model
-# sconces.compress()
-# original_model = torch.load('/home/sathya/Downloads/vgg.cifar.pretrained.pth')
-# pruned_model = torch.load('/home/sathya/Downloads/sconce/test/data/CWP-GMP/pruned_model.pth')
-# accuracies = []
-# sconces.model = original_model
-# accuracies.append(sconces.evaluate())
-# sconces.model = pruned_model
-# accuracies.append(sconces.evaluate())
-# sconces.compare_models(original_model, pruned_model, accuracies )
 print("\n=======================================================================")
 print("=======================================================================\n")
 
-# sconces = sconce()
-# sconces.model = model
-# sconces.criterion = nn.CrossEntropyLoss()  # Loss
-# sconces.optimizer = optim.Adam(sconces.model.parameters(), lr=1e-4)
-# sconces.scheduler = optim.lr_scheduler.CosineAnnealingLR(sconces.optimizer, T_max=200)
-# sconces.dataloader = dataloader
-# sconces.epochs = 1  # Number of time we iterate over the data
-# sconces.num_finetune_epochs = 1
-# sconces.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-# sconces.experiment_name = "vgg-cwp"
-# sconces.prune_mode = "CWP"  # Supports Automated Pruning Ratio Detection
-# # Compress the model
-# sconces.compress()
+sconces = sconce()
+sconces.model = copy.deepcopy(model)
+sconces.criterion = nn.CrossEntropyLoss()  # Loss
+sconces.optimizer = optim.Adam(sconces.model.parameters(), lr=1e-4)
+sconces.scheduler = optim.lr_scheduler.CosineAnnealingLR(sconces.optimizer, T_max=200)
+sconces.dataloader = dataloader
+sconces.epochs = 1  # Number of time we iterate over the data
+sconces.num_finetune_epochs = 1
+sconces.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+sconces.experiment_name = "cwp-gmp"
+sconces.prune_mode = "GMP"  # Supports Automated Pruning Ratio Detection
+# Compress the model
+sconces.compress()
 
-#
-# sconces = sconce()
-# sconces.model = model
-# sconces.criterion = nn.CrossEntropyLoss()  # Loss
-# sconces.optimizer = optim.Adam(sconces.model.parameters(), lr=1e-4)
-# sconces.scheduler = optim.lr_scheduler.CosineAnnealingLR(sconces.optimizer, T_max=200)
-# sconces.dataloader = dataloader
-# sconces.epochs = 1  # Number of time we iterate over the data
-# sconces.num_finetune_epochs = 1
-# sconces.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-# sconces.experiment_name = "best"
-# sconces.prune_mode = "GMP"  # Supports Automated Pruning Ratio Detection
-# # Compress the model
-# sconces.compress()
-#
-# # print("\n=======================================================================")
-# # print("=======================================================================\n")
-# #
-# # sconces.model = sconces.model
-# # sconces.epochs = 1  # Number of time we iterate over the data
-# # sconces.num_finetune_epochs = 5
-# # sconces.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-# # sconces.prune_mode = "GMP"  # Supports Automated Pruning Ratio Detection
-# # sconces.compress()
+print("\n=======================================================================")
+print("=======================================================================\n")
 
+sconces = sconce()
+sconces.model = copy.deepcopy(model)
+sconces.criterion = nn.CrossEntropyLoss()  # Loss
+sconces.optimizer = optim.Adam(sconces.model.parameters(), lr=1e-4)
+sconces.scheduler = optim.lr_scheduler.CosineAnnealingLR(sconces.optimizer, T_max=200)
+sconces.dataloader = dataloader
+sconces.epochs = 1  # Number of time we iterate over the data
+sconces.num_finetune_epochs = 1
+sconces.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+sconces.experiment_name = "vgg-cwp"
+sconces.prune_mode = "CWP"  # Supports Automated Pruning Ratio Detection
+# Compress the model
+sconces.compress()
+
+
+print("\n=======================================================================")
+print("=======================================================================\n")
 
 
 sconces = sconce()
-sconces.model = model
+sconces.model = copy.deepcopy(model)
 sconces.criterion = nn.CrossEntropyLoss()  # Loss
 sconces.optimizer = optim.Adam(sconces.model.parameters(), lr=1e-4)
 sconces.scheduler = optim.lr_scheduler.CosineAnnealingLR(sconces.optimizer, T_max=200)
@@ -174,5 +147,4 @@ sconces.num_finetune_epochs = 1
 sconces.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 sconces.experiment_name = "vgg-venum"
 sconces.prune_mode = "venum"  # Supports Automated Pruning Ratio Detection
-# Compress the model
 sconces.compress()
