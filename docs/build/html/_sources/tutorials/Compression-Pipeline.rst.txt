@@ -200,108 +200,10 @@ Train and Validated the Model on the given dataset
 Magic Happens here: Compress the model(GMP pruning is set as the prune
 mode[sconces.prune_mode] above)
 
-.. code:: ipython3
+Compress the model granuarly
+============================
 
-    # Compress the model granuarly
-    sconces.compress()
-
-
-.. parsed-literal::
-
-    
-    Original Dense Model Size Model=35.20 MiB
-
-
-.. parsed-literal::
-
-    
-
-.. parsed-literal::
-
-    Original Model Validation Accuracy: 92.92585170340682 %
-    Granular-Magnitude Pruning
-
-
-.. parsed-literal::
-
-    
-
-.. parsed-literal::
-
-    Sparsity for each Layer: {'backbone.conv0.weight': 0.45000000000000007, 'backbone.conv1.weight': 0.7000000000000002, 'backbone.conv2.weight': 0.5000000000000001, 'backbone.conv3.weight': 0.25000000000000006, 'backbone.conv4.weight': 0.3500000000000001, 'backbone.conv5.weight': 0.6000000000000002, 'backbone.conv6.weight': 0.25000000000000006, 'backbone.conv7.weight': 0.30000000000000004, 'classifier.weight': 0.8500000000000002}
-
-
-.. parsed-literal::
-
-    
-
-.. parsed-literal::
-
-    
-    Pruned Model has size=21.94 MiB(non-zeros) = 62.31% of Original model size
-
-
-.. parsed-literal::
-
-    
-
-.. parsed-literal::
-
-    Epoch:1 Train Loss: 0.00000 Validation Accuracy: 92.67535
-
-
-.. parsed-literal::
-
-    
-
-.. parsed-literal::
-
-    Epoch:2 Train Loss: 0.00000 Validation Accuracy: 92.74549
-
-
-.. parsed-literal::
-
-    
-
-.. parsed-literal::
-
-    Epoch:3 Train Loss: 0.00000 Validation Accuracy: 92.81563
-
-
-.. parsed-literal::
-
-    
-
-.. parsed-literal::
-
-    Epoch:4 Train Loss: 0.00000 Validation Accuracy: 92.78557
-
-
-.. parsed-literal::
-
-    
-
-.. parsed-literal::
-
-    Epoch:5 Train Loss: 0.00000 Validation Accuracy: 92.82565
-
-
-.. parsed-literal::
-
-    
-
-.. parsed-literal::
-
-    
-     ................. Comparison Table  .................
-                    Original        Pruned          Reduction Ratio
-    Latency (ms)    34800.0         33400.0         1.0            
-    MACs (M)        606             606             1.0            
-    Param (M)       9.23            5.75            1.6            
-    Accuracies (%)  92.926          92.826          -0.1           
-    Fine-Tuned Sparse model has size=21.94 MiB = 62.31% of Original model size
-    Fine-Tuned Pruned Model Validation Accuracy: 92.82565130260521
-
+sconces.compress()
 
 **Channel-Wise Pruning**
 
@@ -415,7 +317,7 @@ mode[sconces.prune_mode] above)
     
      ................. Comparison Table  .................
                     Original        Pruned          Reduction Ratio
-    Latency (ms)    38700.0         21200.0         1.8            
+    Latency (ms)    3.87            2.12            1.8            
     MACs (M)        606             410             1.5            
     Param (M)       5.75            5.44            1.1            
     Accuracies (%)  92.826          90.591          -2.234         
@@ -453,7 +355,7 @@ Benchmarking on RTX4090
 |          |          |          |          | eduction | eduction |
 |          |          |          |          | Ratio    | Ratio    |
 +==========+==========+==========+==========+==========+==========+
-| *        | 5900     | 4200     | 5700     | 1.4      | 1        |
+| *        | 5.90     | 4.20     | 5.70     | 1.4      | 1        |
 | *Latency |          |          |          |          |          |
 | (ms)     |          |          |          |          |          |
 | [↓]**    |          |          |          |          |          |
@@ -655,7 +557,7 @@ Spiking Neural Network Compression
     
      ................. Comparison Table  .................
                     Original        Pruned          Reduction Ratio
-    Latency (ms)    20900.0         14300.0         1.5            
+    Latency (ms)    2.09            1.43            1.5            
     MACs (M)        160             160             1.0            
     Param (M)       0.01            0.01            1.0            
     Accuracies (%)  97.115          95.974          -1.142         

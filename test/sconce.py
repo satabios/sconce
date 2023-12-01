@@ -124,11 +124,14 @@ class sconce:
         self.snn = False
         self.snn_num_steps = 50
         self.accuracy_function = None
+        self.original_dense_model = None
+        self.layer_iter_id =0
 
-        self.layer_of_interest = []
         self.conv_layer = []
         self.linear_layer = []
         self.handles = []
+        self.layer_prune_ratio = []
+        self.layer_idx = 0
 
         self.bitwidth = 4
 
@@ -252,6 +255,10 @@ class sconce:
             for i, data in enumerate(loader):
                 images, labels = data
                 images, labels = images.to(self.device), labels.to(self.device)
+                if (self.prune_mode == "venum" ):
+                    out = self.model(images)
+                    total = len(images)
+                    break
                 if self.snn:
                     outputs = self.forward_pass_snn(images, mem_out_rec=None)
                     correct += SF.accuracy_rate(outputs, labels) * outputs.size(1)
@@ -262,6 +269,8 @@ class sconce:
                     _, predicted = torch.max(outputs.data, 1)
                     total += labels.size(0) - 1
                     correct += (predicted == labels).sum().item()
+
+
             acc = 100 * correct / total
             if verbose:
                 print("Test Accuracy: {} %".format(acc))
@@ -448,23 +457,30 @@ class sconce:
         sparsities = np.flip(np.arange(start=scan_start, stop=scan_end, step=scan_step))
         accuracies = []
         named_conv_weights = [
-            (name, param)
+            (name, param, param.shape)
             for (name, param) in self.model.named_parameters()
             if param.dim() > 1
         ]
-        original_model = copy.deepcopy(self.model)
-        original_dense_model_accuracy = self.evaluate()
+
+        if(self.prune_mode =="venum"):
+            self.prune_mode = "not_venum"
+        original_dense_model_accuracy = self.evaluate(Tqdm=False)
+        self.prune_mode = "venum"
+
         conv_layers = [
             module for module in self.model.modules() if (isinstance(module, nn.Conv2d))
         ]
-        linear_layers = [
-            module for module in self.model.modules() if (isinstance(module, nn.Linear))
+        all_layer_modules = [
+            (name, module, module.shape) for name, module in self.model.named_parameters()
         ]
 
         if self.prune_mode == "CWP":
             sorted_model = copy.deepcopy(self.apply_channel_sorting())
         layer_iter = tqdm(named_conv_weights, desc="layer", leave=False)
-        for i_layer, (name, param) in enumerate(layer_iter):
+        # for i_layer, (name, param, param_shape) in enumerate(layer_iter):
+        for i_layer, (name, param) in enumerate(self.model.named_parameters()):
+            # param = module.weight.data
+
             param_clone = param.detach().clone()
             accuracy = []
             desc = None
@@ -475,6 +491,16 @@ class sconce:
                 picker = sparsities
             hit_flag = False
             for sparsity in picker:
+                # if self.prune_mode == "venum":
+                #     # torch.Size([512, 512, 3, 3])
+                #     # torch.Size([10, 512])
+                #     layer_len = len(param.shape)
+                #     if(layer_len==2): #Linear
+                #         self.handles.append(param.register_forward_hook(self.venum()))
+                #
+                #     elif(layer_len==4): #Conv2d
+                #         self.handles.append(param.register_forward_hook(self.venum()))
+
                 if self.prune_mode == "GMP":
                     self.fine_grained_prune(param.detach(), sparsity=sparsity)
                     hit_flag = True
@@ -504,77 +530,14 @@ class sconce:
                         self.sparsity_dict[name] = best_possible_sparsity
                     else:
                         # restore
+
                         param.copy_(param_clone)
                         accuracy.append(acc)
                         hit_flag = False
-        # self.model = original_model
 
-        #     if verbose:
-        #         print(
-        #             f'\r    sparsity=[{",".join(["{:.2f}".format(x) for x in sparsities])}]: accuracy=[{", ".join(["{:.2f}%".format(x) for x in accuracy])}]',
-        #             end="",
-        #         )
-        #     accuracies.append(accuracy)
-        #
-        #     self.degradation_value_local = self.degradation_value
-        #
-        #     final_values_test = accuracies - np.asarray(self.dense_model_valid_acc)
-        #     # print("Initial:", self.degradation_value_local)
-        #     while len(final_values_test[final_values_test > 0]) == 0:
-        #         # print("Updated:", self.degradation_value_local)
-        #         self.degradation_value_local += (
-        #             0.5  # Small Increment to get a good degradation level
-        #         )
-        #         if self.degradation_value_local > 15:  # Max Slack for Sparsity Value
-        #             break
-        #         final_values_test = accuracies - np.asarray(self.dense_model_valid_acc)
-        #
-        #     final_values = accuracies - np.asarray(self.dense_model_valid_acc)
-        #     final_values_index_of_interest = np.where(
-        #         final_values > 0,
-        #         final_values < self.degradation_value_local,
-        #         final_values,
-        #     )
-        #     if (
-        #         len(final_values_index_of_interest[final_values_index_of_interest == 1])
-        #         >= 1
-        #     ):
-        #         selected_sparsity = sparsities[
-        #             np.where(final_values_index_of_interest == 1)[1][-1]
-        #         ]
-        #         self.sparsity_dict[name] = selected_sparsity
-        #     else:
-        #         self.sparsity_dict[name] = 0.0
-        #
-        # if verbose:
-        #     lower_bound_accuracy = 100 - (100 - dense_model_accuracy) * 1.5
-        #     fig, axes = plt.subplots(
-        #         3, int(math.ceil(len(accuracies) / 3)), figsize=(15, 8)
-        #     )
-        #     axes = axes.ravel()
-        #     plot_index = 0
-        #     for name, param in self.model.named_parameters():
-        #         if param.dim() > 1:
-        #             ax = axes[plot_index]
-        #             curve = ax.plot(sparsities, accuracies[plot_index])
-        #             line = ax.plot(sparsities, [lower_bound_accuracy] * len(sparsities))
-        #             ax.set_xticks(np.arange(start=0.4, stop=1.0, step=0.1))
-        #             ax.set_ylim(80, 95)
-        #             ax.set_title(name)
-        #             ax.set_xlabel("sparsity")
-        #             ax.set_ylabel("top-1 accuracy")
-        #             ax.legend(
-        #                 [
-        #                     "accuracy after pruning",
-        #                     f"{lower_bound_accuracy / dense_model_accuracy * 100:.0f}% of dense model accuracy",
-        #                 ]
-        #             )
-        #             ax.grid(axis="x")
-        #             plot_index += 1
-        #     fig.suptitle("Sensitivity Curves: Validation Accuracy vs. Pruning Sparsity")
-        #     fig.tight_layout()
-        #     fig.subplots_adjust(top=0.925)
-        #     plt.show()
+            if (self.prune_mode == "venum"):
+                self.model = copy.deepcopy(self.original_dense_model)
+
 
     def fine_grained_prune(self, tensor: torch.Tensor, sparsity: float) -> torch.Tensor:
         """
@@ -641,22 +604,22 @@ class sconce:
                     param, self.sparsity_dict[name]
                 )
 
-    def venum_prune(W, X, s, in_channel=0, kernel_size=0, cnn=False):
+    def venum_prune(self, W, X, s, in_channel=0, kernel_size=0, cnn=False):
 
         metric = W.abs() * X.norm(p=2, dim=0)  # get the venum pruning metric
         _, sorted_idx = torch.sort(metric, dim=1)  # sort the weights per output
-        del metric
         pruned_idx = sorted_idx[:, :int(in_channel * s)]  # get the indices of the weights to be pruned
-        zeros_tensor = torch.zeros_like(W)
-        # Use scatter_ to set the pruned indices to zero
+        if(cnn):
+            pruned_idx = sorted_idx[:, :int(in_channel * kernel_size[0]*kernel_size[1]* s)]
+
         with torch.no_grad():
+            zeros_tensor = torch.zeros_like(W)
+            # Use scatter_ to set the pruned indices to zero
             W.scatter_(dim=1, index=pruned_idx, src=zeros_tensor)
         if (cnn):
             W = W.unflatten(dim=1, sizes=(in_channel, kernel_size[0], kernel_size[1]))
 
-        del X
-        gc.collect()
-        torch.cuda.empty_cache()
+
 
         return W
 
@@ -681,43 +644,45 @@ class sconce:
                 inp_unfolded = inp_unfolded.flatten(1).T
 
                 with torch.no_grad():
-                    module.weight.data = self.venum_prune(weights, inp_unfolded, self.channel_pruning_ratio, in_channel, kernel_size, cnn=True)
-                    del inp_unfolded, weights
-
+                    sparsity = self.channel_pruning_ratio[self.layer_idx]
+                    if(sparsity>0):
+                        module.weight.data =  self.venum_prune(W = weights, X=inp_unfolded, s=sparsity, in_channel=in_channel, kernel_size=kernel_size, cnn=True)
             elif (isinstance(module, nn.Linear)):
-                weights = module.weight
-                module.weight.data = self.venum_prune(W=weights, X=inp[0], s=self.channel_pruning_ratio, cnn=False)
+                sparsity = self.channel_pruning_ratio[self.layer_idx]
+                if (sparsity > 0):
+                    module.weight.data = self.venum_prune(W=module.weight, X=inp[0], s=sparsity, cnn=False)
 
             gc.collect()
             torch.cuda.empty_cache()
 
         return prune
 
-    def find_instance(self, obj, object_of_importance=(nn.Conv2d, nn.Linear)):
-        if isinstance(obj, object_of_importance):
-            if(self.prune_mode == "venum"):
-                self.handles.append(obj.register_forward_hook(self.venum()))
-            #Add Wanda and SparseGPT here
-            else:
-                if object_of_importance == nn.Conv2d:
-                    self.conv_layer.append(obj)
-                elif object_of_importance == nn.BatchNorm2d:
-                    self.linear_layer.append(obj)
-            return
-
-        elif isinstance(obj, nn.Sequential):
-            for layer_id in range(len(obj)):
-                internal_obj = obj[layer_id]
-                self.find_instance(internal_obj, object_of_importance)
-        elif isinstance(obj, list):
-            for internal_obj in obj:
-                self.find_instance(internal_obj, object_of_importance)
-        elif hasattr(obj, "__class__"):
-            for internal_obj in obj.children():
-                self.find_instance(internal_obj, object_of_importance)
-        elif isinstance(obj, OrderedDict):
-            for key, value in obj.items():
-                self.find_instance(value, object_of_importance)
+    # def find_instance(self, obj, object_of_importance=(nn.Conv2d, nn.Linear)):
+    #     if isinstance(obj, object_of_importance):
+    #         if(self.prune_mode == "venum"):
+    #             self.layer_prune_ratio.append(0)
+    #             self.handles.append(obj.register_forward_hook(self.venum()))
+    #         #Add Wanda and SparseGPT here
+    #         else:
+    #             if object_of_importance == nn.Conv2d:
+    #                 self.conv_layer.append(obj)
+    #             elif object_of_importance == nn.BatchNorm2d:
+    #                 self.linear_layer.append(obj)
+    #         return
+    #
+    #     elif isinstance(obj, nn.Sequential):
+    #         for layer_id in range(len(obj)):
+    #             internal_obj = obj[layer_id]
+    #             self.find_instance(internal_obj, object_of_importance)
+    #     elif isinstance(obj, list):
+    #         for internal_obj in obj:
+    #             self.find_instance(internal_obj, object_of_importance)
+    #     elif hasattr(obj, "__class__"):
+    #         for internal_obj in obj.children():
+    #             self.find_instance(internal_obj, object_of_importance)
+    #     elif isinstance(obj, OrderedDict):
+    #         for key, value in obj.items():
+    #             self.find_instance(value, object_of_importance)
     def compress(self, verbose=True) -> None:
         """
         Compresses the neural network model using either Granular-Magnitude Pruning (GMP) or Channel-Wise Pruning (CWP).
@@ -736,13 +701,13 @@ class sconce:
         """
         original_experiment_name = self.experiment_name
         if self.snn:
-            original_dense_model = self.model
+            self.original_dense_model = self.model
 
         else:
-            original_dense_model = copy.deepcopy(self.model)
-            torch.save(original_dense_model, "original_model.pth")
+            self.original_dense_model = copy.deepcopy(self.model)
+            torch.save(self.original_dense_model, "original_model.pth")
         torch.save(
-            original_dense_model.state_dict(),
+            self.original_dense_model.state_dict(),
             self.experiment_name + "_original_weights.pth",
         )
 
@@ -777,13 +742,29 @@ class sconce:
             self.CWP_Pruning()  # Channelwise Pruning
 
             self.fine_tune = True
+
+
         elif self.prune_mode == "venum":
-            self.find_instance(obj=self.model)
-            handles = self.handles
+            self.sensitivity_scan(
+                dense_model_accuracy=dense_validation_acc, verbose=False
+            )
+            print(f"Sparsity for each Layer: {self.sparsity_dict}")
+            self.prune_mode = "BRRR"
+            self.evaluate(verbose=True)
+            self.prune_mode = "venum"
+            for l_id in range:
+                self.layer_idx = l_id
+                self.find_instance(obj=self.model)
+
+            #Run through calibiration Dataset
+            self.evaluate()
 
 
             for handle in self.handles:
                 handle.remove()
+
+            self.prune_mode="BRRR"
+            self.evaluate(verbose=True)
 
 
         pruned_model = copy.deepcopy(self.model)
@@ -823,7 +804,7 @@ class sconce:
             pruned_validation_acc,
             fine_tuned_validation_acc,
         ]
-        self.compare_models(original_dense_model, pruned_model, accuracies)
+        self.compare_models(self.original_dense_model, pruned_model, accuracies)
 
         if verbose:
             print(
