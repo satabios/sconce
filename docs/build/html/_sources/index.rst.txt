@@ -7,4 +7,5 @@ sconce Documentation
    :maxdepth: 2
 
    usage
+   Model Compression Techniques
    tutorials/index
