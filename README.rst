@@ -24,7 +24,7 @@ solve complex problems with such ease.
 .. image:: https://github.com/satabios/sconce/blob/main/docs/source/images/sconce-pipeline.png?raw=true
         :align: center
         :width: 1000
-        :height: 400
+        :height: 350
 
 To bridge this gap, this package aids to perform a series of aids:
 
