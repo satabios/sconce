@@ -17,13 +17,13 @@ for file in "$tutorials_folder_path"/*.ipynb; do
   jupyter nbconvert --to rst --output-dir="docs/source/tutorials/" "$file"
 done
 
-
+git pull
 
 cd docs/
 make html
 cd ../
 
-git pull
+
 echo "Message to Push?"
 read message
 git_push "$message"
