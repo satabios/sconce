@@ -20,6 +20,12 @@ and thus we comprehend the universe through mathematical models. One such ideati
 that we use to train our models. However, the brain does not use gradient descent to learn. It is still a mystery how the brain learns and how it is able to
 solve complex problems with such ease.
 
+
+.. image:: https://github.com/satabios/sconce/blob/main/docs/source/images/sconce-pipeline.png?raw=true
+        :align: center
+        :width: 1000
+        :height: 400
+
 To bridge this gap, this package aids to perform a series of aids:
 
 * Make **Training**, **Testing**, **Inference**, **Model Profiling**, etc.. pipelined. Thus easing your way through research and development.
