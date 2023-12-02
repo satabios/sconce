@@ -23,6 +23,7 @@ cd docs/
 make html
 cd ../
 
+git pull
 echo "Message to Push?"
 read message
 git_push "$message"

@@ -122,6 +122,7 @@ Features
 ------------
 
 .. automodule:: sconce
+    :imported-members:
     :members:
     :undoc-members:
     :show-inheritance:
