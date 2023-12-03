@@ -57,7 +57,7 @@ setup(
     include_package_data=True,
     keywords="sconce",
     name="sconce",
-    packages=find_packages(include=["sconce"]),
+    packages=find_packages(exclude=['test']),
     test_suite="tests",
     tests_require=test_requirements,
     url="https://github.com/satabios/sconce",
