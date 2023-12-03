@@ -9,8 +9,8 @@ project = 'sconce'
 copyright = '2023, Sathyaprakash'
 author = 'Sathyaprakash'
 
-release = '0.72'
-version = '0.72.0'
+release = '0.57'
+version = '0.57.0'
 
 # -- General configuration
 html_logo = "https://github.com/satabios/sconce/blob/master/docs/source/images/sconce-punch-bk_removed.png?raw=true"
