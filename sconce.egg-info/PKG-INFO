@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: sconce
-Version: 0.72
+Version: 0.73
 Summary: sconce: Compression and Deployment made Easy
 Home-page: https://github.com/satabios/sconce
 Author: Sathyaprakash Narayanan
@@ -44,6 +44,12 @@ and thus we comprehend the universe through mathematical models. One such ideati
 that we use to train our models. However, the brain does not use gradient descent to learn. It is still a mystery how the brain learns and how it is able to
 solve complex problems with such ease.
 
+
+.. image:: https://github.com/satabios/sconce/blob/main/docs/source/images/sconce-pipeline.png?raw=true
+        :align: center
+       
+
+
 To bridge this gap, this package aids to perform a series of aids:
 
 * Make **Training**, **Testing**, **Inference**, **Model Profiling**, etc.. pipelined. Thus easing your way through research and development.
@@ -52,6 +58,8 @@ To bridge this gap, this package aids to perform a series of aids:
 * Leverage **Sparsity** in the model to make it more efficient for hardware Deployment/Inferences. 
 * **Deployments** of the model on hardware.
 * Support `Spiking Neural Networks(snnTorch) <https://github.com/jeshraghian/snntorch>`_ in this compression pipeline [Future integerations are expected].
+* **Auto-Sensitivity Scan**: Each model would require a set of ingredients of its own to make it efficient. sconce enables an auto-search algorithm that picks the best possible solution from a corpus amount of possible techniques in the fastest manner possible with the least amount of human intervention.
+
 
 If you like this project, please consider starring ⭐ this repo as it is the easiest and best way to support it.
 
