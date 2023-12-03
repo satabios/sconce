@@ -13,7 +13,10 @@ release = '0.57'
 version = '0.57.0'
 
 
-sys.path.insert(0, os.path.abspath(".."))
+sys.path.insert(0, os.path.abspath("..")
+
+
+html_theme = 'sphinx_rtd_theme'
 # -- General configuration
 html_logo = "https://github.com/satabios/sconce/blob/master/docs/source/images/sconce-punch-bk_removed.png?raw=true"
 
@@ -36,7 +39,7 @@ templates_path = ['_templates']
 
 # -- Options for HTML output
 
-html_theme = 'sphinx_rtd_theme'
+
 
 # -- Options for EPUB output
 epub_show_urls = 'footnote'
