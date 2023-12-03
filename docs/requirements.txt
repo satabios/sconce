@@ -25,6 +25,7 @@ six>=1.16.0
 sympy>=1.12
 torch
 snntorch
+sphinx_rtd_theme
 torchprofile>=0.0.4
 torchvision>=0.15.2
 torchprofile>=0.0.4

@@ -23,7 +23,7 @@ extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
     'sphinx.ext.intersphinx',
-    'sphinx_rtd_theme'
+    'sphinx_rtd_theme',
 ]
 html_logo = "images/sconce-punch-bk_removed.png"
 
