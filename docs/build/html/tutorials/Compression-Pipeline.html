@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Compress the model granuarly &mdash; sconce 0.72 documentation</title>
+  <title>Compression Pipeline &mdash; sconce 0.57 documentation</title>
       <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
       <link rel="stylesheet" href="../_static/my_theme.css" type="text/css" />
@@ -15,13 +15,13 @@
   
         <script src="../_static/jquery.js?v=5d32c60e"></script>
         <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../_static/documentation_options.js?v=be457ae4"></script>
+        <script src="../_static/documentation_options.js?v=2fd344d2"></script>
         <script src="../_static/doctools.js?v=888ff710"></script>
         <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Let’s First Evaluate the Accuracy and Model Size of Dense Model" href="Pruning.html" />
+    <link rel="next" title="Pruning" href="Pruning.html" />
     <link rel="prev" title="Tutorials" href="index.html" /> 
 </head>
 
@@ -38,7 +38,7 @@
               <img src="../_static/sconce-punch-bk_removed.png" class="logo" alt="Logo"/>
           </a>
               <div class="version">
-                0.72.0
+                0.57.0
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
@@ -52,17 +52,12 @@
 <li class="toctree-l1"><a class="reference internal" href="../usage.html">Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../Model%20Compression%20Techniques.html">Model Compression Techniques</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="index.html">Tutorials</a><ul class="current">
-<li class="toctree-l2 current"><a class="current reference internal" href="#">Compress the model granuarly</a></li>
-<li class="toctree-l2"><a class="reference internal" href="Pruning.html">Let’s First Evaluate the Accuracy and Model Size of Dense Model</a></li>
-<li class="toctree-l2"><a class="reference internal" href="Pruning.html#lets-see-the-distribution-of-weight-values">Let’s see the distribution of weight values</a></li>
-<li class="toctree-l2"><a class="reference internal" href="Pruning.html#fine-grained-pruning">Fine-grained Pruning</a></li>
-<li class="toctree-l2"><a class="reference internal" href="Pruning.html#channel-pruning">Channel Pruning</a></li>
-<li class="toctree-l2"><a class="reference internal" href="Quantization.html">Goals</a></li>
-<li class="toctree-l2"><a class="reference internal" href="Quantization.html#k-means-quantization-on-whole-model">K-Means Quantization on Whole Model</a></li>
-<li class="toctree-l2"><a class="reference internal" href="Quantization.html#trained-k-means-quantization">Trained K-Means Quantization</a></li>
-<li class="toctree-l2"><a class="reference internal" href="Quantization.html#n-bit-integer"><em>n</em>-bit Integer</a></li>
-<li class="toctree-l2"><a class="reference internal" href="Quantization.html#special-case-linear-quantization-on-weight-tensor">Special case: linear quantization on weight tensor</a></li>
-<li class="toctree-l2"><a class="reference internal" href="Quantization.html#quantized-inference">Quantized Inference</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Compression Pipeline</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#compress-the-model-granuarly">Compress the model granuarly</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="Pruning.html">Pruning</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Quantization.html">Quantization</a></li>
 </ul>
 </li>
 </ul>
@@ -82,7 +77,7 @@
   <ul class="wy-breadcrumbs">
       <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
           <li class="breadcrumb-item"><a href="index.html">Tutorials</a></li>
-      <li class="breadcrumb-item active">Compress the model granuarly</li>
+      <li class="breadcrumb-item active">Compression Pipeline</li>
       <li class="wy-breadcrumbs-aside">
             <a href="../_sources/tutorials/Compression-Pipeline.rst.txt" rel="nofollow"> View page source</a>
       </li>
@@ -92,11 +87,8 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <div class="line-block">
-<div class="line">===============================</div>
-<div class="line">Compression Pipeline</div>
-<div class="line">===============================</div>
-</div>
+  <section id="compression-pipeline">
+<h1>Compression Pipeline<a class="headerlink" href="#compression-pipeline" title="Link to this heading"></a></h1>
 <p>!pip install sconce -q</p>
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">defaultdict</span><span class="p">,</span> <span class="n">OrderedDict</span>
 
@@ -247,7 +239,7 @@
 <p>Magic Happens here: Compress the model(GMP pruning is set as the prune
 mode[sconces.prune_mode] above)</p>
 <section id="compress-the-model-granuarly">
-<h1>Compress the model granuarly<a class="headerlink" href="#compress-the-model-granuarly" title="Link to this heading"></a></h1>
+<h2>Compress the model granuarly<a class="headerlink" href="#compress-the-model-granuarly" title="Link to this heading"></a></h2>
 <p>sconces.compress()</p>
 <p><strong>Channel-Wise Pruning</strong></p>
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">sconces</span> <span class="o">=</span> <span class="n">sconce</span><span class="p">()</span>
@@ -560,13 +552,14 @@ to the higher values of model size.</p>
 </pre></div>
 </div>
 </section>
+</section>
 
 
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="index.html" class="btn btn-neutral float-left" title="Tutorials" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="Pruning.html" class="btn btn-neutral float-right" title="Let’s First Evaluate the Accuracy and Model Size of Dense Model" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="Pruning.html" class="btn btn-neutral float-right" title="Pruning" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>
