@@ -22,7 +22,7 @@ extensions = [
     'sphinx.ext.autosummary',
     'sphinx.ext.intersphinx',
 ]
-html_logo = "images/sconce-punch-cool.png"
+html_logo = "images/sconce-punch-bk_removed.png"
 
 intersphinx_mapping = {
     'python': ('https://docs.python.org/3/', None),
@@ -38,5 +38,6 @@ html_theme = 'sphinx_rtd_theme'
 
 # -- Options for EPUB output
 epub_show_urls = 'footnote'
+
 
 html_css_files = ['my_theme.css']
