@@ -18,12 +18,12 @@ sys.path.insert(0, os.path.abspath("../../"))
 html_logo = "https://github.com/satabios/sconce/blob/master/docs/source/images/sconce-punch-bk_removed.png?raw=true"
 
 extensions = [
+    'sphinx_rtd_theme',
     'sphinx.ext.duration',
     'sphinx.ext.doctest',
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
     'sphinx.ext.intersphinx',
-    'sphinx_rtd_theme',
 ]
 html_logo = "images/sconce-punch-bk_removed.png"
 
