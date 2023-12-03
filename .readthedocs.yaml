@@ -5,9 +5,8 @@ build:
   tools:
     python: "3.10"
 
-python:
-  install:
-    - requirements: docs/requirements.txt
-
 sphinx:
   configuration: docs/source/conf.py
+
+
+
