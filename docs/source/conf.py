@@ -4,7 +4,7 @@
 # -- Project information
 import os
 import sys
-sys.path.insert(0, os.path.abspath('../..'))
+sys.path.insert(0, os.path.abspath('../../sconce'))
 project = 'sconce'
 copyright = '2023, Sathyaprakash'
 author = 'Sathyaprakash'
@@ -40,4 +40,4 @@ html_theme = 'sphinx_rtd_theme'
 epub_show_urls = 'footnote'
 
 
-# html_css_files = ['my_theme.css']
+html_css_files = ['my_theme.css']
