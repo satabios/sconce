@@ -1,5 +1,4 @@
 from setuptools import setup, find_packages
-
 import os
 
 
@@ -7,7 +6,7 @@ with open("README.rst", encoding="utf-8") as readme_file:
     readme = readme_file.read()
 
 # fmt: off
-__version__ = '0.57'
+__version__ = '0.72'
 # fmt: on
 
 requirements = [
@@ -26,11 +25,11 @@ version = __version__
 
 lib_folder = os.path.dirname(os.path.realpath(__file__))
 requirement_path = lib_folder + '/requirements.txt'
-install_requirements = []
+install_requires = []
 
 if os.path.isfile(requirement_path):
     with open(requirement_path) as f:
-        install_requirements = f.read().splitlines()
+        install_requires = f.read().splitlines()
 
 setup(
     author="Sathyaprakash Narayanan",
@@ -45,13 +44,15 @@ setup(
         "Topic :: Scientific/Engineering",
         "Topic :: Scientific/Engineering :: Mathematics",
         "Topic :: Scientific/Engineering :: Artificial Intelligence",
+        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Operating System :: OS Independent",
     ],
     description="Model Compresion Made Easy",
     long_description=readme,
-    install_requires=install_requirements,
+    install_requires=install_requires,
     license="MIT License",
     include_package_data=True,
     keywords="sconce",
@@ -63,4 +64,3 @@ setup(
     version=__version__,
     zip_safe=False,
 )
-
