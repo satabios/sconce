@@ -1,7 +1,3 @@
-#!/usr/bin/env python
-# Configuration file for the Sphinx documentation builder.
-
-# -- Project information
 import os
 import sphinx_rtd_theme
 import sys
