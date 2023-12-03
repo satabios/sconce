@@ -1,7 +1,10 @@
+#!/usr/bin/env python
+# Configuration file for the Sphinx documentation builder.
+
+# -- Project information
 import os
-import sphinx_rtd_theme
 import sys
-sys.path.insert(0, os.path.abspath('../../sconce'))
+
 project = 'sconce'
 copyright = '2023, Sathyaprakash'
 author = 'Sathyaprakash'
@@ -9,11 +12,12 @@ author = 'Sathyaprakash'
 release = '0.57'
 version = '0.57.0'
 
+
+sys.path.insert(0, os.path.abspath(".."))
 # -- General configuration
 html_logo = "https://github.com/satabios/sconce/blob/master/docs/source/images/sconce-punch-bk_removed.png?raw=true"
 
 extensions = [
-    'sphinx_rtd_theme',
     'sphinx.ext.duration',
     'sphinx.ext.doctest',
     'sphinx.ext.autodoc',
