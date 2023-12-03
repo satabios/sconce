@@ -1,7 +1,7 @@
 import os
 import sphinx_rtd_theme
 import sys
-sys.path.insert(0, os.path.abspath('../../sconce'))
+sys.path.insert(0, os.path.abspath('../..'))
 project = 'sconce'
 copyright = '2023, Sathyaprakash'
 author = 'Sathyaprakash'
