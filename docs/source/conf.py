@@ -4,6 +4,8 @@
 # -- Project information
 import os
 import sys
+import sphinx_rtd_theme
+
 
 project = 'sconce'
 copyright = '2023, Sathyaprakash'
@@ -18,7 +20,7 @@ sys.path.insert(0, os.path.abspath("../../sconce"))
 html_logo = "https://github.com/satabios/sconce/blob/master/docs/source/images/sconce-punch-bk_removed.png?raw=true"
 
 extensions = [
-    "sphinx_rtd_theme",
+    'sphinx_rtd_theme',
     'sphinx.ext.duration',
     'sphinx.ext.doctest',
     'sphinx.ext.autodoc',
@@ -37,7 +39,7 @@ templates_path = ['_templates']
 
 # -- Options for HTML output
 
-html_theme = 'sphinx_rtd_theme'
+html_theme = "sphinx_rtd_theme"
 
 # -- Options for EPUB output
 epub_show_urls = 'footnote'
