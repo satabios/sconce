@@ -1,18 +1,19 @@
+#!/usr/bin/env python
 # Configuration file for the Sphinx documentation builder.
-#
-# For the full list of built-in configuration values, see the documentation:
-# https://www.sphinx-doc.org/en/master/usage/configuration.html
 
-# -- Project information -----------------------------------------------------
-# https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
-
+# -- Project information
+import os
+import sys
+sys.path.insert(0, os.path.abspath('../../sconce'))
 project = 'sconce'
-copyright = '2023, Sathyaprakash Narayanan'
-author = 'Sathyaprakash Narayanan'
-release = '0.0.60'
+copyright = '2023, Sathyaprakash'
+author = 'Sathyaprakash'
 
-# -- General configuration ---------------------------------------------------
-# https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
+release = '0.57'
+version = '0.57.0'
+
+# -- General configuration
+html_logo = "https://github.com/satabios/sconce/blob/master/docs/source/images/sconce-punch-bk_removed.png?raw=true"
 
 extensions = [
     'sphinx.ext.duration',
@@ -21,6 +22,7 @@ extensions = [
     'sphinx.ext.autosummary',
     'sphinx.ext.intersphinx',
 ]
+html_logo = "images/sconce-punch-cool.png"
 
 intersphinx_mapping = {
     'python': ('https://docs.python.org/3/', None),
@@ -30,16 +32,9 @@ intersphinx_disabled_domains = ['std']
 
 templates_path = ['_templates']
 
-# source_suffix = ['.rst', '.md']
-source_suffix = ".rst"
-
-# The master toctree document.
-master_doc = "index"
 # -- Options for HTML output
 
 html_theme = 'sphinx_rtd_theme'
 
 # -- Options for EPUB output
 epub_show_urls = 'footnote'
-
-#theme
