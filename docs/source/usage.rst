@@ -119,12 +119,9 @@ One Roof Solution [Train -> Compress -> Deploy]:
 
 
 Features
-^^^^^^^^^
+------------
 
 .. automodule:: sconce
-
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-
+   :members:
+   :undoc-members:
+   :show-inheritance:
