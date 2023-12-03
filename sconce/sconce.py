@@ -37,6 +37,7 @@ from torch.nn import parameter
 import ipdb
 import snntorch
 from snntorch import functional as SF
+from torch import mps
 
 random.seed(321)
 np.random.seed(432)
