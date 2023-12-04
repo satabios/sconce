@@ -1,6 +1,6 @@
 [build-system]
-requires = ["flit_core >=3.2,<4"]
-
+requires = ["setuptools<60.0", "wheel"]
+build-backend = "setuptools.build_meta"
 
 [project]
 name = "sconce"
