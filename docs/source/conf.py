@@ -4,8 +4,9 @@
 # -- Project information
 import os
 import sys
+print("PATH Direc:",os.getcwd())
 sys.path.insert(0, os.path.abspath('../../'))
-
+print("LS:",os.listdir('./'))
 # -- Project information -----------------------------------------------------
 
 project = 'sconce'
