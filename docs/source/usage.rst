@@ -1,6 +1,14 @@
 Usage
 =====
 
+Features
+-------------------------
+
+.. automodule:: sconce
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 .. _installation:
 
 Installation
@@ -116,12 +124,3 @@ One Roof Solution [Train -> Compress -> Deploy]:
 
 
    sconces.compress()
-
-
-Features
----------------------
-
-.. autoclass:: sconce
-   :members:
-   :undoc-members:
-   :show-inheritance:
