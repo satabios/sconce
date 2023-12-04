@@ -29,7 +29,6 @@ torchvision>=0.15.2
 torchprofile>=0.0.4
 tqdm>=4.65.0
 snntorch
-sconce
 plotly
 typing_extensions>=4.7.1
 urllib3>=2.0.4
