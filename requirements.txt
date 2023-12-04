@@ -1,3 +1,4 @@
+setuptools
 certifi>=2023.5.7
 charset-normalizer>=3.2.0
 cmake>=3.27.0
