@@ -4,10 +4,8 @@ Usage
 Features
 -------------------------
 
-.. autoclass:: sconce
-   :members:
-   :undoc-members:
-   :show-inheritance:
+.. automodule:: sconce
+    :members:
 
 .. _installation:
 
