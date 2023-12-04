@@ -795,8 +795,8 @@ class sconce:
             self.sensitivity_scan(
                 dense_model_accuracy=dense_validation_acc, verbose=False
             )
-            sensitivity_start_end = time.time() - sensitivity_start_time
-            print("Sensitivity Scan Time(secs):", sensitivity_start_end)
+            sensitivity_start_end = time.time() 
+            print("Sensitivity Scan Time(secs):", sensitivity_start_end-sensitivity_start_time)
             # self.sparsity_dict = {'0.weight': 0.6500000000000001, '3.weight': 0.5000000000000001, '7.weight': 0.7000000000000002}
             # self.sparsity_dict = {'backbone.conv0.weight': 0.20000000000000004, 'backbone.conv1.weight': 0.45000000000000007, 'backbone.conv2.weight': 0.25000000000000006, 'backbone.conv3.weight': 0.25000000000000006, 'backbone.conv4.weight': 0.25000000000000006, 'backbone.conv5.weight': 0.25000000000000006, 'backbone.conv6.weight': 0.3500000000000001, 'backbone.conv7.weight': 0.3500000000000001, 'classifier.weight': 0.7000000000000002}
 
@@ -811,8 +811,8 @@ class sconce:
             self.sensitivity_scan(
                 dense_model_accuracy=dense_validation_acc, verbose=False
             )
-            sensitivity_start_end = time.time() - sensitivity_start_time
-            print("Sensitivity Scan Time(secs):", sensitivity_start_end)
+            sensitivity_start_end = time.time() 
+            print("Sensitivity Scan Time(secs):", sensitivity_start_end-sensitivity_start_time)
 
             # self.sparsity_dict = {'backbone.conv0.weight': 0.15000000000000002, 'backbone.conv1.weight': 0.15, 'backbone.conv2.weight': 0.15, 'backbone.conv3.weight': 0.15000000000000002, 'backbone.conv4.weight': 0.20000000000000004, 'backbone.conv5.weight': 0.20000000000000004, 'backbone.conv6.weight': 0.45000000000000007}
             print(f"Sparsity for each Layer: {self.sparsity_dict}")
@@ -826,8 +826,8 @@ class sconce:
             self.sensitivity_scan(
                 dense_model_accuracy=dense_validation_acc, verbose=False
             )
-            sensitivity_start_end = time.time() - sensitivity_start_time
-            print("Sensitivity Scan Time(secs):", sensitivity_start_end)
+            sensitivity_start_end = time.time()
+            print("Sensitivity Scan Time(secs):", sensitivity_start_end-sensitivity_start_time)
             self.prune_mode = "venum"
             # self.sparsity_dict = {'backbone.conv0.weight': 0.30000000000000004, 'backbone.conv1.weight': 0.45000000000000007, 'backbone.conv2.weight': 0.45000000000000007, 'backbone.conv3.weight': 0.5500000000000002, 'backbone.conv4.weight': 0.6000000000000002, 'backbone.conv5.weight': 0.7000000000000002, 'backbone.conv6.weight': 0.7500000000000002, 'backbone.conv7.weight': 0.8500000000000002, 'classifier.weight': 0.9500000000000003}
             print(f"Sparsity for each Layer: {self.sparsity_dict}")
