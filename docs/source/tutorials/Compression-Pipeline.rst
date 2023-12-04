@@ -451,8 +451,9 @@ to the higher values of model size.
     Fine-Tuned Sparse model has size=9.94 MiB = 28.22% of Original model size
     Fine-Tuned Pruned Model Validation Accuracy: 87.73547094188376
 
-
+===============================
 Spiking Neural Network Compression
+===============================
 
 .. code:: ipython3
 
