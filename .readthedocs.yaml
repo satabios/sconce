@@ -6,8 +6,10 @@ build:
     python: "3.10"
 
 python:
-  install:
-    - requirements: docs/requirements.txt
+   install:
+   - requirements: docs/requirements.txt
+   - method: pip
+     path: .
 
 sphinx:
   configuration: docs/source/conf.py
