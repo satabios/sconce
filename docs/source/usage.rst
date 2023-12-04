@@ -6,6 +6,8 @@ Features
 
 .. automodule:: sconce
     :members:
+    :undoc-members:
+    :show-inheritance:
 
 .. _installation:
 
