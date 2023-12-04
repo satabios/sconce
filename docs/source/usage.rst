@@ -2,7 +2,7 @@ Usage
 =====
 
 Features
--------------------------
+=========
 
 .. automodule:: sconce
     :members:
