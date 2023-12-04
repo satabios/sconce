@@ -4,7 +4,7 @@ Usage
 Features
 -------------------------
 
-.. automodule:: sconce
+.. autoclass:: sconce
    :members:
    :undoc-members:
    :show-inheritance:
