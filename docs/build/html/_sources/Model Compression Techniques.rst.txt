@@ -5,7 +5,7 @@ Model Compression Techniques
 
 
 Pruning Techniques
-########
+###################
 
 +------------------------+------------------------+------------------------+------------------------+------------------------+------------------------+------------------------+------------------------+
 |   Method               |   Weight Update        |   Calibration Data     |        Pruning Metric  |        Complexity      |       Fine-Tuning      |      Support for       |     Support for        |
