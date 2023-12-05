@@ -62,10 +62,6 @@ the same as what we used in the Lab 0 tutorial.
     from torchvision.transforms import *
     
     from torchprofile import profile_macs
-    
-    assert torch.cuda.is_available(), \
-    "The current runtime does not have CUDA support." \
-    "Please go to menu bar (Runtime - Change runtime type) and select GPU"
 
 .. code:: ipython3
 
@@ -987,19 +983,6 @@ range [-128, 127].
 -  Both :math:`r` and :math:`S` are floating numbers, and thus we cannot
    directly add integer :math:`Z` to :math:`r/S`. Therefore
    :math:`q = \mathrm{int}(\mathrm{round}(r/S)) + Z`.
--  To convert
-   ```torch.FloatTensor`` <https://pytorch.org/docs/stable/tensors.html>`__
-   to
-   ```torch.IntTensor`` <https://pytorch.org/docs/stable/tensors.html>`__,
-   we could use
-   ```torch.round()`` <https://pytorch.org/docs/stable/generated/torch.round.html#torch.round>`__,
-   ```torch.Tensor.round()`` <https://pytorch.org/docs/stable/generated/torch.Tensor.round.html#torch.Tensor.round>`__,
-   ```torch.Tensor.round_()`` <https://pytorch.org/docs/stable/generated/torch.Tensor.round_>`__
-   to first convert all values to floating integer, and then use
-   ```torch.Tensor.to(torch.int8)`` <https://pytorch.org/docs/stable/generated/torch.Tensor.to.html#torch.Tensor.to>`__
-   to convert the data type from
-   ```torch.float`` <https://pytorch.org/docs/stable/tensors.html>`__ to
-   ```torch.int8`` <https://pytorch.org/docs/stable/tensors.html>`__.
 
 .. code:: ipython3
 
