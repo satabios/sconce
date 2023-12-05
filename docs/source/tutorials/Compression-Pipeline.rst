@@ -176,18 +176,11 @@ Train and Validated the Model on the given dataset
     sconces.evaluate()
 
 
-.. parsed-literal::
-
     
 
 .. parsed-literal::
 
     Epoch:1 Train Loss: 0.00000 Validation Accuracy: 92.92585
-
-
-.. parsed-literal::
-
-    
 
 
 
@@ -200,7 +193,7 @@ Train and Validated the Model on the given dataset
 Magic Happens here: Compress the model(GMP pruning is set as the prune
 mode[sconces.prune_mode] above)
 
-Compress the model granuarly
+Compress the model Granuarly
 ============================
 
 sconces.compress()
@@ -233,18 +226,13 @@ sconces.compress()
     Original Dense Model Size Model=21.94 MiB
 
 
-.. parsed-literal::
 
-    
 
 .. parsed-literal::
 
     Original Model Validation Accuracy: 92.82565130260521 %
 
 
-.. parsed-literal::
-
-    
 
 .. parsed-literal::
 
@@ -256,61 +244,41 @@ sconces.compress()
 .. parsed-literal::
 
     
-
-.. parsed-literal::
-
-    
     Pruned Model has size=12.81 MiB(non-zeros) = 58.41% of Original model size
 
 
-.. parsed-literal::
-
-    
 
 .. parsed-literal::
 
     Epoch:1 Train Loss: 0.00000 Validation Accuracy: 89.83968
 
 
-.. parsed-literal::
-
-    
 
 .. parsed-literal::
 
     Epoch:2 Train Loss: 0.00000 Validation Accuracy: 89.97996
 
 
-.. parsed-literal::
-
-    
 
 .. parsed-literal::
 
     Epoch:3 Train Loss: 0.00000 Validation Accuracy: 90.21042
 
 
-.. parsed-literal::
 
-    
 
 .. parsed-literal::
 
     Epoch:4 Train Loss: 0.00000 Validation Accuracy: 90.39078
 
 
-.. parsed-literal::
 
-    
 
 .. parsed-literal::
 
     Epoch:5 Train Loss: 0.00000 Validation Accuracy: 90.59118
 
 
-.. parsed-literal::
-
-    
 
 .. parsed-literal::
 
@@ -402,9 +370,6 @@ to the higher values of model size.
     Original Dense Model Size Model=35.20 MiB
 
 
-.. parsed-literal::
-
-                                                         
 
 .. parsed-literal::
 
@@ -413,9 +378,6 @@ to the higher values of model size.
      Venum Pruning
 
 
-.. parsed-literal::
-
-                                                        
 
 .. parsed-literal::
 
@@ -427,17 +389,10 @@ to the higher values of model size.
 
 .. parsed-literal::
 
-                                                         
-
-.. parsed-literal::
-
     
     Pruned Model has size=9.94 MiB(non-zeros) = 28.22% of Original model size
 
-
-.. parsed-literal::
-
-                                                         
+                                   
 
 .. parsed-literal::
 
@@ -451,9 +406,9 @@ to the higher values of model size.
     Fine-Tuned Sparse model has size=9.94 MiB = 28.22% of Original model size
     Fine-Tuned Pruned Model Validation Accuracy: 87.73547094188376
 
-===============================
+====================================
 Spiking Neural Network Compression
-===============================
+====================================
 
 .. code:: ipython3
 
@@ -585,9 +540,6 @@ Spiking Neural Network Compression
     Original Dense Model Size Model=0.11 MiB
 
 
-.. parsed-literal::
-
-    
 
 .. parsed-literal::
 
@@ -595,18 +547,12 @@ Spiking Neural Network Compression
     Granular-Magnitude Pruning
 
 
-.. parsed-literal::
-
-    
 
 .. parsed-literal::
 
     Sparsity for each Layer: {'0.weight': 0.6500000000000001, '3.weight': 0.5000000000000001, '7.weight': 0.7000000000000002}
 
 
-.. parsed-literal::
-
-    
 
 .. parsed-literal::
 
@@ -616,16 +562,7 @@ Spiking Neural Network Compression
 
 .. parsed-literal::
 
-    
-
-.. parsed-literal::
-
     Epoch:1 Train Loss: 0.00000 Validation Accuracy: 95.97356
-
-
-.. parsed-literal::
-
-    
 
 .. parsed-literal::
 
