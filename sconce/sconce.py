@@ -327,16 +327,16 @@ class sconce:
     def get_num_parameters(self, model: nn.Module, count_nonzero_only=False) -> int:
         """
         Calculate the total number of parameters of a PyTorch model.
-
+        
         Args:
           model (nn.Module): The PyTorch model to count the parameters of.
           count_nonzero_only (bool, optional): Whether to count only the nonzero weights.
             Defaults to False.
-
+        
         Returns:
           int: The total number of parameters of the model.
         """
-
+        
         num_counted_elements = 0
         for param in model.parameters():
             if count_nonzero_only:
