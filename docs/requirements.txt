@@ -126,7 +126,6 @@ rfc3339-validator==0.1.4
 rfc3986-validator==0.1.1
 rpds-py==0.13.0
 safetensors==0.4.0
-sconce
 Send2Trash==1.8.2
 six==1.16.0
 sniffio==1.3.0
