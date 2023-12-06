@@ -9,3 +9,4 @@ sconce Documentation
    usage
    Model Compression Techniques
    tutorials/index
+   Features
