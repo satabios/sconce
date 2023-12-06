@@ -117,14 +117,3 @@ One Roof Solution [Train -> Compress -> Deploy]:
 
 
    sconces.compress()
-
-
-
-Features
----------
-
-.. automodule:: sconce
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
