@@ -1,23 +1,25 @@
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html5" lang="en">
 <head>
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Compression Pipeline &mdash; sconce 0.57 documentation</title>
-      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
-      <link rel="stylesheet" href="../_static/my_theme.css" type="text/css" />
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css" />
+      <link rel="stylesheet" type="text/css" href="../_static/my_theme.css" />
       <link rel="stylesheet" href="../_static/css/default.css" type="text/css" />
+
+  
   <!--[if lt IE 9]>
     <script src="../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script src="../_static/jquery.js?v=5d32c60e"></script>
-        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../_static/documentation_options.js?v=2fd344d2"></script>
-        <script src="../_static/doctools.js?v=888ff710"></script>
-        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../_static/doctools.js"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
@@ -53,7 +55,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../Model%20Compression%20Techniques.html">Model Compression Techniques</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="index.html">Tutorials</a><ul class="current">
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Compression Pipeline</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#compress-the-model-granuarly">Compress the model granuarly</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#compress-the-model-granuarly">Compress the model Granuarly</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#spiking-neural-network-compression">Spiking Neural Network Compression</a></li>
@@ -89,7 +91,7 @@
            <div itemprop="articleBody">
              
   <section id="compression-pipeline">
-<h1>Compression Pipeline<a class="headerlink" href="#compression-pipeline" title="Link to this heading"></a></h1>
+<h1>Compression Pipeline<a class="headerlink" href="#compression-pipeline" title="Permalink to this heading"></a></h1>
 <p>!pip install sconce -q</p>
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">defaultdict</span><span class="p">,</span> <span class="n">OrderedDict</span>
 
@@ -240,7 +242,7 @@
 <p>Magic Happens here: Compress the model(GMP pruning is set as the prune
 mode[sconces.prune_mode] above)</p>
 <section id="compress-the-model-granuarly">
-<h2>Compress the model granuarly<a class="headerlink" href="#compress-the-model-granuarly" title="Link to this heading"></a></h2>
+<h2>Compress the model Granuarly<a class="headerlink" href="#compress-the-model-granuarly" title="Permalink to this heading"></a></h2>
 <p>sconces.compress()</p>
 <p><strong>Channel-Wise Pruning</strong></p>
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">sconces</span> <span class="o">=</span> <span class="n">sconce</span><span class="p">()</span>
@@ -415,7 +417,7 @@ to the higher values of model size.</p>
 </section>
 </section>
 <section id="spiking-neural-network-compression">
-<h1>Spiking Neural Network Compression<a class="headerlink" href="#spiking-neural-network-compression" title="Link to this heading"></a></h1>
+<h1>Spiking Neural Network Compression<a class="headerlink" href="#spiking-neural-network-compression" title="Permalink to this heading"></a></h1>
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">!</span>pip<span class="w"> </span>install<span class="w"> </span>snntorch<span class="w"> </span>-q
 </pre></div>
 </div>

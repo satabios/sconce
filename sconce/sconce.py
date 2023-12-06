@@ -48,10 +48,6 @@ KiB = 1024 * Byte
 MiB = 1024 * KiB
 GiB = 1024 * MiB
 
-device = torch.device("cuda" if torch.cuda.is_available() else "CPU")
-if(device=="cuda"):
-    torch.cuda.synchronize()
-
 
 class sconce:
     def __init__(self):
@@ -141,24 +137,28 @@ class sconce:
 
         self.device = None
 
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "CPU")
+        if self.device == "cuda":
+            torch.cuda.synchronize()
+
     def forward_pass_snn(self, data, mem_out_rec=None):
         """
-        snn Forward Pass
+        Perform a forward pass through the spiking neural network (SNN).
 
-        :param data: Input from the data loader
-        :param mem_out_rec: Record Membrane Potential, if set to a value return both Membrane potential and Spikes
-        :return: Return the Membrane Potential output of the network
-        # :example:
-        # .. jupyter-execute::
-        #
-        #   import sconce
-        #   print(your_package_name.some_documented_func(1))
+        Args:
+            data (torch.Tensor): Input data for the SNN.
+            mem_out_rec (torch.Tensor, optional): Memory output recording tensor. Defaults to None.
+
+        Returns:
+            torch.Tensor or Tuple[torch.Tensor, torch.Tensor]: Spike output tensor or tuple of spike output tensor and memory output tensor.
         """
         spk_rec = []
         mem_rec = []
         utils.reset(self.model)  # resets hidden states for all LIF neurons in net
 
         for step in range(self.snn_num_steps):  # data.size(0) = number of time steps
+            # Perform forward pass through the SNN
+            # ...
             spk_out, mem_out = self.model(data)
             spk_rec.append(spk_out)
             mem_rec.append(mem_out)
@@ -327,18 +327,20 @@ class sconce:
         return 1 - float(num_nonzeros) / num_elements
 
     def get_num_parameters(self, model: nn.Module, count_nonzero_only=False) -> int:
+
         """
         Calculate the total number of parameters of a PyTorch model.
-        
+
         Args:
-          model (nn.Module): The PyTorch model to count the parameters of.
-          count_nonzero_only (bool, optional): Whether to count only the nonzero weights.
+            model (nn.Module): The PyTorch model to count the parameters of.
+            count_nonzero_only (bool, optional): Whether to count only the nonzero weights.
             Defaults to False.
-        
+
         Returns:
-          int: The total number of parameters of the model.
+            int: The total number of parameters of the model.
+
         """
-        
+
         num_counted_elements = 0
         for param in model.parameters():
             if count_nonzero_only:
@@ -544,11 +546,13 @@ class sconce:
     def fine_grained_prune(self, tensor: torch.Tensor, sparsity: float) -> torch.Tensor:
         """
         magnitude-based pruning for single tensor
+
         :param tensor: torch.(cuda.)Tensor, weight of conv/fc layer
         :param sparsity: float, pruning sparsity
             sparsity = #zeros / #elements = 1 - #nonzeros / #elements
         :return:
             torch.(cuda.)Tensor, mask for zeros
+
         """
         sparsity = min(max(0.0, sparsity), 1.0)
         if sparsity == 1.0:

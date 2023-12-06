@@ -1,23 +1,25 @@
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html5" lang="en">
 <head>
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>sconce Documentation &mdash; sconce 0.57 documentation</title>
-      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
-      <link rel="stylesheet" href="_static/my_theme.css" type="text/css" />
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css" />
+      <link rel="stylesheet" type="text/css" href="_static/my_theme.css" />
       <link rel="stylesheet" href="_static/css/default.css" type="text/css" />
+
+  
   <!--[if lt IE 9]>
     <script src="_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script src="_static/jquery.js?v=5d32c60e"></script>
-        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="_static/documentation_options.js?v=2fd344d2"></script>
-        <script src="_static/doctools.js?v=888ff710"></script>
-        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="_static/doctools.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -78,9 +80,9 @@
            <div itemprop="articleBody">
              
   <section id="sconce-documentation">
-<h1>sconce Documentation<a class="headerlink" href="#sconce-documentation" title="Link to this heading"></a></h1>
+<h1>sconce Documentation<a class="headerlink" href="#sconce-documentation" title="Permalink to this heading"></a></h1>
 <section id="introduction">
-<h2>Introduction<a class="headerlink" href="#introduction" title="Link to this heading"></a></h2>
+<h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this heading"></a></h2>
 <a class="reference external image-reference" href="https://sconce.readthedocs.io/en/latest/?badge=latest"><img alt="Documentation Status" src="https://readthedocs.org/projects/sconce/badge/?version=latest" /></a>
 <a class="reference internal image-reference" href="https://github.com/satabios/sconce/blob/main/docs/source/images/sconce-punch-bk_removed.png?raw=true"><img alt="https://github.com/satabios/sconce/blob/main/docs/source/images/sconce-punch-bk_removed.png?raw=true" class="align-center" src="https://github.com/satabios/sconce/blob/main/docs/source/images/sconce-punch-bk_removed.png?raw=true" style="width: 400px; height: 400px;" /></a>
 <p>Advancement of deep learning has been largely driven by the availability of large datasets and the computational power to train large models.
@@ -106,7 +108,7 @@ solve complex problems with such ease.</p>
 If you have issues, comments, or are looking for advice on training spiking neural networks, you can open an issue, a discussion,
 or chat in our <a class="reference external" href="https://discord.gg/GKwXMrZr">discord</a> channel.</p>
 <section id="sconce-structure">
-<h3>sconce Structure<a class="headerlink" href="#sconce-structure" title="Link to this heading"></a></h3>
+<h3>sconce Structure<a class="headerlink" href="#sconce-structure" title="Permalink to this heading"></a></h3>
 <p>sconce contains the following components:</p>
 <table class="docutils align-default">
 <colgroup>
@@ -143,7 +145,7 @@ Provided that the network models and tensors are loaded onto CUDA, sconce takes 
 <p>sconce is a work in progress, and we welcome contributions from the community.</p>
 </section>
 <section id="requirements">
-<h3>Requirements<a class="headerlink" href="#requirements" title="Link to this heading"></a></h3>
+<h3>Requirements<a class="headerlink" href="#requirements" title="Permalink to this heading"></a></h3>
 <p>The following packages need to be installed to use sconce:</p>
 <ul class="simple">
 <li><p>torch &gt;= 1.1.0</p></li>
@@ -155,7 +157,7 @@ Provided that the network models and tensors are loaded onto CUDA, sconce takes 
 <p>They are automatically installed if sconce is installed using the pip command. Ensure the correct version of torch is installed for your system to enable CUDA compatibility.</p>
 </section>
 <section id="installation">
-<h3>Installation<a class="headerlink" href="#installation" title="Link to this heading"></a></h3>
+<h3>Installation<a class="headerlink" href="#installation" title="Permalink to this heading"></a></h3>
 <p>Run the following to install:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>python
 $<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>sconce
@@ -169,11 +171,11 @@ $ python setup.py install
 </div>
 </section>
 <section id="api-examples">
-<h3>API &amp; Examples<a class="headerlink" href="#api-examples" title="Link to this heading"></a></h3>
+<h3>API &amp; Examples<a class="headerlink" href="#api-examples" title="Permalink to this heading"></a></h3>
 <p>A complete API is available <a class="reference external" href="https://sconce.readthedocs.io/">here</a>. Examples, tutorials and Colab notebooks are provided.</p>
 </section>
 <section id="quickstart">
-<h3>Quickstart<a class="headerlink" href="#quickstart" title="Link to this heading"></a></h3>
+<h3>Quickstart<a class="headerlink" href="#quickstart" title="Permalink to this heading"></a></h3>
 <a class="reference external image-reference" href="https://colab.research.google.com/github/satabios/sconce/blob/main/tutorials/Compression%20Pipeline.ipynb#"><img alt="Open In Colab" src="https://colab.research.google.com/assets/colab-badge.svg" /></a>
 <p>Here are a few ways you can get started with sconce:</p>
 <ul class="simple">
@@ -185,7 +187,7 @@ $ python setup.py install
 </section>
 </section>
 <section id="id1">
-<h1>Quickstart:<a class="headerlink" href="#id1" title="Link to this heading"></a></h1>
+<h1>Quickstart:<a class="headerlink" href="#id1" title="Permalink to this heading"></a></h1>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Net</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
