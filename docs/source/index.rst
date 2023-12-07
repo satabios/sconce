@@ -4,7 +4,7 @@ sconce Documentation
 .. include:: ../../README.rst
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    usage
    Model Compression Techniques
