@@ -491,9 +491,9 @@ Networks <https://arxiv.org/pdf/1506.02626.pdf>`__).
    test. Here we use ``round()``.
 -  In step 2, we calculate the ``importance`` of weight tensor. Pytorch
    provides
-   ```torch.abs()`` <https://pytorch.org/docs/stable/generated/torch.abs.html#torch.abs>`__,
-   ```torch.Tensor.abs()`` <https://pytorch.org/docs/stable/generated/torch.Tensor.abs.html#torch.Tensor.abs>`__,
-   ```torch.Tensor.abs_()`` <https://pytorch.org/docs/stable/generated/torch.Tensor.abs_.html>`__
+   `<https://pytorch.org/docs/stable/generated/torch.abs.html#torch.abs>`__,
+   `<https://pytorch.org/docs/stable/generated/torch.Tensor.abs.html#torch.Tensor.abs>`__,
+   `<https://pytorch.org/docs/stable/generated/torch.Tensor.abs_.html>`__
    APIs.
 -  In step 3, we calculate the pruning ``threshold`` so that all
    synapses with importance smaller than ``threshold`` will be removed.

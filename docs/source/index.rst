@@ -10,3 +10,6 @@ sconce Documentation
    Model Compression Techniques
    tutorials/index
    Features
+   timeline
+   reference
+   
