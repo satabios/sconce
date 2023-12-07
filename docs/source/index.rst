@@ -5,7 +5,7 @@ sconce Documentation
 
 .. toctree::
    :maxdepth: 1
-
+   
    usage
    Model Compression Techniques
    tutorials/index
