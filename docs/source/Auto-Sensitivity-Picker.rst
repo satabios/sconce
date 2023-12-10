@@ -31,10 +31,11 @@ Pruning in the context of deep learning involves removing certain weights or neu
 
 Ultimately, finding the optimal sparsity level often involves experimentation and thorough evaluation. Researchers and practitioners typically perform multiple experiments to identify the best trade-off between model size, computational efficiency, and task performance.
 
-
 .. image:: https://github.com/satabios/sconce/blob/main/docs/source/images/auto-sparsity-selection.png
-        :alt: auto-sense-picker
         :align: center
+        :width: 400
+        :height: 400
+        :alt: auto-sparsity-selection
 
 Hence we use the Efficient-Hyperparameter Search for Pruning to find the optimal sparsity level for Pruning or other techniques that require sensitivity as a hyperparameter.
 Two different methods are used to find the optimal sensitivity level as shown in the figure above. This ensemble of methods is used to find the optimal sensitivity level for the given model and dataset.
