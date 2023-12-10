@@ -12,4 +12,5 @@ sconce Documentation
    Features
    timeline
    reference
+   Auto-Sensitivity-Picker
    
