@@ -32,7 +32,6 @@ Pruning in the context of deep learning involves removing certain weights or neu
 Ultimately, finding the optimal sparsity level often involves experimentation and thorough evaluation. Researchers and practitioners typically perform multiple experiments to identify the best trade-off between model size, computational efficiency, and task performance.
 
 
-
 .. image:: https://github.com/satabios/sconce/blob/main/docs/source/images/auto-sparsity-selection.png
         :alt: auto-sense-picker
         :align: center
