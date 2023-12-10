@@ -33,7 +33,7 @@ Ultimately, finding the optimal sparsity level often involves experimentation an
 
 .. image:: https://github.com/satabios/sconce/blob/main/docs/source/images/auto-sparsity-selection.png?raw=true
         :align: center
-        :width: 400
+        :width: 600
         :height: 400
         :alt: auto-sparsity-selection
 
