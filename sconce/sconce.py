@@ -706,7 +706,7 @@ class sconce:
                 weights = module.weight.data
                 # print("LPre:",torch.count_nonzero(weights))
                 module.weight.data = self.venum_prune(
-                    W=weights, X=inp[0], s=sparstiy, cnn=False
+                    W=weights, X=inp[0], s=sparstiy,in_channel=module.in_features, cnn=False
                 )
                 # print("LPost:",torch.count_nonzero(module.weight.data))
 
