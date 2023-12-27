@@ -130,10 +130,10 @@ class sconce:
         self.conv_layer = []
         self.linear_layer = []
         self.handles = []
-        self.temp_sparsity_list=[]
-        self.prune_indexes =[]
-        self.record_prune_indexes=False
-        self.layer_idx=0
+        self.temp_sparsity_list = []
+        self.prune_indexes = []
+        self.record_prune_indexes = False
+        self.layer_idx = 0
 
         self.bitwidth = 4
 
@@ -248,7 +248,6 @@ class sconce:
         self.model.to(self.device)
         self.model.eval()
         with torch.no_grad():
-
             correct = 0
             total = 0
             local_acc = []
@@ -465,12 +464,12 @@ class sconce:
 
     @torch.no_grad()
     def sensitivity_scan(
-            self,
-            dense_model_accuracy,
-            scan_step=0.05,
-            scan_start=0.1,
-            scan_end=1.0,
-            verbose=True,
+        self,
+        dense_model_accuracy,
+        scan_step=0.05,
+        scan_start=0.1,
+        scan_end=1.0,
+        verbose=True,
     ):
         """
         Scans the sensitivity of the model to weight pruning by gradually increasing the sparsity of each layer's weights
@@ -512,18 +511,16 @@ class sconce:
             sorted_model = copy.deepcopy(sortd)
 
         if "venum" in self.prune_mode:
-            if self.prune_mode == 'venum-cwp':
+            if self.prune_mode == "venum-cwp":
                 named_all_weights = named_conv_weights
 
             list_of_sparsities = [0] * (len(named_all_weights) - 1)
             sparsity_dict = {count: ele for count, ele in enumerate(list_of_sparsities)}
             self.venum_apply(sparsity_dict)
 
-
         layer_iter = tqdm(named_all_weights, desc="layer", leave=False)
         original_prune_mode = self.prune_mode
         for i_layer, (name, param) in enumerate(layer_iter):
-
             param_clone = param.detach().clone()
             accuracy = []
             desc = None
@@ -535,15 +532,21 @@ class sconce:
             hit_flag = False
 
             for sparsity in picker:
-                if ("venum" in self.prune_mode and len(param.shape) > 2 and i_layer < (len(conv_layers) - 1)):
+                if (
+                    "venum" in self.prune_mode
+                    and len(param.shape) > 2
+                    and i_layer < (len(conv_layers) - 1)
+                ):
                     # self.temp_sparsity_list[i_layer] = sparsity
                     self.layer_idx = i_layer
                     self.prune_mode = original_prune_mode
 
-                    list_of_sparsities =  [0] * (len(layer_iter)-1)
+                    list_of_sparsities = [0] * (len(layer_iter) - 1)
                     list_of_sparsities[i_layer] = sparsity
-                    sparsity_dict = { count:ele for count, ele in enumerate(list_of_sparsities)}
-                    if(self.prune_mode=="venum-cwp"):
+                    sparsity_dict = {
+                        count: ele for count, ele in enumerate(list_of_sparsities)
+                    }
+                    if self.prune_mode == "venum-cwp":
                         self.venum_CWP_Pruning(original_model, sparsity_dict)
                     else:
                         self.venum_apply(sparsity_dict)
@@ -553,9 +556,9 @@ class sconce:
                     self.fine_grained_prune(param.detach(), sparsity=sparsity)
                     hit_flag = True
                 elif (
-                        self.prune_mode == "CWP"
-                        and len(param.shape) > 2
-                        and i_layer < (len(conv_layers) - 1)
+                    self.prune_mode == "CWP"
+                    and len(param.shape) > 2
+                    and i_layer < (len(conv_layers) - 1)
                 ):
                     # self.model = sorted_model
                     self.model = self.channel_prune_layerwise(
@@ -627,9 +630,8 @@ class sconce:
 
     @torch.no_grad()
     def venum_apply(self, sparsity_dict):
-
         for layer_id, (_, sparsity) in enumerate(sparsity_dict.items()):
-            if(sparsity>0):
+            if sparsity > 0:
                 self.layer_idx = layer_id
                 self.find_instance(obj=self.model, sparsity=sparsity)
 
@@ -689,37 +691,41 @@ class sconce:
     def venum_prune(self, W, X, s, in_channel=0, kernel_size=0, cnn=False):
         metric = W.abs() * X.norm(p=2, dim=0)  # get the venum pruning metric
 
-        if(self.prune_mode=="venum_cwp" and cnn==True):
+        if self.prune_mode == "venum_cwp" and cnn == True:
             norm = torch.norm(metric, dim=1)
             _, sorted_idx = torch.sort(norm)
             self.venum_sorted_list.append(sorted_idx)
 
         else:
-            #Venum GMP
+            # Venum GMP
 
             _, sorted_idx = torch.sort(metric, dim=1)  # sort the weights per output
 
-            if (cnn):
-                pruned_idx = sorted_idx[:, :int(in_channel * kernel_size[0] * kernel_size[1] * s)]
+            if cnn:
+                pruned_idx = sorted_idx[
+                    :, : int(in_channel * kernel_size[0] * kernel_size[1] * s)
+                ]
             else:
-                pruned_idx = sorted_idx[:, :int(in_channel * s)]  # get the indices of the weights to be pruned
+                pruned_idx = sorted_idx[
+                    :, : int(in_channel * s)
+                ]  # get the indices of the weights to be pruned
 
-            if(self.record_prune_indexes):
+            if self.record_prune_indexes:
                 self.prune_indexes.append(pruned_idx)
             with torch.no_grad():
                 zeros_tensor = torch.zeros_like(W)
                 # Use scatter_ to set the pruned indices to zero
                 W.scatter_(dim=1, index=pruned_idx, src=zeros_tensor)
-            if (cnn):
-                W = W.unflatten(dim=1, sizes=(in_channel, kernel_size[0], kernel_size[1]))
+            if cnn:
+                W = W.unflatten(
+                    dim=1, sizes=(in_channel, kernel_size[0], kernel_size[1])
+                )
 
             return W
 
     def venum(self, sparstiy):
         def prune(module, inp, out):
-
-            if (isinstance(module, nn.Conv2d)):
-
+            if isinstance(module, nn.Conv2d):
                 in_channel = module.in_channels
                 kernel_size = module.kernel_size
                 weights = module.weight.flatten(1).clone()
@@ -728,7 +734,7 @@ class sconce:
                     module.kernel_size,
                     dilation=module.dilation,
                     padding=module.padding,
-                    stride=module.stride
+                    stride=module.stride,
                 )
                 torch.cuda.empty_cache()
                 inp_unfolded = unfold(inp[0])
@@ -737,17 +743,31 @@ class sconce:
 
                 with torch.no_grad():
                     # print("cPre:",torch.count_nonzero(weights))
-                    if(self.prune_mode=="venum_cwp"):
-                        self.venum_prune(W=weights, X=inp_unfolded, s=sparstiy, in_channel=in_channel, kernel_size=kernel_size, cnn=True)
+                    if self.prune_mode == "venum_cwp":
+                        self.venum_prune(
+                            W=weights,
+                            X=inp_unfolded,
+                            s=sparstiy,
+                            in_channel=in_channel,
+                            kernel_size=kernel_size,
+                            cnn=True,
+                        )
                     else:
-                        self.venum_prune(W=weights, X=inp_unfolded, s=sparstiy, in_channel=in_channel,
-                                         kernel_size=kernel_size, cnn=True)
+                        self.venum_prune(
+                            W=weights,
+                            X=inp_unfolded,
+                            s=sparstiy,
+                            in_channel=in_channel,
+                            kernel_size=kernel_size,
+                            cnn=True,
+                        )
 
-
-            elif (isinstance(module, nn.Linear)):
+            elif isinstance(module, nn.Linear):
                 weights = module.weight.data
                 # print("LPre:",torch.count_nonzero(weights))
-                module.weight.data = self.venum_prune(W=weights, X=inp[0], s=sparstiy, cnn=False)
+                module.weight.data = self.venum_prune(
+                    W=weights, X=inp[0], s=sparstiy, cnn=False
+                )
                 # print("LPost:",torch.count_nonzero(module.weight.data))
 
             gc.collect()
@@ -755,18 +775,20 @@ class sconce:
 
         return prune
 
-    def find_instance(self, obj, object_of_importance=(nn.Conv2d, nn.Linear), sparsity=None):
+    def find_instance(
+        self, obj, object_of_importance=(nn.Conv2d, nn.Linear), sparsity=None
+    ):
         if isinstance(obj, object_of_importance):
-            if("venum" in self.prune_mode):
-                if(self.layer_idx==0):
+            if "venum" in self.prune_mode:
+                if self.layer_idx == 0:
                     # print("LID, sp:", obj, self.layer_idx, sparsity)
                     self.handles.append(obj.register_forward_hook(self.venum(sparsity)))
-                    self.layer_idx-= 1
-                elif(self.layer_idx<0):
+                    self.layer_idx -= 1
+                elif self.layer_idx < 0:
                     return
                 else:
-                    self.layer_idx-=1
-            #Add Wanda and SparseGPT here
+                    self.layer_idx -= 1
+            # Add Wanda and SparseGPT here
             else:
                 if object_of_importance == nn.Conv2d:
                     self.conv_layer.append(obj)
@@ -787,8 +809,6 @@ class sconce:
         elif isinstance(obj, OrderedDict):
             for key, value in obj.items():
                 self.find_instance(value, object_of_importance, sparsity)
-
-
 
     def compress(self, verbose=True) -> None:
         """
@@ -833,7 +853,7 @@ class sconce:
                 dense_model_accuracy=dense_validation_acc, verbose=False
             )
             sensitivity_start_end = time.time() - sensitivity_start_time
-            print("Sensitivity Scan Time(mins):", sensitivity_start_end/60)
+            print("Sensitivity Scan Time(mins):", sensitivity_start_end / 60)
             # self.sparsity_dict = {'0.weight': 0.6500000000000001, '3.weight': 0.5000000000000001, '7.weight': 0.7000000000000002}
             # self.sparsity_dict = {'backbone.conv0.weight': 0.20000000000000004, 'backbone.conv1.weight': 0.45000000000000007, 'backbone.conv2.weight': 0.25000000000000006, 'backbone.conv3.weight': 0.25000000000000006, 'backbone.conv4.weight': 0.25000000000000006, 'backbone.conv5.weight': 0.25000000000000006, 'backbone.conv6.weight': 0.3500000000000001, 'backbone.conv7.weight': 0.3500000000000001, 'classifier.weight': 0.7000000000000002}
 
@@ -848,8 +868,8 @@ class sconce:
             self.sensitivity_scan(
                 dense_model_accuracy=dense_validation_acc, verbose=False
             )
-            sensitivity_start_end =  time.time()- sensitivity_start_time
-            print("Sensitivity Scan Time(mins):", sensitivity_start_end/60)
+            sensitivity_start_end = time.time() - sensitivity_start_time
+            print("Sensitivity Scan Time(mins):", sensitivity_start_end / 60)
 
             # self.sparsity_dict = {'backbone.conv0.weight': 0.15000000000000002, 'backbone.conv1.weight': 0.15, 'backbone.conv2.weight': 0.15, 'backbone.conv3.weight': 0.15000000000000002, 'backbone.conv4.weight': 0.20000000000000004, 'backbone.conv5.weight': 0.20000000000000004, 'backbone.conv6.weight': 0.45000000000000007}
             print(f"Sparsity for each Layer: {self.sparsity_dict}")
@@ -870,26 +890,29 @@ class sconce:
         #     self.fine_tune=True
 
         elif "venum" in self.prune_mode:
-
             print("\n Venum CWP Pruning")
             sensitivity_start_time = time.time()
-            self.sensitivity_scan(dense_model_accuracy=dense_validation_acc, verbose=False)
+            self.sensitivity_scan(
+                dense_model_accuracy=dense_validation_acc, verbose=False
+            )
             sensitivity_start_end = time.time() - sensitivity_start_time
-            print("Sensitivity Scan Time(mins):", sensitivity_start_end/60)
+            print("Sensitivity Scan Time(mins):", sensitivity_start_end / 60)
 
             # self.sparsity_dict = {'backbone.conv0.weight': 0.3500000000000001, 'backbone.conv1.weight': 0.15000000000000002, 'backbone.conv2.weight': 0.1, 'backbone.conv3.weight': 0.15000000000000002, 'backbone.conv4.weight': 0.20, 'backbone.conv5.weight': 0.20, 'backbone.conv6.weight': 0.30000000000000004}
             print(f"Sparsity for each Layer: {self.sparsity_dict}")
             self.venum_apply(self.sparsity_dict)
-            if(self.prune_mode ==  "venum-cwp"):
+            if self.prune_mode == "venum-cwp":
                 self.venum_CWP_Pruning(original_dense_model, self.sparsity_dict)
             self.fine_tune = True
 
-
-
-
-        print("Pruning Time Consumed (mins):", (time.time()- sensitivity_start_end/60)/60)
-        print("Total Pruning Time Consumed (mins):", (time.time()- sensitivity_start_time)/60)
-
+        print(
+            "Pruning Time Consumed (mins):",
+            (time.time() - sensitivity_start_end / 60) / 60,
+        )
+        print(
+            "Total Pruning Time Consumed (mins):",
+            (time.time() - sensitivity_start_time) / 60,
+        )
 
         pruned_model = copy.deepcopy(self.model)
         pruned_model_size = self.get_model_size(
@@ -915,9 +938,8 @@ class sconce:
             )
             self.experiment_name = self.experiment_name + "_pruned_" + "fine_tuning"
             self.train()
-            if(self.prune_mode == "venum"):
+            if self.prune_mode == "venum":
                 self.venum_apply(self.sparsity_dict)
-
 
             pruned_model = copy.deepcopy(self.model)
 
@@ -1124,7 +1146,6 @@ class sconce:
         # self.model = self.channel_prune(sorted_model, self.channel_pruning_ratio)
         self.sparsity_dict = [value for key, value in self.sparsity_dict.items()]
         self.model = self.channel_prune(sorted_model, self.sparsity_dict)
-
 
     def venum_CWP_Pruning(self, original_dense_model, sparsity_dict):
         """
@@ -1352,10 +1373,8 @@ class sconce:
         n_conv = len(all_convs)
         # note that for the ratios, it affects the previous conv output and next
         # conv input, i.e., conv0 - ratio0 - conv1 - ratio1-...
-        if (not isinstance(prune_ratio, list)):
-
+        if not isinstance(prune_ratio, list):
             prune_ratio = [prune_ratio] * (n_conv - 1)
-
 
         assert len(all_convs) == len(all_bns)
 
@@ -1364,9 +1383,8 @@ class sconce:
             prev_bn = all_bns[i_ratio]
             next_conv = all_convs[i_ratio + 1]
             original_channels = prev_conv.out_channels  # same as next_conv.in_channels
-            if(self.prune_mode!="venum_cwp"):
+            if self.prune_mode != "venum_cwp":
                 n_keep = self.get_num_channels_to_keep(original_channels, p_ratio)
-
 
                 # prune the output of the previous conv and bn
                 prev_conv.weight.set_(prev_conv.weight.detach()[:n_keep])
@@ -1380,13 +1398,15 @@ class sconce:
                 next_conv.weight.set_(next_conv.weight.detach()[:, :n_keep])
             else:
                 pick_list = self.venum_sorted_list[i_ratio]
-                salient_indices = pick_list[int(original_channels * p_ratio):]
+                salient_indices = pick_list[int(original_channels * p_ratio) :]
 
                 # prune the output of the previous conv and bn
                 prev_conv.weight.set_(prev_conv.weight.detach()[salient_indices])
                 prev_bn.weight.set_(prev_bn.weight.detach()[salient_indices])
                 prev_bn.bias.set_(prev_bn.bias.detach()[salient_indices])
-                prev_bn.running_mean.set_(prev_bn.running_mean.detach()[salient_indices])
+                prev_bn.running_mean.set_(
+                    prev_bn.running_mean.detach()[salient_indices]
+                )
                 prev_bn.running_var.set_(prev_bn.running_var.detach()[salient_indices])
 
                 # prune the input of the next conv (hint: just one line of code)
