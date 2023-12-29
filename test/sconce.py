@@ -16,6 +16,8 @@ import time
 from collections import OrderedDict, defaultdict
 from typing import Union, List
 
+from thop import profile
+from prettytable import PrettyTable
 import numpy as np
 import torch
 from matplotlib import pyplot as plt
@@ -99,6 +101,7 @@ class sconce:
         self.epochs = None
         self.learning_rate = 1e-4
         self.dense_model_valid_acc = 0
+        self.params = []
 
         self.fine_tune_epochs = 10
         self.fine_tune = False
@@ -167,7 +170,7 @@ class sconce:
         else:
             return torch.stack(spk_rec)
 
-    def train(self) -> None:
+    def train(self, model=None) -> None:
         """
         Trains the model for a specified number of epochs using the specified dataloader and optimizer.
         If fine-tuning is enabled, the number of epochs is set to `num_finetune_epochs`.
@@ -264,7 +267,7 @@ class sconce:
             return
 
     @torch.no_grad()
-    def evaluate(self, Tqdm=True, verbose=False):
+    def evaluate(self,model =None, device=None, Tqdm=True, verbose=False):
         """
         Evaluates the model on the test dataset and returns the accuracy.
 
@@ -274,8 +277,14 @@ class sconce:
         Returns:
           float: The test accuracy as a percentage.
         """
+        if(model!=None):
+            self.model = model
+        if(device!=None):
+            final_device = device
+        else:
+            final_device= self.device
 
-        self.model.to(self.device)
+        self.model.to(final_device)
         self.model.eval()
         with torch.no_grad():
             correct = 0
@@ -287,7 +296,7 @@ class sconce:
                 loader = self.dataloader["test"]
             for i, data in enumerate(loader):
                 images, labels = data
-                images, labels = images.to(self.device), labels.to(self.device)
+                images, labels = images.to(final_device), labels.to(final_device)
                 # if ( "venum" in self.prune_mode ):
                 #     out = self.model(images)
                 #     total = len(images)
@@ -322,6 +331,46 @@ class sconce:
         """
         return profile_macs(model, inputs)
 
+    def measure_inference_latency(self, model,
+                                  device,
+                                  input_data,
+                                  num_samples=100,
+                                  num_warmups=10):
+
+        model.to(device)
+        model.eval()
+
+        x = input_data.to(device)
+
+        with torch.no_grad():
+            for _ in range(num_warmups):
+                _ = model(x)
+        torch.cuda.synchronize()
+
+        with torch.no_grad():
+            start_time = time.time()
+            for _ in range(num_samples):
+                _ = model(x)
+                torch.cuda.synchronize()
+            end_time = time.time()
+        elapsed_time = end_time - start_time
+        elapsed_time_ave = elapsed_time / num_samples
+
+        return elapsed_time_ave
+    def save_torchscript_model(self, model, model_dir, model_filename):
+
+        if not os.path.exists(model_dir):
+            os.makedirs(model_dir)
+        model_filepath = os.path.join(model_dir, model_filename)
+
+        torch.jit.save(torch.jit.script(model), model_filepath)
+
+    def load_torchscript_model(self, model_filepath, device):
+
+        model = torch.jit.load(model_filepath, map_location=device)
+
+        return model
+
     def get_sparsity(self, tensor: torch.Tensor) -> float:
         """
         calculate the sparsity of the given tensor
@@ -353,6 +402,12 @@ class sconce:
             num_nonzeros += param.count_nonzero()
             num_elements += param.numel()
         return 1 - float(num_nonzeros) / num_elements
+
+    def get_model_size_weights(self, mdl):
+        torch.save(mdl.state_dict(), "tmp.pt")
+        mdl_size =  round (os.path.getsize("tmp.pt") / 1e6, 3)
+        os.remove('tmp.pt')
+        return mdl_size
 
     def get_num_parameters(self, model: nn.Module, count_nonzero_only=False) -> int:
         """
@@ -419,10 +474,12 @@ class sconce:
         # warmup
         for _ in range(n_warmup):
             _ = model(dummy_input)
+        torch.cuda.synchronize()
         # real test
         t1 = time.time()
         for _ in range(n_test):
             _ = model(dummy_input)
+            torch.cuda.synchronize()
         t2 = time.time()
         return (t2 - t1) / n_test  # average latency in ms
 
@@ -812,11 +869,20 @@ class sconce:
 
         else:
             original_dense_model = copy.deepcopy(self.model)
-            torch.save(original_dense_model, "original_model.pth")
-        torch.save(
-            original_dense_model.state_dict(),
-            self.experiment_name + "_original_weights.pth",
-        )
+
+        input_shape = list(next(iter(self.dataloader["test"]))[0].size())
+        input_shape[0] = 1
+
+        current_device = next(original_dense_model.parameters()).device
+        dummy_input = torch.randn(input_shape).to(current_device)
+
+        self.params.append([ self.evaluate(model=original_dense_model),
+                                         self.measure_latency(model=original_dense_model,dummy_input=dummy_input),
+                                         self.get_num_parameters(model=original_dense_model),
+                                         self.get_model_size(model=original_dense_model, count_nonzero_only=True)])
+        save_file_name = self.experiment_name + "_original.pt"
+        self.save_torchscript_model(model = original_dense_model, model_dir="./", model_filename= save_file_name)
+
 
         dense_model_size = self.get_model_size(
             model=self.model, count_nonzero_only=True
@@ -845,13 +911,13 @@ class sconce:
         elif self.prune_mode == "CWP":
             print("\n Channel-Wise Pruning")
             sensitivity_start_time = time.time()
-            self.sensitivity_scan(
-                dense_model_accuracy=dense_validation_acc, verbose=False
-            )
+            # self.sensitivity_scan(
+            #     dense_model_accuracy=dense_validation_acc, verbose=False
+            # )
             sensitivity_start_end =  time.time()- sensitivity_start_time
             print("Sensitivity Scan Time(mins):", sensitivity_start_end/60)
 
-            # self.sparsity_dict = {'backbone.conv0.weight': 0.15000000000000002, 'backbone.conv1.weight': 0.15, 'backbone.conv2.weight': 0.15, 'backbone.conv3.weight': 0.15000000000000002, 'backbone.conv4.weight': 0.20000000000000004, 'backbone.conv5.weight': 0.20000000000000004, 'backbone.conv6.weight': 0.45000000000000007}
+            self.sparsity_dict = {'backbone.conv0.weight': 0.15000000000000002, 'backbone.conv1.weight': 0.15, 'backbone.conv2.weight': 0.15, 'backbone.conv3.weight': 0.15000000000000002, 'backbone.conv4.weight': 0.20000000000000004, 'backbone.conv5.weight': 0.20000000000000004, 'backbone.conv6.weight': 0.45000000000000007}
             print(f"Sparsity for each Layer: {self.sparsity_dict}")
             self.CWP_Pruning()  # Channelwise Pruning
             self.fine_tune = True
@@ -892,6 +958,12 @@ class sconce:
 
 
         pruned_model = copy.deepcopy(self.model)
+
+        current_device = next(pruned_model.parameters()).device
+        dummy_input = torch.randn(input_shape).to(current_device)
+
+
+
         pruned_model_size = self.get_model_size(
             model=pruned_model, count_nonzero_only=True
         )
@@ -905,39 +977,33 @@ class sconce:
             f"\nPruned Model has Accuracy={pruned_model_acc :.2f} MiB(non-zeros) = {pruned_model_acc - dense_validation_acc :.2f}% of Original model Accuracy"
         )
 
+
+
         if self.fine_tune:
-            print("\n \n========== Fine-Tuning ==========")
+            print("\n \n==================== Fine-Tuning ====================")
             self.optimizer = torch.optim.SGD(
                 self.model.parameters(), lr=0.0001, momentum=0.9, weight_decay=1e-4
             )
             self.scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
                 self.optimizer, self.num_finetune_epochs
             )
-            self.experiment_name = self.experiment_name + "_pruned_" + "fine_tuning"
+
             self.train()
+            save_file_name = self.experiment_name + "_pruned_fine_tuned" + ".pt"
+            self.save_torchscript_model(model=self.model, model_dir="./", model_filename=save_file_name)
+
+
             if(self.prune_mode == "venum"):
                 self.venum_apply(self.sparsity_dict)
 
 
             pruned_model = copy.deepcopy(self.model)
 
+
         fine_tuned_pruned_model_size = self.get_model_size(
             model=pruned_model, count_nonzero_only=True
         )
         fine_tuned_validation_acc = self.evaluate(verbose=False)
-
-        torch.save(
-            pruned_model.state_dict(),
-            self.experiment_name + "_pruned_fine_tuned_weights" + ".pth",
-        )
-        if self.snn == False:
-            torch.save(pruned_model, "pruned_model.pth")
-        accuracies = [
-            dense_validation_acc,
-            pruned_validation_acc,
-            fine_tuned_validation_acc,
-        ]
-        self.compare_models(original_dense_model, pruned_model, accuracies)
 
         if verbose:
             print(
@@ -948,80 +1014,187 @@ class sconce:
                 fine_tuned_validation_acc,
             )
 
-    # def k_means_quantize(self, fp32_tensor: torch.Tensor, bitwidth=4,codebook=None):
-    #
-    #     """
-    #     quantize tensor using k-means clustering
-    #     :param fp32_tensor:
-    #     :param bitwidth: [int] quantization bit width, default=4
-    #     :param codebook: [Codebook] (the cluster centroids, the cluster label tensor)
-    #     :return:
-    #         [Codebook = (centroids, labels)]
-    #             centroids: [torch.(cuda.)FloatTensor] the cluster centroids
-    #             labels: [torch.(cuda.)LongTensor] cluster label tensor
-    #     """
-    #
-    #     if codebook is None:
-    #       # get number of clusters based on the quantization precision
-    #       # hint: one line of code
-    #       n_clusters = 1 << self.bitwidth
-    #
-    #       # use k-means to get the quantization centroids
-    #       kmeans = KMeans(n_clusters=n_clusters, mode='euclidean', verbose=0)
-    #       labels = kmeans.fit_predict(fp32_tensor.view(-1, 1)).to(torch.long)
-    #       centroids = kmeans.centroids.to(torch.float).view(-1)
-    #       self.codebook = self.Codebook(centroids, labels)
-    #
-    #     # decode the codebook into k-means quantized tensor for inference
-    #     # hint: one line of code
-    #     # ipdb.set_trace()
-    #     quantized_tensor = self.codebook.centroids[self.codebook.labels]
-    #
-    #     fp32_tensor.set_(quantized_tensor.view_as(fp32_tensor))
-    #     return codebook
-    #
-    #
-    #
-    # @torch.no_grad()
-    # def kmeansquantize(self):
-    #   """
-    #   Applies k-means quantization to the model's parameters and returns a dictionary of codebooks.
-    #   If the bitwidth is a dictionary, applies quantization to the named parameters in the dictionary.
-    #   Otherwise, applies quantization to all parameters with more than one dimension.
-    #   Returns a dictionary of codebooks, where each key is the name of a parameter and each value is a codebook.
-    #   """
-    #   codebook = {}
-    #   if isinstance(self.bitwidth, dict):
-    #     for name, param in self.model.named_parameters():
-    #       if name in bitwidth:
-    #         codebook[name] = self.k_means_quantize(param, bitwidth=self.bitwidth[name])
-    #   else:
-    #     for name, param in self.model.named_parameters():
-    #       if param.dim() > 1:
-    #         codebook[name] = self.k_means_quantize(param, bitwidth=self.bitwidth)
-    #   return codebook
 
-    #
-    # @torch.no_grad()
-    # def apply_quantization(self, update_centroids):
-    #     """
-    #     Applies quantization to the model's parameters using k-means clustering.
-    #
-    #     Args:
-    #       update_centroids (bool): Whether to update the codebook centroids.
-    #
-    #     Returns:
-    #       None
-    #     """
-    #     self.codebook = self.quantize()
-    #     for name, param in self.model.named_parameters():
-    #       if name in self.codebook:
-    #         if update_centroids:
-    #           update_codebook(param, codebook=self.codebook[name])
-    #         self.codebook[name] = k_means_quantize(
-    #           param, codebook=self.codebook[name])
+        quantized_model, model_fp32_trained = self.qat()
 
-    def compare_models(self, original_dense_model, pruned_fine_tuned_model, accuracies=None):
+
+        model_list = [original_dense_model, pruned_model, quantized_model]
+
+        self.compare_models(model_list=model_list)
+
+
+    def evaluate_model(self, model, test_loader, device, criterion=None):
+
+        model.eval()
+        model.to(device)
+
+        running_loss = 0
+        running_corrects = 0
+
+        for inputs, labels in test_loader:
+
+            inputs = inputs.to(device)
+            labels = labels.to(device)
+
+            outputs = model(inputs)
+            _, preds = torch.max(outputs, 1)
+
+            if criterion is not None:
+                loss = criterion(outputs, labels).item()
+            else:
+                loss = 0
+
+            # statistics
+            running_loss += loss * inputs.size(0)
+            running_corrects += torch.sum(preds == labels.data)
+
+        eval_loss = running_loss / len(test_loader.dataset)
+        eval_accuracy = running_corrects / len(test_loader.dataset)
+
+        return eval_loss, eval_accuracy
+
+    def print_model_size(self, mdl):
+        torch.save(mdl.state_dict(), "tmp.pt")
+        print("%.2f MB" % (os.path.getsize("tmp.pt") / 1e6))
+        os.remove('tmp.pt')
+    def qat(self):
+        print("\n \n==================== Quantization-Aware Training(QAT) ====================")
+        def get_all_layers(model, parent_name=''):
+            layers = []
+            for name, module in model.named_children():
+                full_name = f"{parent_name}.{name}" if parent_name else name
+                layers.append((full_name, module))
+                if isinstance(module, nn.Module):
+                    layers.extend(get_all_layers(module, parent_name=full_name))
+            return layers
+
+        fusing_layers = [torch.nn.modules.conv.Conv2d, torch.nn.modules.batchnorm.BatchNorm2d,
+                         torch.nn.modules.activation.ReLU, torch.nn.modules.linear.Linear,
+                         torch.nn.modules.batchnorm.BatchNorm1d]
+
+        def detect_sequences(lst):
+            detected_sequences = []
+
+            i = 0
+            while i < len(lst):
+                if i + 2 < len(lst) and [type(l) for l in lst[i:i + 3]] == [fusing_layers[0], fusing_layers[1],
+                                                                            fusing_layers[2]]:
+                    detected_sequences.append(np.take(name_list, [i for i in range(i, i + 3)]).tolist())
+                    i += 3
+                elif i + 1 < len(lst) and [type(l) for l in lst[i:i + 2]] == [fusing_layers[0], fusing_layers[1]]:
+                    detected_sequences.append(np.take(name_list, [i for i in range(i, i + 2)]).tolist())
+                    i += 2
+                # if i + 1 < len(lst) and [ type(l) for l in lst[i:i+2]] == [fusing_layers[0], fusing_layers[2]]:
+                #     detected_sequences.append(np.take(name_list,[i for i in range(i,i+2)]).tolist())
+                #     i += 2
+                # elif i + 1 < len(lst) and [ type(l) for l in lst[i:i+2]] == [fusing_layers[1], fusing_layers[2]]:
+                #     detected_sequences.append(np.take(name_list,[i for i in range(i,i+2)]).tolist())
+                #     i += 2
+                elif i + 1 < len(lst) and [type(l) for l in lst[i:i + 2]] == [fusing_layers[3], fusing_layers[2]]:
+                    detected_sequences.append(np.take(name_list, [i for i in range(i, i + 2)]).tolist())
+                    i += 2
+                elif i + 1 < len(lst) and [type(l) for l in lst[i:i + 2]] == [fusing_layers[3], fusing_layers[4]]:
+                    detected_sequences.append(np.take(name_list, [i for i in range(i, i + 2)]).tolist())
+                    i += 2
+                else:
+                    i += 1
+
+            return detected_sequences
+
+        original_model = copy.deepcopy(self.model)
+
+
+        model_fp32 = copy.deepcopy(self.model)
+        model_fp32 = nn.Sequential(torch.quantization.QuantStub(),
+                                   model_fp32,
+                                   torch.quantization.DeQuantStub())
+
+        model_fp32.eval()
+
+        all_layers = get_all_layers(model_fp32)
+        name_list = []
+        layer_list = []
+        for name, module in all_layers:
+            name_list.append(name)
+            layer_list.append(module)
+
+        fusion_layers = detect_sequences(layer_list)
+
+        model_fp32.qconfig = torch.ao.quantization.get_default_qat_qconfig('x86')
+
+        # fuse the activations to preceding layers, where applicable
+        # this needs to be done manually depending on the model architecture
+        model_fp32_fused = torch.ao.quantization.fuse_modules(model_fp32,
+                                                              fusion_layers)
+
+        # Prepare the model for QAT. This inserts observers and fake_quants in
+        # the model needs to be set to train for QAT logic to work
+        # the model that will observe weight and activation tensors during calibration.
+        model_fp32_prepared = torch.ao.quantization.prepare_qat(model_fp32_fused.train())
+        self.model  = model_fp32_prepared
+        self.train()
+
+        # Convert the observed model to a quantized model. This does several things:
+        # quantizes the weights, computes and stores the scale and bias value to be
+        # used with each activation tensor, fuses modules where appropriate,
+        # and replaces key operators with quantized implementations.
+        model_fp32_trained = copy.deepcopy(self.model)
+        model_fp32_trained.to('cpu')
+        model_fp32_trained.eval()
+
+
+
+        model_int8 = torch.ao.quantization.convert(model_fp32_trained, inplace=True)
+        model_int8.eval()
+        # # torch.save(model_int8, 'quantized_model.pt')
+        # # torch.save(
+        # #     model_int8.state_dict(),
+        # #     self.experiment_name + "_quantized" + ".pth",
+        # # # )
+        # input_shape = list(next(iter(self.dataloader["test"]))[0].size())
+        # input_shape[0] = 1
+        # current_device = "cpu"
+        # dummy_input = torch.randn(input_shape).to(current_device)
+        # #
+        # # self.params.append([self.evaluate(model=model_int8),
+        # #                     self.measure_latency(model=model_int8, dummy_input=dummy_input),
+        # #                     self.get_num_parameters(model=model_int8),
+        # #                     self.get_model_size(model=model_int8, count_nonzero_only=True)])
+        #
+        # save_file_name = self.experiment_name + "_int8.pt"
+        # self.save_torchscript_model(model=model_int8, model_dir="./", model_filename=save_file_name)
+        #
+        # quantized_jit_model = self.load_torchscript_model(model_filepath=self.experiment_name + "_int8.pt", device='cpu')
+        #
+        # _, fp32_eval_accuracy = self.evaluate_model(model=original_model, test_loader=self.dataloader['test'], device='cpu', criterion=None)
+        # _, int8_eval_accuracy = self.evaluate_model(model=model_int8, test_loader=self.dataloader['test'], device='cpu',
+        #                                        criterion=None)
+        # _, int8_jit_eval_accuracy = self.evaluate_model(model=quantized_jit_model, test_loader=self.dataloader['test'],
+        #                                             device='cpu', criterion=None)
+        # print("FP32 evaluation accuracy: {:.3f}".format(fp32_eval_accuracy))
+        # print("INT8 evaluation accuracy: {:.3f}".format(int8_eval_accuracy))
+        # print("INT8 JIT evaluation accuracy: {:.3f}".format(int8_eval_accuracy))
+        #
+        #
+        # fp32_cpu_inference_latency = self.measure_inference_latency(model=original_model, device='cpu',
+        #                                                        input_data=dummy_input, num_samples=100)
+        # int8_cpu_inference_latency = self.measure_inference_latency(model=model_int8, device='cpu',
+        #                                                        input_data=dummy_input, num_samples=100)
+        # int8_jit_cpu_inference_latency = self.measure_inference_latency(model=quantized_jit_model, device='cpu',
+        #                                                            input_data=dummy_input, num_samples=100)
+        # fp32_gpu_inference_latency = self.measure_inference_latency(model=original_model, device='cuda',
+        #                                                        input_data=dummy_input, num_samples=100)
+        #
+        # print("FP32 CPU Inference Latency: {:.2f} ms / sample".format(fp32_cpu_inference_latency * 1000))
+        # print("FP32 CUDA Inference Latency: {:.2f} ms / sample".format(fp32_gpu_inference_latency * 1000))
+        # print("INT8 CPU Inference Latency: {:.2f} ms / sample".format(int8_cpu_inference_latency * 1000))
+        # print("INT8 JIT CPU Inference Latency: {:.2f} ms / sample".format(int8_jit_cpu_inference_latency * 1000))
+
+        return model_int8, model_fp32_trained
+    # def compare_models(self, original_dense_model, pruned_fine_tuned_model, quantization=False,accuracies=None):
+
+    def compare_models(self,model_list, model_tags=None):
+
         """
         Compares the performance of two PyTorch models: an original dense model and a pruned and fine-tuned model.
         Prints a table of metrics including latency, MACs, and model size for both models and their reduction ratios.
@@ -1032,24 +1205,34 @@ class sconce:
 
         Returns: None
         """
-        # accuracies = accuracies
+
+        table_data = {
+            "latency": ["Latency (ms/sample)"],
+            "accuracy": ["Accuracy (%)"],
+            "params": ["Params (M)"],
+            "size": ["Size (MiB)"],
+            "mac": ["MAC (M)"],
+            # "energy": ["Energy (Joules)"],
+        }
+        table = PrettyTable()
+        table.field_names = ["", "Original Model", "Pruned Model", "Quantized Model"]
+
+        accuracies, latency, params, model_size, macs = [], [], [], [], []
+        skip = 3
+
         input_shape = list(next(iter(self.dataloader["test"]))[0].size())
         input_shape[0] = 1
         dummy_input = torch.randn(input_shape).to("cpu")
-        pruned_fine_tuned_model = pruned_fine_tuned_model.to("cpu")
-
-        if(accuracies==None):
-            accuracies = [
-                self.dense_model_valid_acc,
-                self.evaluate(model=pruned_fine_tuned_model, verbose=False),
-            ]
-
-        # Parse through snn model and send to cpu
-        if self.snn:
-            for model in [original_dense_model, pruned_fine_tuned_model]:
+        file_name_list = ['original_model','pruned_model','quantized_model']
+        if not os.path.exists('weights/'):
+            os.makedirs('weights/')
+        for model, model_file_name in zip(model_list,file_name_list):
+            # print(str(model))
+                # # Parse through snn model and send to cpu
+            if self.snn:
                 if isinstance(model, nn.Sequential):
-                    for layer_id in range(len(original_dense_model)):
-                        layer = original_dense_model[layer_id]
+                    for layer_id in range(len(model)):
+                        layer = model[layer_id]
                         if isinstance((layer), snntorch._neurons.leaky.Leaky):
                             layer.mem = layer.mem.to("cpu")
                 else:
@@ -1057,69 +1240,144 @@ class sconce:
                         if isinstance((layer), snntorch._neurons.leaky.Leaky):
                             layer.mem = layer.mem.to("cpu")
 
-        original_dense_model = original_dense_model.to("cpu")
-        original_latency = self.measure_latency(
-            model=original_dense_model, dummy_input=dummy_input
-        )
-        pruned_latency = self.measure_latency(
-            model=pruned_fine_tuned_model, dummy_input=dummy_input
-        )
+            table_data['accuracy'].append(round(self.evaluate(model= model, device='cpu'),3))
+            table_data['latency'].append(round(self.measure_latency(model=model.to("cpu"), dummy_input=dummy_input) * 1000, 1))
+            table_data['size'].append(self.get_model_size_weights(model))
 
-        print("\n ................. Comparison Table  .................")
-        table_template = "{:<15} {:<15} {:<15} {:<15}"
-        print(table_template.format("", "Original", "Pruned", "Reduction Ratio"))
-        print(
-            table_template.format(
-                "Latency (ms)",
-                round(original_latency * 1000, 1),
-                round(pruned_latency * 1000, 1),
-                round(original_latency / pruned_latency, 1),
-            )
-        )
+            try:
+                model_params = self.get_num_parameters(model, count_nonzero_only=True)
+                if torch.is_tensor(model_params):
+                    model_params =model_params.item()
+                model_params = round(model_params / 1e6, 2)
+                if(model_params==0):
+                    table_data['params'].append("*")
+                else:
+                    table_data['params'].append(model_params)
+            except RuntimeError as e:
+                table_data['params'].append("*")
+            if (skip == 1):
+                table_data['mac'].append("*")
+                pass
+            else:
+                try:
 
-        # 2. measure the computation (MACs)
-        original_macs = self.get_model_macs(original_dense_model, dummy_input)
-        pruned_macs = self.get_model_macs(pruned_fine_tuned_model, dummy_input)
-        table_template = "{:<15} {:<15} {:<15} {:<15}"
-        print(
-            table_template.format(
-                "MACs (M)",
-                round(original_macs / 1e6),
-                round(pruned_macs / 1e6),
-                round(original_macs / pruned_macs, 1),
-            )
-        )
+                    mac = self.get_model_macs(model, dummy_input)
+                    table_data['mac'].append(round(mac/ 1e6))
+                except AttributeError as e:
+                    table_data['mac'].append("-")
 
-        # 3. measure the model size (params)
-        original_param = self.get_num_parameters(
-            original_dense_model, count_nonzero_only=True
-        ).item()
-        pruned_param = self.get_num_parameters(
-            pruned_fine_tuned_model, count_nonzero_only=True
-        ).item()
-        print(
-            table_template.format(
-                "Param (M)",
-                round(original_param / 1e6, 2),
-                round(pruned_param / 1e6, 2),
-                round(original_param / pruned_param, 1),
-            )
-        )
+            ########################################
 
-        # 4. Accuracies
+            folder_file_name = 'weights/'+model_file_name+"/"
+            if not os.path.exists(folder_file_name):
+                os.makedirs(folder_file_name)
+            folder_file_name+=model_file_name
+            torch.save(model,folder_file_name+'.pt')
+            torch.save(model.state_dict(), folder_file_name + '_weights.pt')
+            traced_model = torch.jit.trace(model, dummy_input)
+            torch.jit.save(torch.jit.script(traced_model), folder_file_name+'.pt')
 
-        print(
-            table_template.format(
-                "Accuracies (%)",
-                round(accuracies[0], 3),
-                round(accuracies[-1], 3),
-                str(round(accuracies[-1] - accuracies[0], 3)),
-            )
-        )
+            ########################################
+            #Save model with pt,.pth and jit
+            skip-=1
 
-        # put model back to cuda
-        # pruned_model = pruned_fine_tuned_model.to("cuda")
-        # model = original_dense_model.to("cuda")
+
+        for key, value in table_data.items():
+            table.add_row(value)
+        print("\n \n============================== Comparison Table ==============================")
+        print(table)
+
+        # # accuracies = accuracies
+        # if( accuracies == None):
+        #     accuracies =[]
+        #     accuracies.append(self.evaluate(model = original_dense_model))
+        #     accuracies.append(self.evaluate(model = pruned_fine_tuned_model))
+
+        # input_shape = list(next(iter(self.dataloader["test"]))[0].size())
+        # input_shape[0] = 1
+        # dummy_input = torch.randn(input_shape).to("cpu")
+        # original_dense_model.to("cpu")
+        # pruned_fine_tuned_model.to("cpu")
+
+
+
+        # # Parse through snn model and send to cpu
+        # if self.snn:
+        #     for model in [original_dense_model, pruned_fine_tuned_model]:
+        #         if isinstance(model, nn.Sequential):
+        #             for layer_id in range(len(original_dense_model)):
+        #                 layer = original_dense_model[layer_id]
+        #                 if isinstance((layer), snntorch._neurons.leaky.Leaky):
+        #                     layer.mem = layer.mem.to("cpu")
+        #         else:
+        #             for module in model.modules():
+        #                 if isinstance((layer), snntorch._neurons.leaky.Leaky):
+        #                     layer.mem = layer.mem.to("cpu")
+
+        # original_dense_model.to("cpu")
+        # original_latency = self.measure_latency(
+        #     model=original_dense_model, dummy_input=dummy_input
+        # )
+        # pruned_latency = self.measure_latency(
+        #     model=pruned_fine_tuned_model, dummy_input=dummy_input
+        # )
+        # table_struct = "Quantized" if (quantization==True) else "Pruned"
+        # print("\n ................. Comparison Table  .................")
+        # table_template = "{:<15} {:<15} {:<15} {:<15}"
+        # print(table_template.format("", "Original", table_struct, "Reduction Ratio"))
+        # print(
+        #     table_template.format(
+        #         "Latency (ms)",
+        #         round(original_latency * 1000, 1),
+        #         round(pruned_latency * 1000, 1),
+        #         round(original_latency / pruned_latency, 1),
+        #     )
+        # )
+
+        # # 2. measure the computation (MACs)
+        # if(not quantization):
+        #     original_macs = self.get_model_macs(original_dense_model, dummy_input)
+        #     pruned_macs = self.get_model_macs(pruned_fine_tuned_model, dummy_input)
+        #     table_template = "{:<15} {:<15} {:<15} {:<15}"
+        #     print(
+        #         table_template.format(
+        #             "MACs (M)",
+        #             round(original_macs / 1e6),
+        #             round(pruned_macs / 1e6),
+        #             round(original_macs / pruned_macs, 1),
+        #         )
+        #     )
+
+        #     # 3. measure the model size (params)
+        #     original_param = self.get_num_parameters(
+        #         original_dense_model, count_nonzero_only=True
+        #     ).item()
+        #     pruned_param = self.get_num_parameters(
+        #         pruned_fine_tuned_model, count_nonzero_only=True
+        #     ).item()
+        #     print(
+        #         table_template.format(
+        #             "Param (M)",
+        #             round(original_param / 1e6, 2),
+        #             round(pruned_param / 1e6, 2),
+        #             round(original_param / pruned_param, 1),
+        #         )
+        #     )
+
+        # # 4. Accuracies
+
+        # print(
+        #     table_template.format(
+        #         "Accuracies (%)",
+        #         round(accuracies[0], 3),
+        #         round(accuracies[-1], 3),
+        #         str(round(accuracies[-1] - accuracies[0], 3)),
+        #     )
+        # )
+
+        # # put model back to cuda
+        # # pruned_model = pruned_fine_tuned_model.to("cuda")
+        # # model = original_dense_model.to("cuda")
 
     def CWP_Pruning(self):
         """
