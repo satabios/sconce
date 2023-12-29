@@ -102,6 +102,7 @@ class sconce:
         self.learning_rate = 1e-4
         self.dense_model_valid_acc = 0
         self.params = []
+        self.qat_config = 'x86'
 
         self.fine_tune_epochs = 10
         self.fine_tune = False
@@ -1120,7 +1121,7 @@ class sconce:
 
         fusion_layers = detect_sequences(layer_list)
 
-        model_fp32.qconfig = torch.ao.quantization.get_default_qat_qconfig('x86')
+        model_fp32.qconfig = torch.ao.quantization.get_default_qat_qconfig(self.qat_config)
 
         # fuse the activations to preceding layers, where applicable
         # this needs to be done manually depending on the model architecture
