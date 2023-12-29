@@ -1,5 +1,4 @@
 sphinx_rtd_theme
-sphinx_timeline
 alabaster==0.7.13
 anyio==4.0.0
 argon2-cffi==23.1.0
