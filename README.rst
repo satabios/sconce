@@ -21,11 +21,6 @@ that we use to train our models. However, the brain does not use gradient descen
 solve complex problems with such ease.
 
 
-.. image:: https://github.com/satabios/sconce/blob/main/docs/source/images/sconce-outline.jpeg?raw=true
-        :align: center
-       
-
-
 To bridge this gap, this package aids to perform a series of aids:
 
 * Make **Training**, **Testing**, **Inference**, **Model Profiling**, etc.. pipelined. Thus easing your way through research and development.
@@ -36,6 +31,13 @@ To bridge this gap, this package aids to perform a series of aids:
 * Support `Spiking Neural Networks(snnTorch) <https://github.com/jeshraghian/snntorch>`_ in this compression pipeline [Future integerations are expected].
 * **Auto-Sensitivity Scan**: Each model would require a set of ingredients of its own to make it efficient. sconce enables an auto-search algorithm that picks the best possible solution from a corpus amount of possible techniques in the fastest manner possible with the least amount of human intervention.
 
+
+
+.. image:: https://github.com/satabios/sconce/blob/main/docs/source/images/sconce-outline.jpeg?raw=true
+        :align: center
+
+.. image:: https://github.com/satabios/sconce/blob/main/docs/source/images/sconce-workflow-tier1.jpeg?raw=true
+        :align: center
 
 If you like this project, please consider starring ⭐ this repo as it is the easiest and best way to support it.
 
