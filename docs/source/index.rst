@@ -10,6 +10,7 @@ sconce Documentation
    Model Compression Techniques
    tutorials/index
    Auto-Sensitivity-Picker
+   Workflow
    Features
    timeline
    reference
