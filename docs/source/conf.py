@@ -8,13 +8,6 @@ import sys
 
 sys.path.insert(0, os.path.abspath(os.path.join("..", "..", "sconce")))
 
-
-try:
-  import sconce
-except ImportError:
-  print("oh no 1")
-
-
 # sys.path.insert(0, os.path.abspath(os.path.join('../../sconce/')))
 print("PATH Direc:",os.getcwd())
 print("LS:",os.listdir('./'))
