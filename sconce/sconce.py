@@ -332,8 +332,22 @@ class sconce:
         return profile_macs(model, inputs)
 
     def measure_inference_latency(
-        self, model, device, input_data, num_samples=100, num_warmups=10
-    ):
+            self, model, device, input_data, num_samples=100, num_warmups=10
+        ):
+    
+        """
+        Measures the inference latency of a given model on a specific device.
+
+        Args:
+            model (torch.nn.Module): The model to measure the inference latency for.
+            device (torch.device): The device to run the inference on.
+            input_data (torch.Tensor): The input data for the model.
+            num_samples (int, optional): The number of samples to measure the latency for. Defaults to 100.
+            num_warmups (int, optional): The number of warmup iterations to run before measuring the latency. Defaults to 10.
+
+        Returns:
+            float: The average inference latency in seconds.
+        """
         model.to(device)
         model.eval()
 
@@ -356,6 +370,17 @@ class sconce:
         return elapsed_time_ave
 
     def save_torchscript_model(self, model, model_dir, model_filename):
+        """
+        Save a PyTorch model as a TorchScript model.
+
+        Args:
+            model (torch.nn.Module): The PyTorch model to be saved.
+            model_dir (str): The directory where the TorchScript model will be saved.
+            model_filename (str): The filename of the TorchScript model.
+
+        Returns:
+            None
+        """
         if not os.path.exists(model_dir):
             os.makedirs(model_dir)
         model_filepath = os.path.join(model_dir, model_filename)
@@ -363,14 +388,29 @@ class sconce:
         torch.jit.save(torch.jit.script(model), model_filepath)
 
     def load_torchscript_model(self, model_filepath, device):
+        """
+        Load a TorchScript model from the specified filepath and move it to the specified device.
+
+        Args:
+            model_filepath (str): The filepath of the TorchScript model.
+            device (str or torch.device): The device to move the model to.
+
+        Returns:
+            torch.jit.ScriptModule: The loaded TorchScript model.
+        """
         model = torch.jit.load(model_filepath, map_location=device)
 
         return model
 
     def get_sparsity(self, tensor: torch.Tensor) -> float:
         """
-        calculate the sparsity of the given tensor
-            sparsity = #zeros / #elements = 1 - #nonzeros / #elements
+        Calculate the sparsity of a tensor.
+
+        Parameters:
+            tensor (torch.Tensor): The input tensor.
+
+        Returns:
+            float: The sparsity of the tensor, defined as 1 - (number of non-zero elements / total number of elements).
         """
         return 1 - float(tensor.count_nonzero()) / tensor.numel()
 
@@ -400,6 +440,15 @@ class sconce:
         return 1 - float(num_nonzeros) / num_elements
 
     def get_model_size_weights(self, mdl):
+        """
+        Calculates the size of the model's weights in megabytes.
+
+        Args:
+            mdl (torch.nn.Module): The model whose weights size needs to be calculated.
+
+        Returns:
+            float: The size of the model's weights in megabytes.
+        """
         torch.save(mdl.state_dict(), "tmp.pt")
         mdl_size = round(os.path.getsize("tmp.pt") / 1e6, 3)
         os.remove("tmp.pt")
@@ -430,9 +479,15 @@ class sconce:
         self, model: nn.Module, data_width=32, count_nonzero_only=False
     ) -> int:
         """
-        calculate the model size in bits
-        :param data_width: #bits per element
-        :param count_nonzero_only: only count nonzero weights
+        Calculates the size of a model in terms of memory usage.
+
+        Args:
+            model (nn.Module): The model to calculate the size for.
+            data_width (int, optional): The width of each data element in bits. Defaults to 32.
+            count_nonzero_only (bool, optional): Whether to count only the non-zero parameters. Defaults to False.
+
+        Returns:
+            int: The size of the model in memory, in bits.
         """
         return self.get_num_parameters(model, count_nonzero_only) * data_width
 
@@ -526,18 +581,18 @@ class sconce:
         verbose=True,
     ):
         """
-        Scans the sensitivity of the model to weight pruning by gradually increasing the sparsity of each layer's weights
-        and measuring the resulting accuracy. Returns a dictionary mapping layer names to the sparsity values that resulted
-        in the highest accuracy for each layer.
+        Perform sensitivity scan to determine the sparsity levels for weight pruning.
 
-        :param dense_model_accuracy: the accuracy of the original dense model
-        :param scan_step: the step size for the sparsity scan
-        :param scan_start: the starting sparsity for the scan
-        :param scan_end: the ending sparsity for the scan
-        :param verbose: whether to print progress information during the scan
-        :return: a dictionary mapping layer names to the sparsity values that resulted in the highest accuracy for each layer
+        Parameters:
+        - dense_model_accuracy (float): The accuracy of the dense model.
+        - scan_step (float): The step size for the sparsity scan. Default is 0.05.
+        - scan_start (float): The starting sparsity level for the scan. Default is 0.1.
+        - scan_end (float): The ending sparsity level for the scan. Default is 1.0.
+        - verbose (bool): Whether to display progress information. Default is True.
+
+        Returns:
+        - None
         """
-
         self.sparsity_dict = {}
         sparsities = np.flip(np.arange(start=scan_start, stop=scan_end, step=scan_step))
         accuracies = []
@@ -552,7 +607,6 @@ class sconce:
             if param.dim() > 2
         ]
         original_model = copy.deepcopy(self.model)
-        # original_dense_model_accuracy = self.evaluate()
         conv_layers = [
             module for module in self.model.modules() if (isinstance(module, nn.Conv2d))
         ]
@@ -591,7 +645,6 @@ class sconce:
                     and len(param.shape) > 2
                     and i_layer < (len(conv_layers) - 1)
                 ):
-                    # self.temp_sparsity_list[i_layer] = sparsity
                     self.layer_idx = i_layer
                     self.prune_mode = original_prune_mode
 
@@ -614,20 +667,13 @@ class sconce:
                     and len(param.shape) > 2
                     and i_layer < (len(conv_layers) - 1)
                 ):
-                    # self.model = sorted_model
                     self.model = self.channel_prune_layerwise(
                         sorted_model, sparsity, i_layer
                     )
                     hit_flag = True
-                ## TODO:
-                ## Add conv CWP and linear CWP
 
                 if hit_flag == True:
-                    # if self.prune_mode == "venum_sensitivity":
-                    #     self.prune_mode = original_prune_mode
                     acc = self.evaluate(Tqdm=False) - dense_model_accuracy
-                    # if ("venum" in self.prune_mode):
-                    #     self.prune_mode = "venum_sensitivity"
                     if abs(acc) <= self.degradation_value:
                         self.sparsity_dict[name] = sparsity
                         self.model = copy.deepcopy(original_model)
@@ -640,15 +686,9 @@ class sconce:
                         self.sparsity_dict[name] = best_possible_sparsity
                         self.model = copy.deepcopy(original_model)
                     else:
-                        # restore
-                        #
-                        if "venum" in self.prune_mode:
-                            self.model = copy.deepcopy(original_model)
-                        else:
-                            param.copy_(param_clone)
+                        param.copy_(param_clone)
                         accuracy.append(acc)
                         hit_flag = False
-                # break
 
     def fine_grained_prune(self, tensor: torch.Tensor, sparsity: float) -> torch.Tensor:
         """
@@ -937,21 +977,21 @@ class sconce:
         elif self.prune_mode == "CWP":
             print("\n Channel-Wise Pruning")
             sensitivity_start_time = time.time()
-            # self.sensitivity_scan(
-            #     dense_model_accuracy=dense_validation_acc, verbose=False
-            # )
+            self.sensitivity_scan(
+                dense_model_accuracy=dense_validation_acc, verbose=False
+            )
             sensitivity_start_end = time.time() - sensitivity_start_time
             print("Sensitivity Scan Time(mins):", sensitivity_start_end / 60)
 
-            self.sparsity_dict = {
-                "backbone.conv0.weight": 0.15000000000000002,
-                "backbone.conv1.weight": 0.15,
-                "backbone.conv2.weight": 0.15,
-                "backbone.conv3.weight": 0.15000000000000002,
-                "backbone.conv4.weight": 0.20000000000000004,
-                "backbone.conv5.weight": 0.20000000000000004,
-                "backbone.conv6.weight": 0.45000000000000007,
-            }
+            # self.sparsity_dict = {
+            #     "backbone.conv0.weight": 0.15000000000000002,
+            #     "backbone.conv1.weight": 0.15,
+            #     "backbone.conv2.weight": 0.15,
+            #     "backbone.conv3.weight": 0.15000000000000002,
+            #     "backbone.conv4.weight": 0.20000000000000004,
+            #     "backbone.conv5.weight": 0.20000000000000004,
+            #     "backbone.conv6.weight": 0.45000000000000007,
+            # }
             print(f"Sparsity for each Layer: {self.sparsity_dict}")
             self.CWP_Pruning()  # Channelwise Pruning
             self.fine_tune = True
