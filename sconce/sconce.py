@@ -692,12 +692,17 @@ class sconce:
 
     def fine_grained_prune(self, tensor: torch.Tensor, sparsity: float) -> torch.Tensor:
         """
-        magnitude-based pruning for single tensor
-        :param tensor: torch.(cuda.)Tensor, weight of conv/fc layer
-        :param sparsity: float, pruning sparsity
-            sparsity = #zeros / #elements = 1 - #nonzeros / #elements
-        :return:
-            torch.(cuda.)Tensor, mask for zeros
+        Prunes a tensor in a fine-grained manner based on the desired sparsity level.
+
+        Args:
+            tensor (torch.Tensor): The input tensor to be pruned.
+            sparsity (float): The desired sparsity level, ranging from 0.0 to 1.0.
+
+        Returns:
+            torch.Tensor: The pruned tensor with the same shape as the input tensor.
+
+        Raises:
+            None.
         """
         sparsity = min(max(0.0, sparsity), 1.0)
         if sparsity == 1.0:
@@ -724,6 +729,15 @@ class sconce:
 
     @torch.no_grad()
     def venum_apply(self, sparsity_dict):
+        """
+        Applies sparsity to the model layers based on the given sparsity dictionary.
+
+        Args:
+            sparsity_dict (dict): A dictionary containing layer IDs as keys and corresponding sparsity values.
+
+        Returns:
+            None
+        """
         for layer_id, (_, sparsity) in enumerate(sparsity_dict.items()):
             if sparsity > 0:
                 self.layer_idx = layer_id
@@ -735,19 +749,7 @@ class sconce:
         for handle in self.handles:
             handle.remove()
 
-    # @torch.no_grad()
-    # def venum_apply(self, sparsity_dict):
-    #
-    #     for layer_id, (_, sparsity) in enumerate(sparsity_dict.items()):
-    #         self.layer_idx = layer_id
-    #         self.find_instance(obj=self.model, sparsity=sparsity)
-    #
-    #     self.prune_mode = "venum_sensitivity"
-    #     self.venum_evaluate(Tqdm=False)
-    #     self.prune_mode = "venum"
-    #
-    #     for handle in self.handles:
-    #         handle.remove()
+   
 
     @torch.no_grad()
     def GMP_apply(self):
