@@ -38,6 +38,8 @@ To bridge this gap, this package aids to perform a series of aids:
 
 .. image:: https://github.com/satabios/sconce/blob/main/docs/source/images/sconce-workflow-tier1.jpeg?raw=true
         :align: center
+        :width: 500
+        :height: 700
 
 If you like this project, please consider starring ⭐ this repo as it is the easiest and best way to support it.
 
