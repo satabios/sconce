@@ -26,7 +26,6 @@ extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
     'sphinx.ext.intersphinx',
-    'sphinx_timeline',
 ]
 html_logo = "images/sconce-punch-bk_removed.png"
 
