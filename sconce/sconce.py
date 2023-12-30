@@ -145,17 +145,18 @@ class sconce:
 
     def forward_pass_snn(self, data, mem_out_rec=None):
         """
-        snn Forward Pass
+        Perform a forward pass through the spiking neural network (SNN).
 
-        :param data: Input from the data loader
-        :param mem_out_rec: Record Membrane Potential, if set to a value return both Membrane potential and Spikes
-        :return: Return the Membrane Potential output of the network
-        # :example:
-        # .. jupyter-execute::
-        #
-        #   import sconce
-        #   print(your_package_name.some_documented_func(1))
+        Args:
+            data: Input data for the SNN.
+            mem_out_rec: Optional tensor to record the membrane potentials of the neurons.
+
+        Returns:
+            If `mem_out_rec` is not None, returns a tuple containing the spike outputs and membrane potentials
+            of the neurons at each time step. Otherwise, returns only the spike outputs.
+
         """
+
         spk_rec = []
         mem_rec = []
         utils.reset(self.model)  # resets hidden states for all LIF neurons in net
@@ -455,18 +456,6 @@ class sconce:
         return mdl_size
 
     def get_num_parameters(self, model: nn.Module, count_nonzero_only=False) -> int:
-        """
-        Calculate the total number of parameters of a PyTorch model.
-
-        Args:
-          model (nn.Module): The PyTorch model to count the parameters of.
-          count_nonzero_only (bool, optional): Whether to count only the nonzero weights.
-            Defaults to False.
-
-        Returns:
-          int: The total number of parameters of the model.
-        """
-
         num_counted_elements = 0
         for param in model.parameters():
             if count_nonzero_only:
