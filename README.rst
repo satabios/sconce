@@ -6,10 +6,6 @@ Introduction
         :target: https://sconce.readthedocs.io/en/latest/?badge=latest
         :alt: Documentation Status
 
-.. image:: https://github.com/satabios/sconce/blob/main/docs/source/images/sconce-punch-bk_removed.png?raw=true
-        :align: center
-        :width: 400
-        :height: 400
 
 Advancement of deep learning has been largely driven by the availability of large datasets and the computational power to train large models.
 The amount of complexity increases with each day passing and it is becoming increasingly difficult to train these models. Neverthless, infer 
@@ -36,9 +32,6 @@ To bridge this gap, this package aids to perform a series of aids:
 .. image:: https://github.com/satabios/sconce/blob/main/docs/source/images/sconce-outline.jpeg?raw=true
         :align: center
 
-.. image:: https://github.com/satabios/sconce/blob/main/docs/source/images/sconce-workflow-tier1.jpeg?raw=true
-        :align: center
-        
 
 If you like this project, please consider starring ⭐ this repo as it is the easiest and best way to support it.
 
