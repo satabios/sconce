@@ -316,7 +316,7 @@ Benchmarking on RTX4090
    *92.86%*.
 -  **Post Pruning(CMP) Pruned Model** size *20.76MiB* with accuracy of
    *90.59%*.
-
+   
 +----------+----------+----------+----------+----------+----------+
 | Metric   | Original | CWP      | GMP      | CWP      | GMP      |
 |          |          | Pruned   | Pruned   | R        | R        |
