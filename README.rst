@@ -128,7 +128,7 @@ Here are a few ways you can get started with sconce:
 .. _Tutorials: https://sconce.readthedocs.io/en/latest/tutorials/index.html
 
 Quickstart:
-================
+^^^^^^^^^^^^^^^^^^^^^^^^
 
 
 Define Network:
