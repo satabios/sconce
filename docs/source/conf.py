@@ -5,16 +5,18 @@
 import os
 import sys
 
-
 sys.path.insert(0, os.path.abspath(os.path.join('../../sconce/')))
+print("PATH Direc:",os.getcwd())
+print("LS:",os.listdir('./'))
+print("LSD:",os.listdir('../../sconce/'))
 # -- Project information -----------------------------------------------------
 
 project = 'sconce'
 copyright = '2023, Sathyaprakash'
 author = 'Sathyaprakash'
 
-release = '0.57'
-version = '0.57.0'
+release = '0.92'
+version = '0.92.0'
 
 # -- General configuration
 html_logo = "https://github.com/satabios/sconce/blob/master/docs/source/images/sconce-punch-bk_removed.png?raw=true"
