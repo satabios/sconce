@@ -1,16 +1,14 @@
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" data-content_root="../">
+<html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Pruning &mdash; sconce 0.57 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
-      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
-      <link rel="stylesheet" type="text/css" href="../_static/my_theme.css" />
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/my_theme.css" type="text/css" />
       <link rel="stylesheet" href="../_static/css/default.css" type="text/css" />
-
-  
   <!--[if lt IE 9]>
     <script src="../_static/js/html5shiv.min.js"></script>
   <![endif]-->
@@ -112,319 +110,319 @@
              
   <section id="pruning">
 <h1>Pruning<a class="headerlink" href="#pruning" title="Link to this heading"></a></h1>
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>print(&#39;Installing torchprofile...&#39;)
-!pip install torchprofile 1&gt;/dev/null
-print(&#39;All required packages have been successfully installed!&#39;)
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Installing torchprofile...&#39;</span><span class="p">)</span>
+<span class="o">!</span>pip<span class="w"> </span>install<span class="w"> </span>torchprofile<span class="w"> </span><span class="m">1</span>&gt;/dev/null
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;All required packages have been successfully installed!&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>Installing torchprofile...
 All required packages have been successfully installed!
 </pre></div>
 </div>
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>import copy
-import math
-import random
-import time
-from collections import OrderedDict, defaultdict
-from typing import Union, List
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">copy</span>
+<span class="kn">import</span> <span class="nn">math</span>
+<span class="kn">import</span> <span class="nn">random</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span><span class="p">,</span> <span class="n">defaultdict</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Union</span><span class="p">,</span> <span class="n">List</span>
 
-import numpy as np
-import torch
-from matplotlib import pyplot as plt
-from torch import nn
-from torch.optim import *
-from torch.optim.lr_scheduler import *
-from torch.utils.data import DataLoader
-from torchprofile import profile_macs
-from torchvision.datasets import *
-from torchvision.transforms import *
-from tqdm.auto import tqdm
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">from</span> <span class="nn">matplotlib</span> <span class="kn">import</span> <span class="n">pyplot</span> <span class="k">as</span> <span class="n">plt</span>
+<span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">nn</span>
+<span class="kn">from</span> <span class="nn">torch.optim</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">torch.optim.lr_scheduler</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">torch.utils.data</span> <span class="kn">import</span> <span class="n">DataLoader</span>
+<span class="kn">from</span> <span class="nn">torchprofile</span> <span class="kn">import</span> <span class="n">profile_macs</span>
+<span class="kn">from</span> <span class="nn">torchvision.datasets</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">torchvision.transforms</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">tqdm.auto</span> <span class="kn">import</span> <span class="n">tqdm</span>
 
-from torchprofile import profile_macs
+<span class="kn">from</span> <span class="nn">torchprofile</span> <span class="kn">import</span> <span class="n">profile_macs</span>
 
-assert torch.cuda.is_available(), \
-&quot;The current runtime does not have CUDA support.&quot; \
-&quot;Please go to menu bar (Runtime - Change runtime type) and select GPU&quot;
+<span class="k">assert</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">(),</span> \
+<span class="s2">&quot;The current runtime does not have CUDA support.&quot;</span> \
+<span class="s2">&quot;Please go to menu bar (Runtime - Change runtime type) and select GPU&quot;</span>
 </pre></div>
 </div>
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>random.seed(0)
-np.random.seed(0)
-torch.manual_seed(0)
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">torch</span><span class="o">.</span><span class="n">manual_seed</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
 </pre></div>
 </div>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">&lt;</span><span class="n">torch</span><span class="o">.</span><span class="n">_C</span><span class="o">.</span><span class="n">Generator</span> <span class="n">at</span> <span class="mh">0x7fc8ecd58a30</span><span class="o">&gt;</span>
 </pre></div>
 </div>
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>def download_url(url, model_dir=&#39;.&#39;, overwrite=False):
-    import os, sys
-    from urllib.request import urlretrieve
-    target_dir = url.split(&#39;/&#39;)[-1]
-    model_dir = os.path.expanduser(model_dir)
-    try:
-        if not os.path.exists(model_dir):
-            os.makedirs(model_dir)
-        model_dir = os.path.join(model_dir, target_dir)
-        cached_file = model_dir
-        if not os.path.exists(cached_file) or overwrite:
-            sys.stderr.write(&#39;Downloading: &quot;{}&quot; to {}\n&#39;.format(url, cached_file))
-            urlretrieve(url, cached_file)
-        return cached_file
-    except Exception as e:
-        # remove lock file so download can be executed next time.
-        os.remove(os.path.join(model_dir, &#39;download.lock&#39;))
-        sys.stderr.write(&#39;Failed to download from url %s&#39; % url + &#39;\n&#39; + str(e) + &#39;\n&#39;)
-        return None
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">download_url</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">model_dir</span><span class="o">=</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="kn">import</span> <span class="nn">os</span><span class="o">,</span> <span class="nn">sys</span>
+    <span class="kn">from</span> <span class="nn">urllib.request</span> <span class="kn">import</span> <span class="n">urlretrieve</span>
+    <span class="n">target_dir</span> <span class="o">=</span> <span class="n">url</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">model_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="n">model_dir</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">model_dir</span><span class="p">):</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">model_dir</span><span class="p">)</span>
+        <span class="n">model_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">model_dir</span><span class="p">,</span> <span class="n">target_dir</span><span class="p">)</span>
+        <span class="n">cached_file</span> <span class="o">=</span> <span class="n">model_dir</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">cached_file</span><span class="p">)</span> <span class="ow">or</span> <span class="n">overwrite</span><span class="p">:</span>
+            <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;Downloading: &quot;</span><span class="si">{}</span><span class="s1">&quot; to </span><span class="si">{}</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">cached_file</span><span class="p">))</span>
+            <span class="n">urlretrieve</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">cached_file</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">cached_file</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="c1"># remove lock file so download can be executed next time.</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">model_dir</span><span class="p">,</span> <span class="s1">&#39;download.lock&#39;</span><span class="p">))</span>
+        <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;Failed to download from url </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">url</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span>
 </pre></div>
 </div>
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>class VGG(nn.Module):
-  ARCH = [64, 128, &#39;M&#39;, 256, 256, &#39;M&#39;, 512, 512, &#39;M&#39;, 512, 512, &#39;M&#39;]
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">VGG</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+  <span class="n">ARCH</span> <span class="o">=</span> <span class="p">[</span><span class="mi">64</span><span class="p">,</span> <span class="mi">128</span><span class="p">,</span> <span class="s1">&#39;M&#39;</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="s1">&#39;M&#39;</span><span class="p">,</span> <span class="mi">512</span><span class="p">,</span> <span class="mi">512</span><span class="p">,</span> <span class="s1">&#39;M&#39;</span><span class="p">,</span> <span class="mi">512</span><span class="p">,</span> <span class="mi">512</span><span class="p">,</span> <span class="s1">&#39;M&#39;</span><span class="p">]</span>
 
-  def __init__(self) -&gt; None:
-    super().__init__()
+  <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
 
-    layers = []
-    counts = defaultdict(int)
+    <span class="n">layers</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">counts</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
 
-    def add(name: str, layer: nn.Module) -&gt; None:
-      layers.append((f&quot;{name}{counts[name]}&quot;, layer))
-      counts[name] += 1
+    <span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">layer</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+      <span class="n">layers</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}{</span><span class="n">counts</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">layer</span><span class="p">))</span>
+      <span class="n">counts</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
 
-    in_channels = 3
-    for x in self.ARCH:
-      if x != &#39;M&#39;:
-        # conv-bn-relu
-        add(&quot;conv&quot;, nn.Conv2d(in_channels, x, 3, padding=1, bias=False))
-        add(&quot;bn&quot;, nn.BatchNorm2d(x))
-        add(&quot;relu&quot;, nn.ReLU(True))
-        in_channels = x
-      else:
-        # maxpool
-        add(&quot;pool&quot;, nn.MaxPool2d(2))
+    <span class="n">in_channels</span> <span class="o">=</span> <span class="mi">3</span>
+    <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ARCH</span><span class="p">:</span>
+      <span class="k">if</span> <span class="n">x</span> <span class="o">!=</span> <span class="s1">&#39;M&#39;</span><span class="p">:</span>
+        <span class="c1"># conv-bn-relu</span>
+        <span class="n">add</span><span class="p">(</span><span class="s2">&quot;conv&quot;</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="n">in_channels</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
+        <span class="n">add</span><span class="p">(</span><span class="s2">&quot;bn&quot;</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">BatchNorm2d</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+        <span class="n">add</span><span class="p">(</span><span class="s2">&quot;relu&quot;</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">(</span><span class="kc">True</span><span class="p">))</span>
+        <span class="n">in_channels</span> <span class="o">=</span> <span class="n">x</span>
+      <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># maxpool</span>
+        <span class="n">add</span><span class="p">(</span><span class="s2">&quot;pool&quot;</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">MaxPool2d</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span>
 
-    self.backbone = nn.Sequential(OrderedDict(layers))
-    self.classifier = nn.Linear(512, 10)
+    <span class="bp">self</span><span class="o">.</span><span class="n">backbone</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span><span class="n">OrderedDict</span><span class="p">(</span><span class="n">layers</span><span class="p">))</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">classifier</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="mi">512</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
 
-  def forward(self, x: torch.Tensor) -&gt; torch.Tensor:
-    # backbone: [N, 3, 32, 32] =&gt; [N, 512, 2, 2]
-    x = self.backbone(x)
+  <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+    <span class="c1"># backbone: [N, 3, 32, 32] =&gt; [N, 512, 2, 2]</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">backbone</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
 
-    # avgpool: [N, 512, 2, 2] =&gt; [N, 512]
-    x = x.mean([2, 3])
+    <span class="c1"># avgpool: [N, 512, 2, 2] =&gt; [N, 512]</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">mean</span><span class="p">([</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span>
 
-    # classifier: [N, 512] =&gt; [N, 10]
-    x = self.classifier(x)
-    return x
+    <span class="c1"># classifier: [N, 512] =&gt; [N, 10]</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">classifier</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">x</span>
 </pre></div>
 </div>
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>def train(
-  model: nn.Module,
-  dataloader: DataLoader,
-  criterion: nn.Module,
-  optimizer: Optimizer,
-  scheduler: LambdaLR,
-  callbacks = None
-) -&gt; None:
-  model.train()
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">train</span><span class="p">(</span>
+  <span class="n">model</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span>
+  <span class="n">dataloader</span><span class="p">:</span> <span class="n">DataLoader</span><span class="p">,</span>
+  <span class="n">criterion</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span>
+  <span class="n">optimizer</span><span class="p">:</span> <span class="n">Optimizer</span><span class="p">,</span>
+  <span class="n">scheduler</span><span class="p">:</span> <span class="n">LambdaLR</span><span class="p">,</span>
+  <span class="n">callbacks</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+  <span class="n">model</span><span class="o">.</span><span class="n">train</span><span class="p">()</span>
 
-  for inputs, targets in tqdm(dataloader, desc=&#39;train&#39;, leave=False):
-    # Move the data from CPU to GPU
-    inputs = inputs.cuda()
-    targets = targets.cuda()
+  <span class="k">for</span> <span class="n">inputs</span><span class="p">,</span> <span class="n">targets</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">dataloader</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s1">&#39;train&#39;</span><span class="p">,</span> <span class="n">leave</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="c1"># Move the data from CPU to GPU</span>
+    <span class="n">inputs</span> <span class="o">=</span> <span class="n">inputs</span><span class="o">.</span><span class="n">cuda</span><span class="p">()</span>
+    <span class="n">targets</span> <span class="o">=</span> <span class="n">targets</span><span class="o">.</span><span class="n">cuda</span><span class="p">()</span>
 
-    # Reset the gradients (from the last iteration)
-    optimizer.zero_grad()
+    <span class="c1"># Reset the gradients (from the last iteration)</span>
+    <span class="n">optimizer</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>
 
-    # Forward inference
-    outputs = model(inputs)
-    loss = criterion(outputs, targets)
+    <span class="c1"># Forward inference</span>
+    <span class="n">outputs</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">inputs</span><span class="p">)</span>
+    <span class="n">loss</span> <span class="o">=</span> <span class="n">criterion</span><span class="p">(</span><span class="n">outputs</span><span class="p">,</span> <span class="n">targets</span><span class="p">)</span>
 
-    # Backward propagation
-    loss.backward()
+    <span class="c1"># Backward propagation</span>
+    <span class="n">loss</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
 
-    # Update optimizer and LR scheduler
-    optimizer.step()
-    scheduler.step()
+    <span class="c1"># Update optimizer and LR scheduler</span>
+    <span class="n">optimizer</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
+    <span class="n">scheduler</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
 
-    if callbacks is not None:
-        for callback in callbacks:
-            callback()
+    <span class="k">if</span> <span class="n">callbacks</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">callback</span> <span class="ow">in</span> <span class="n">callbacks</span><span class="p">:</span>
+            <span class="n">callback</span><span class="p">()</span>
 </pre></div>
 </div>
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>@torch.inference_mode()
-def evaluate(
-  model: nn.Module,
-  dataloader: DataLoader,
-  verbose=True,
-) -&gt; float:
-  model.eval()
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nd">@torch</span><span class="o">.</span><span class="n">inference_mode</span><span class="p">()</span>
+<span class="k">def</span> <span class="nf">evaluate</span><span class="p">(</span>
+  <span class="n">model</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span>
+  <span class="n">dataloader</span><span class="p">:</span> <span class="n">DataLoader</span><span class="p">,</span>
+  <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+  <span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
 
-  num_samples = 0
-  num_correct = 0
+  <span class="n">num_samples</span> <span class="o">=</span> <span class="mi">0</span>
+  <span class="n">num_correct</span> <span class="o">=</span> <span class="mi">0</span>
 
-  for inputs, targets in tqdm(dataloader, desc=&quot;eval&quot;, leave=False,
-                              disable=not verbose):
-    # Move the data from CPU to GPU
-    inputs = inputs.cuda()
-    targets = targets.cuda()
+  <span class="k">for</span> <span class="n">inputs</span><span class="p">,</span> <span class="n">targets</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">dataloader</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s2">&quot;eval&quot;</span><span class="p">,</span> <span class="n">leave</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                              <span class="n">disable</span><span class="o">=</span><span class="ow">not</span> <span class="n">verbose</span><span class="p">):</span>
+    <span class="c1"># Move the data from CPU to GPU</span>
+    <span class="n">inputs</span> <span class="o">=</span> <span class="n">inputs</span><span class="o">.</span><span class="n">cuda</span><span class="p">()</span>
+    <span class="n">targets</span> <span class="o">=</span> <span class="n">targets</span><span class="o">.</span><span class="n">cuda</span><span class="p">()</span>
 
-    # Inference
-    outputs = model(inputs)
+    <span class="c1"># Inference</span>
+    <span class="n">outputs</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">inputs</span><span class="p">)</span>
 
-    # Convert logits to class indices
-    outputs = outputs.argmax(dim=1)
+    <span class="c1"># Convert logits to class indices</span>
+    <span class="n">outputs</span> <span class="o">=</span> <span class="n">outputs</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 
-    # Update metrics
-    num_samples += targets.size(0)
-    num_correct += (outputs == targets).sum()
+    <span class="c1"># Update metrics</span>
+    <span class="n">num_samples</span> <span class="o">+=</span> <span class="n">targets</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">num_correct</span> <span class="o">+=</span> <span class="p">(</span><span class="n">outputs</span> <span class="o">==</span> <span class="n">targets</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
 
-  return (num_correct / num_samples * 100).item()
+  <span class="k">return</span> <span class="p">(</span><span class="n">num_correct</span> <span class="o">/</span> <span class="n">num_samples</span> <span class="o">*</span> <span class="mi">100</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
 </pre></div>
 </div>
 <p>Helper Functions (Flops, Model Size calculation, etc.)</p>
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>def get_model_macs(model, inputs) -&gt; int:
-    return profile_macs(model, inputs)
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">get_model_macs</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">inputs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">profile_macs</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">inputs</span><span class="p">)</span>
 
 
-def get_sparsity(tensor: torch.Tensor) -&gt; float:
-    &quot;&quot;&quot;
-    calculate the sparsity of the given tensor
-        sparsity = #zeros / #elements = 1 - #nonzeros / #elements
-    &quot;&quot;&quot;
-    return 1 - float(tensor.count_nonzero()) / tensor.numel()
+<span class="k">def</span> <span class="nf">get_sparsity</span><span class="p">(</span><span class="n">tensor</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    calculate the sparsity of the given tensor</span>
+<span class="sd">        sparsity = #zeros / #elements = 1 - #nonzeros / #elements</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="mi">1</span> <span class="o">-</span> <span class="nb">float</span><span class="p">(</span><span class="n">tensor</span><span class="o">.</span><span class="n">count_nonzero</span><span class="p">())</span> <span class="o">/</span> <span class="n">tensor</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span>
 
 
-def get_model_sparsity(model: nn.Module) -&gt; float:
-    &quot;&quot;&quot;
-    calculate the sparsity of the given model
-        sparsity = #zeros / #elements = 1 - #nonzeros / #elements
-    &quot;&quot;&quot;
-    num_nonzeros, num_elements = 0, 0
-    for param in model.parameters():
-        num_nonzeros += param.count_nonzero()
-        num_elements += param.numel()
-    return 1 - float(num_nonzeros) / num_elements
+<span class="k">def</span> <span class="nf">get_model_sparsity</span><span class="p">(</span><span class="n">model</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    calculate the sparsity of the given model</span>
+<span class="sd">        sparsity = #zeros / #elements = 1 - #nonzeros / #elements</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">num_nonzeros</span><span class="p">,</span> <span class="n">num_elements</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">():</span>
+        <span class="n">num_nonzeros</span> <span class="o">+=</span> <span class="n">param</span><span class="o">.</span><span class="n">count_nonzero</span><span class="p">()</span>
+        <span class="n">num_elements</span> <span class="o">+=</span> <span class="n">param</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span>
+    <span class="k">return</span> <span class="mi">1</span> <span class="o">-</span> <span class="nb">float</span><span class="p">(</span><span class="n">num_nonzeros</span><span class="p">)</span> <span class="o">/</span> <span class="n">num_elements</span>
 
-def get_num_parameters(model: nn.Module, count_nonzero_only=False) -&gt; int:
-    &quot;&quot;&quot;
-    calculate the total number of parameters of model
-    :param count_nonzero_only: only count nonzero weights
-    &quot;&quot;&quot;
-    num_counted_elements = 0
-    for param in model.parameters():
-        if count_nonzero_only:
-            num_counted_elements += param.count_nonzero()
-        else:
-            num_counted_elements += param.numel()
-    return num_counted_elements
+<span class="k">def</span> <span class="nf">get_num_parameters</span><span class="p">(</span><span class="n">model</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span> <span class="n">count_nonzero_only</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    calculate the total number of parameters of model</span>
+<span class="sd">    :param count_nonzero_only: only count nonzero weights</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">num_counted_elements</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">count_nonzero_only</span><span class="p">:</span>
+            <span class="n">num_counted_elements</span> <span class="o">+=</span> <span class="n">param</span><span class="o">.</span><span class="n">count_nonzero</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">num_counted_elements</span> <span class="o">+=</span> <span class="n">param</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">num_counted_elements</span>
 
 
-def get_model_size(model: nn.Module, data_width=32, count_nonzero_only=False) -&gt; int:
-    &quot;&quot;&quot;
-    calculate the model size in bits
-    :param data_width: #bits per element
-    :param count_nonzero_only: only count nonzero weights
-    &quot;&quot;&quot;
-    return get_num_parameters(model, count_nonzero_only) * data_width
+<span class="k">def</span> <span class="nf">get_model_size</span><span class="p">(</span><span class="n">model</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span> <span class="n">data_width</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span> <span class="n">count_nonzero_only</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    calculate the model size in bits</span>
+<span class="sd">    :param data_width: #bits per element</span>
+<span class="sd">    :param count_nonzero_only: only count nonzero weights</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">get_num_parameters</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">count_nonzero_only</span><span class="p">)</span> <span class="o">*</span> <span class="n">data_width</span>
 
-Byte = 8
-KiB = 1024 * Byte
-MiB = 1024 * KiB
-GiB = 1024 * MiB
+<span class="n">Byte</span> <span class="o">=</span> <span class="mi">8</span>
+<span class="n">KiB</span> <span class="o">=</span> <span class="mi">1024</span> <span class="o">*</span> <span class="n">Byte</span>
+<span class="n">MiB</span> <span class="o">=</span> <span class="mi">1024</span> <span class="o">*</span> <span class="n">KiB</span>
+<span class="n">GiB</span> <span class="o">=</span> <span class="mi">1024</span> <span class="o">*</span> <span class="n">MiB</span>
 </pre></div>
 </div>
 <p>Define misc functions for verification.</p>
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>def test_fine_grained_prune(
-    test_tensor=torch.tensor([[-0.46, -0.40, 0.39, 0.19, 0.37],
-                              [0.00, 0.40, 0.17, -0.15, 0.16],
-                              [-0.20, -0.23, 0.36, 0.25, 0.03],
-                              [0.24, 0.41, 0.07, 0.13, -0.15],
-                              [0.48, -0.09, -0.36, 0.12, 0.45]]),
-    test_mask=torch.tensor([[True, True, False, False, False],
-                            [False, True, False, False, False],
-                            [False, False, False, False, False],
-                            [False, True, False, False, False],
-                            [True, False, False, False, True]]),
-    target_sparsity=0.75, target_nonzeros=None):
-    def plot_matrix(tensor, ax, title):
-        ax.imshow(tensor.cpu().numpy() == 0, vmin=0, vmax=1, cmap=&#39;tab20c&#39;)
-        ax.set_title(title)
-        ax.set_yticklabels([])
-        ax.set_xticklabels([])
-        for i in range(tensor.shape[1]):
-            for j in range(tensor.shape[0]):
-                text = ax.text(j, i, f&#39;{tensor[i, j].item():.2f}&#39;,
-                                ha=&quot;center&quot;, va=&quot;center&quot;, color=&quot;k&quot;)
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">test_fine_grained_prune</span><span class="p">(</span>
+    <span class="n">test_tensor</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([[</span><span class="o">-</span><span class="mf">0.46</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.40</span><span class="p">,</span> <span class="mf">0.39</span><span class="p">,</span> <span class="mf">0.19</span><span class="p">,</span> <span class="mf">0.37</span><span class="p">],</span>
+                              <span class="p">[</span><span class="mf">0.00</span><span class="p">,</span> <span class="mf">0.40</span><span class="p">,</span> <span class="mf">0.17</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.15</span><span class="p">,</span> <span class="mf">0.16</span><span class="p">],</span>
+                              <span class="p">[</span><span class="o">-</span><span class="mf">0.20</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.23</span><span class="p">,</span> <span class="mf">0.36</span><span class="p">,</span> <span class="mf">0.25</span><span class="p">,</span> <span class="mf">0.03</span><span class="p">],</span>
+                              <span class="p">[</span><span class="mf">0.24</span><span class="p">,</span> <span class="mf">0.41</span><span class="p">,</span> <span class="mf">0.07</span><span class="p">,</span> <span class="mf">0.13</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.15</span><span class="p">],</span>
+                              <span class="p">[</span><span class="mf">0.48</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.09</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.36</span><span class="p">,</span> <span class="mf">0.12</span><span class="p">,</span> <span class="mf">0.45</span><span class="p">]]),</span>
+    <span class="n">test_mask</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([[</span><span class="kc">True</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="kc">False</span><span class="p">],</span>
+                            <span class="p">[</span><span class="kc">False</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="kc">False</span><span class="p">],</span>
+                            <span class="p">[</span><span class="kc">False</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="kc">False</span><span class="p">],</span>
+                            <span class="p">[</span><span class="kc">False</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="kc">False</span><span class="p">],</span>
+                            <span class="p">[</span><span class="kc">True</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="kc">True</span><span class="p">]]),</span>
+    <span class="n">target_sparsity</span><span class="o">=</span><span class="mf">0.75</span><span class="p">,</span> <span class="n">target_nonzeros</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">plot_matrix</span><span class="p">(</span><span class="n">tensor</span><span class="p">,</span> <span class="n">ax</span><span class="p">,</span> <span class="n">title</span><span class="p">):</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">tensor</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="n">vmin</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">vmax</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;tab20c&#39;</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="n">title</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_yticklabels</span><span class="p">([])</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_xticklabels</span><span class="p">([])</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">tensor</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">tensor</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+                <span class="n">text</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="n">j</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">tensor</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="w"> </span><span class="n">j</span><span class="p">]</span><span class="o">.</span><span class="n">item</span><span class="p">()</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span>
+                                <span class="n">ha</span><span class="o">=</span><span class="s2">&quot;center&quot;</span><span class="p">,</span> <span class="n">va</span><span class="o">=</span><span class="s2">&quot;center&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;k&quot;</span><span class="p">)</span>
 
-    test_tensor = test_tensor.clone()
-    fig, axes = plt.subplots(1,2, figsize=(6, 10))
-    ax_left, ax_right = axes.ravel()
-    plot_matrix(test_tensor, ax_left, &#39;dense tensor&#39;)
+    <span class="n">test_tensor</span> <span class="o">=</span> <span class="n">test_tensor</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
+    <span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="mi">10</span><span class="p">))</span>
+    <span class="n">ax_left</span><span class="p">,</span> <span class="n">ax_right</span> <span class="o">=</span> <span class="n">axes</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
+    <span class="n">plot_matrix</span><span class="p">(</span><span class="n">test_tensor</span><span class="p">,</span> <span class="n">ax_left</span><span class="p">,</span> <span class="s1">&#39;dense tensor&#39;</span><span class="p">)</span>
 
-    sparsity_before_pruning = get_sparsity(test_tensor)
-    mask = fine_grained_prune(test_tensor, target_sparsity)
-    sparsity_after_pruning = get_sparsity(test_tensor)
-    sparsity_of_mask = get_sparsity(mask)
+    <span class="n">sparsity_before_pruning</span> <span class="o">=</span> <span class="n">get_sparsity</span><span class="p">(</span><span class="n">test_tensor</span><span class="p">)</span>
+    <span class="n">mask</span> <span class="o">=</span> <span class="n">fine_grained_prune</span><span class="p">(</span><span class="n">test_tensor</span><span class="p">,</span> <span class="n">target_sparsity</span><span class="p">)</span>
+    <span class="n">sparsity_after_pruning</span> <span class="o">=</span> <span class="n">get_sparsity</span><span class="p">(</span><span class="n">test_tensor</span><span class="p">)</span>
+    <span class="n">sparsity_of_mask</span> <span class="o">=</span> <span class="n">get_sparsity</span><span class="p">(</span><span class="n">mask</span><span class="p">)</span>
 
-    plot_matrix(test_tensor, ax_right, &#39;sparse tensor&#39;)
-    fig.tight_layout()
-    plt.show()
+    <span class="n">plot_matrix</span><span class="p">(</span><span class="n">test_tensor</span><span class="p">,</span> <span class="n">ax_right</span><span class="p">,</span> <span class="s1">&#39;sparse tensor&#39;</span><span class="p">)</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 
-    print(&#39;* Test fine_grained_prune()&#39;)
-    print(f&#39;    target sparsity: {target_sparsity:.2f}&#39;)
-    print(f&#39;        sparsity before pruning: {sparsity_before_pruning:.2f}&#39;)
-    print(f&#39;        sparsity after pruning: {sparsity_after_pruning:.2f}&#39;)
-    print(f&#39;        sparsity of pruning mask: {sparsity_of_mask:.2f}&#39;)
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;* Test fine_grained_prune()&#39;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;    target sparsity: </span><span class="si">{</span><span class="n">target_sparsity</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;        sparsity before pruning: </span><span class="si">{</span><span class="n">sparsity_before_pruning</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;        sparsity after pruning: </span><span class="si">{</span><span class="n">sparsity_after_pruning</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;        sparsity of pruning mask: </span><span class="si">{</span><span class="n">sparsity_of_mask</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
 
-    if target_nonzeros is None:
-        if test_mask.equal(mask):
-            print(&#39;* Test passed.&#39;)
-        else:
-            print(&#39;* Test failed.&#39;)
-    else:
-        if mask.count_nonzero() == target_nonzeros:
-            print(&#39;* Test passed.&#39;)
-        else:
-            print(&#39;* Test failed.&#39;)
+    <span class="k">if</span> <span class="n">target_nonzeros</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">test_mask</span><span class="o">.</span><span class="n">equal</span><span class="p">(</span><span class="n">mask</span><span class="p">):</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;* Test passed.&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;* Test failed.&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">mask</span><span class="o">.</span><span class="n">count_nonzero</span><span class="p">()</span> <span class="o">==</span> <span class="n">target_nonzeros</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;* Test passed.&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;* Test failed.&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>Load the pretrained model and the CIFAR-10 dataset.</p>
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>checkpoint_url = &quot;https://hanlab.mit.edu/files/course/labs/vgg.cifar.pretrained.pth&quot;
-checkpoint = torch.load(download_url(checkpoint_url), map_location=&quot;cpu&quot;)
-model = VGG().cuda()
-print(f&quot;=&gt; loading checkpoint &#39;{checkpoint_url}&#39;&quot;)
-model.load_state_dict(checkpoint[&#39;state_dict&#39;])
-recover_model = lambda: model.load_state_dict(checkpoint[&#39;state_dict&#39;])
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">checkpoint_url</span> <span class="o">=</span> <span class="s2">&quot;https://hanlab.mit.edu/files/course/labs/vgg.cifar.pretrained.pth&quot;</span>
+<span class="n">checkpoint</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">download_url</span><span class="p">(</span><span class="n">checkpoint_url</span><span class="p">),</span> <span class="n">map_location</span><span class="o">=</span><span class="s2">&quot;cpu&quot;</span><span class="p">)</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">VGG</span><span class="p">()</span><span class="o">.</span><span class="n">cuda</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;=&gt; loading checkpoint &#39;</span><span class="si">{</span><span class="n">checkpoint_url</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
+<span class="n">model</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">checkpoint</span><span class="p">[</span><span class="s1">&#39;state_dict&#39;</span><span class="p">])</span>
+<span class="n">recover_model</span> <span class="o">=</span> <span class="k">lambda</span><span class="p">:</span> <span class="n">model</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">checkpoint</span><span class="p">[</span><span class="s1">&#39;state_dict&#39;</span><span class="p">])</span>
 </pre></div>
 </div>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">=&gt;</span> <span class="n">loading</span> <span class="n">checkpoint</span> <span class="s1">&#39;https://hanlab.mit.edu/files/course/labs/vgg.cifar.pretrained.pth&#39;</span>
 </pre></div>
 </div>
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>image_size = 32
-transforms = {
-    &quot;train&quot;: Compose([
-        RandomCrop(image_size, padding=4),
-        RandomHorizontalFlip(),
-        ToTensor(),
-    ]),
-    &quot;test&quot;: ToTensor(),
-}
-dataset = {}
-for split in [&quot;train&quot;, &quot;test&quot;]:
-  dataset[split] = CIFAR10(
-    root=&quot;data/cifar10&quot;,
-    train=(split == &quot;train&quot;),
-    download=True,
-    transform=transforms[split],
-  )
-dataloader = {}
-for split in [&#39;train&#39;, &#39;test&#39;]:
-  dataloader[split] = DataLoader(
-    dataset[split],
-    batch_size=512,
-    shuffle=(split == &#39;train&#39;),
-    num_workers=0,
-    pin_memory=True,
-  )
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">image_size</span> <span class="o">=</span> <span class="mi">32</span>
+<span class="n">transforms</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;train&quot;</span><span class="p">:</span> <span class="n">Compose</span><span class="p">([</span>
+        <span class="n">RandomCrop</span><span class="p">(</span><span class="n">image_size</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="mi">4</span><span class="p">),</span>
+        <span class="n">RandomHorizontalFlip</span><span class="p">(),</span>
+        <span class="n">ToTensor</span><span class="p">(),</span>
+    <span class="p">]),</span>
+    <span class="s2">&quot;test&quot;</span><span class="p">:</span> <span class="n">ToTensor</span><span class="p">(),</span>
+<span class="p">}</span>
+<span class="n">dataset</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="k">for</span> <span class="n">split</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;train&quot;</span><span class="p">,</span> <span class="s2">&quot;test&quot;</span><span class="p">]:</span>
+  <span class="n">dataset</span><span class="p">[</span><span class="n">split</span><span class="p">]</span> <span class="o">=</span> <span class="n">CIFAR10</span><span class="p">(</span>
+    <span class="n">root</span><span class="o">=</span><span class="s2">&quot;data/cifar10&quot;</span><span class="p">,</span>
+    <span class="n">train</span><span class="o">=</span><span class="p">(</span><span class="n">split</span> <span class="o">==</span> <span class="s2">&quot;train&quot;</span><span class="p">),</span>
+    <span class="n">download</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">transform</span><span class="o">=</span><span class="n">transforms</span><span class="p">[</span><span class="n">split</span><span class="p">],</span>
+  <span class="p">)</span>
+<span class="n">dataloader</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="k">for</span> <span class="n">split</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;train&#39;</span><span class="p">,</span> <span class="s1">&#39;test&#39;</span><span class="p">]:</span>
+  <span class="n">dataloader</span><span class="p">[</span><span class="n">split</span><span class="p">]</span> <span class="o">=</span> <span class="n">DataLoader</span><span class="p">(</span>
+    <span class="n">dataset</span><span class="p">[</span><span class="n">split</span><span class="p">],</span>
+    <span class="n">batch_size</span><span class="o">=</span><span class="mi">512</span><span class="p">,</span>
+    <span class="n">shuffle</span><span class="o">=</span><span class="p">(</span><span class="n">split</span> <span class="o">==</span> <span class="s1">&#39;train&#39;</span><span class="p">),</span>
+    <span class="n">num_workers</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+    <span class="n">pin_memory</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+  <span class="p">)</span>
 </pre></div>
 </div>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Downloading</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">www</span><span class="o">.</span><span class="n">cs</span><span class="o">.</span><span class="n">toronto</span><span class="o">.</span><span class="n">edu</span><span class="o">/~</span><span class="n">kriz</span><span class="o">/</span><span class="n">cifar</span><span class="o">-</span><span class="mi">10</span><span class="o">-</span><span class="n">python</span><span class="o">.</span><span class="n">tar</span><span class="o">.</span><span class="n">gz</span> <span class="n">to</span> <span class="n">data</span><span class="o">/</span><span class="n">cifar10</span><span class="o">/</span><span class="n">cifar</span><span class="o">-</span><span class="mi">10</span><span class="o">-</span><span class="n">python</span><span class="o">.</span><span class="n">tar</span><span class="o">.</span><span class="n">gz</span>
@@ -443,10 +441,10 @@ for split in [&#39;train&#39;, &#39;test&#39;]:
 have loaded a pretrained VGG model for classifying images in CIFAR10
 dataset.</p>
 <p>Let’s first evaluate the accuracy and model size of this model.</p>
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>dense_model_accuracy = evaluate(model, dataloader[&#39;test&#39;])
-dense_model_size = get_model_size(model)
-print(f&quot;dense model has accuracy={dense_model_accuracy:.2f}%&quot;)
-print(f&quot;dense model has size={dense_model_size/MiB:.2f} MiB&quot;)
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">dense_model_accuracy</span> <span class="o">=</span> <span class="n">evaluate</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">dataloader</span><span class="p">[</span><span class="s1">&#39;test&#39;</span><span class="p">])</span>
+<span class="n">dense_model_size</span> <span class="o">=</span> <span class="n">get_model_size</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;dense model has accuracy=</span><span class="si">{</span><span class="n">dense_model_accuracy</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">%&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;dense model has size=</span><span class="si">{</span><span class="n">dense_model_size</span><span class="o">/</span><span class="n">MiB</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> MiB&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>eval:   0%|          | 0/20 [00:00&lt;?, ?it/s]
@@ -471,30 +469,30 @@ accuracy.</p>
 <h2>Let’s see the distribution of weight values<a class="headerlink" href="#lets-see-the-distribution-of-weight-values" title="Link to this heading"></a></h2>
 <p>Before we jump into pruning, let’s see the distribution of weight values
 in the dense model.</p>
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>def plot_weight_distribution(model, bins=256, count_nonzero_only=False):
-    fig, axes = plt.subplots(3,3, figsize=(10, 6))
-    axes = axes.ravel()
-    plot_index = 0
-    for name, param in model.named_parameters():
-        if param.dim() &gt; 1:
-            ax = axes[plot_index]
-            if count_nonzero_only:
-                param_cpu = param.detach().view(-1).cpu()
-                param_cpu = param_cpu[param_cpu != 0].view(-1)
-                ax.hist(param_cpu, bins=bins, density=True,
-                        color = &#39;blue&#39;, alpha = 0.5)
-            else:
-                ax.hist(param.detach().view(-1).cpu(), bins=bins, density=True,
-                        color = &#39;blue&#39;, alpha = 0.5)
-            ax.set_xlabel(name)
-            ax.set_ylabel(&#39;density&#39;)
-            plot_index += 1
-    fig.suptitle(&#39;Histogram of Weights&#39;)
-    fig.tight_layout()
-    fig.subplots_adjust(top=0.925)
-    plt.show()
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">plot_weight_distribution</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="mi">256</span><span class="p">,</span> <span class="n">count_nonzero_only</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
+    <span class="n">axes</span> <span class="o">=</span> <span class="n">axes</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
+    <span class="n">plot_index</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">named_parameters</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">param</span><span class="o">.</span><span class="n">dim</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">ax</span> <span class="o">=</span> <span class="n">axes</span><span class="p">[</span><span class="n">plot_index</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">count_nonzero_only</span><span class="p">:</span>
+                <span class="n">param_cpu</span> <span class="o">=</span> <span class="n">param</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span>
+                <span class="n">param_cpu</span> <span class="o">=</span> <span class="n">param_cpu</span><span class="p">[</span><span class="n">param_cpu</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+                <span class="n">ax</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span><span class="n">param_cpu</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="n">bins</span><span class="p">,</span> <span class="n">density</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                        <span class="n">color</span> <span class="o">=</span> <span class="s1">&#39;blue&#39;</span><span class="p">,</span> <span class="n">alpha</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">ax</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span><span class="n">param</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">cpu</span><span class="p">(),</span> <span class="n">bins</span><span class="o">=</span><span class="n">bins</span><span class="p">,</span> <span class="n">density</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                        <span class="n">color</span> <span class="o">=</span> <span class="s1">&#39;blue&#39;</span><span class="p">,</span> <span class="n">alpha</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">)</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;density&#39;</span><span class="p">)</span>
+            <span class="n">plot_index</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="s1">&#39;Histogram of Weights&#39;</span><span class="p">)</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">subplots_adjust</span><span class="p">(</span><span class="n">top</span><span class="o">=</span><span class="mf">0.925</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 
-plot_weight_distribution(model)
+<span class="n">plot_weight_distribution</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
 </pre></div>
 </div>
 <img alt="../_images/Pruning_22_0.png" src="../_images/Pruning_22_0.png" />
@@ -560,43 +558,43 @@ removed. <code class="docutils literal notranslate"><span class="pre">mask</span
 <code class="docutils literal notranslate"><span class="pre">`torch.gt()</span></code> &lt;<a class="reference external" href="https://pytorch.org/docs/stable/generated/torch.gt.html?highlight=torch%20gt#torch.gt">https://pytorch.org/docs/stable/generated/torch.gt.html?highlight=torch%20gt#torch.gt</a>&gt;`__
 API.</p></li>
 </ul>
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>def fine_grained_prune(tensor: torch.Tensor, sparsity : float) -&gt; torch.Tensor:
-    &quot;&quot;&quot;
-    magnitude-based pruning for single tensor
-    :param tensor: torch.(cuda.)Tensor, weight of conv/fc layer
-    :param sparsity: float, pruning sparsity
-        sparsity = #zeros / #elements = 1 - #nonzeros / #elements
-    :return:
-        torch.(cuda.)Tensor, mask for zeros
-    &quot;&quot;&quot;
-    sparsity = min(max(0.0, sparsity), 1.0)
-    if sparsity == 1.0:
-        tensor.zero_()
-        return torch.zeros_like(tensor)
-    elif sparsity == 0.0:
-        return torch.ones_like(tensor)
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">fine_grained_prune</span><span class="p">(</span><span class="n">tensor</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">sparsity</span> <span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    magnitude-based pruning for single tensor</span>
+<span class="sd">    :param tensor: torch.(cuda.)Tensor, weight of conv/fc layer</span>
+<span class="sd">    :param sparsity: float, pruning sparsity</span>
+<span class="sd">        sparsity = #zeros / #elements = 1 - #nonzeros / #elements</span>
+<span class="sd">    :return:</span>
+<span class="sd">        torch.(cuda.)Tensor, mask for zeros</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">sparsity</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">sparsity</span><span class="p">),</span> <span class="mf">1.0</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">sparsity</span> <span class="o">==</span> <span class="mf">1.0</span><span class="p">:</span>
+        <span class="n">tensor</span><span class="o">.</span><span class="n">zero_</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">tensor</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">sparsity</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">tensor</span><span class="p">)</span>
 
-    num_elements = tensor.numel()
+    <span class="n">num_elements</span> <span class="o">=</span> <span class="n">tensor</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span>
 
 
-    # Step 1: calculate the #zeros (please use round())
-    num_zeros = round(num_elements * sparsity)
-    # Step 2: calculate the importance of weight
-    importance = tensor.abs()
-    # Step 3: calculate the pruning threshold
-    threshold = importance.view(-1).kthvalue(num_zeros).values
-    # Step 4: get binary mask (1 for nonzeros, 0 for zeros)
-    mask = torch.gt(importance, threshold)
+    <span class="c1"># Step 1: calculate the #zeros (please use round())</span>
+    <span class="n">num_zeros</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="n">num_elements</span> <span class="o">*</span> <span class="n">sparsity</span><span class="p">)</span>
+    <span class="c1"># Step 2: calculate the importance of weight</span>
+    <span class="n">importance</span> <span class="o">=</span> <span class="n">tensor</span><span class="o">.</span><span class="n">abs</span><span class="p">()</span>
+    <span class="c1"># Step 3: calculate the pruning threshold</span>
+    <span class="n">threshold</span> <span class="o">=</span> <span class="n">importance</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">kthvalue</span><span class="p">(</span><span class="n">num_zeros</span><span class="p">)</span><span class="o">.</span><span class="n">values</span>
+    <span class="c1"># Step 4: get binary mask (1 for nonzeros, 0 for zeros)</span>
+    <span class="n">mask</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">gt</span><span class="p">(</span><span class="n">importance</span><span class="p">,</span> <span class="n">threshold</span><span class="p">)</span>
 
-    # Step 5: apply mask to prune the tensor
-    tensor.mul_(mask)
+    <span class="c1"># Step 5: apply mask to prune the tensor</span>
+    <span class="n">tensor</span><span class="o">.</span><span class="n">mul_</span><span class="p">(</span><span class="n">mask</span><span class="p">)</span>
 
-    return mask
+    <span class="k">return</span> <span class="n">mask</span>
 </pre></div>
 </div>
 <p>Let’s verify the functionality of defined fine-grained pruning by
 applying the function above on a dummy tensor.</p>
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>test_fine_grained_prune()
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">test_fine_grained_prune</span><span class="p">()</span>
 </pre></div>
 </div>
 <img alt="../_images/Pruning_30_0.png" src="../_images/Pruning_30_0.png" />
@@ -612,9 +610,9 @@ applying the function above on a dummy tensor.</p>
 rendered in blue while zeros are rendered in gray. Please modify the
 value of <code class="docutils literal notranslate"><span class="pre">target_sparsity</span></code> in the following code cell so that there
 are only 10 nonzeros in the sparse tensor after pruning.</p>
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>target_sparsity = 0.6 #  modify the value of target_sparsity
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">target_sparsity</span> <span class="o">=</span> <span class="mf">0.6</span> <span class="c1">#  modify the value of target_sparsity</span>
 
-test_fine_grained_prune(target_sparsity=target_sparsity, target_nonzeros=10)
+<span class="n">test_fine_grained_prune</span><span class="p">(</span><span class="n">target_sparsity</span><span class="o">=</span><span class="n">target_sparsity</span><span class="p">,</span> <span class="n">target_nonzeros</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
 </pre></div>
 </div>
 <img alt="../_images/Pruning_32_0.png" src="../_images/Pruning_32_0.png" />
@@ -631,24 +629,24 @@ the whole model. In class <code class="docutils literal notranslate"><span class
 record of the pruning masks so that we could apply the masks whenever
 the model weights change to make sure the model keep sparse all the
 time.</p>
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>class FineGrainedPruner:
-    def __init__(self, model, sparsity_dict):
-        self.masks = FineGrainedPruner.prune(model, sparsity_dict)
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">FineGrainedPruner</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">sparsity_dict</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">masks</span> <span class="o">=</span> <span class="n">FineGrainedPruner</span><span class="o">.</span><span class="n">prune</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">sparsity_dict</span><span class="p">)</span>
 
-    @torch.no_grad()
-    def apply(self, model):
-        for name, param in model.named_parameters():
-            if name in self.masks:
-                param *= self.masks[name]
+    <span class="nd">@torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">()</span>
+    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">named_parameters</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">masks</span><span class="p">:</span>
+                <span class="n">param</span> <span class="o">*=</span> <span class="bp">self</span><span class="o">.</span><span class="n">masks</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
 
-    @staticmethod
-    @torch.no_grad()
-    def prune(model, sparsity_dict):
-        masks = dict()
-        for name, param in model.named_parameters():
-            if param.dim() &gt; 1: # we only prune conv and fc weights
-                masks[name] = fine_grained_prune(param, sparsity_dict[name])
-        return masks
+    <span class="nd">@staticmethod</span>
+    <span class="nd">@torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">()</span>
+    <span class="k">def</span> <span class="nf">prune</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">sparsity_dict</span><span class="p">):</span>
+        <span class="n">masks</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">named_parameters</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">param</span><span class="o">.</span><span class="n">dim</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span> <span class="c1"># we only prune conv and fc weights</span>
+                <span class="n">masks</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">fine_grained_prune</span><span class="p">(</span><span class="n">param</span><span class="p">,</span> <span class="n">sparsity_dict</span><span class="p">[</span><span class="n">name</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">masks</span>
 </pre></div>
 </div>
 </section>
@@ -675,33 +673,33 @@ Networks</a>)</p>
 <p>The following code cell defines the sensitivity scan function that
 returns the sparsities scanned, and a list of accuracies for each weight
 to be pruned.</p>
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>@torch.no_grad()
-def sensitivity_scan(model, dataloader, scan_step=0.1, scan_start=0.4, scan_end=1.0, verbose=True):
-    sparsities = np.arange(start=scan_start, stop=scan_end, step=scan_step)
-    accuracies = []
-    named_conv_weights = [(name, param) for (name, param) \
-                          in model.named_parameters() if param.dim() &gt; 1]
-    for i_layer, (name, param) in enumerate(named_conv_weights):
-        param_clone = param.detach().clone()
-        accuracy = []
-        for sparsity in tqdm(sparsities, desc=f&#39;scanning {i_layer}/{len(named_conv_weights)} weight - {name}&#39;):
-            fine_grained_prune(param.detach(), sparsity=sparsity)
-            acc = evaluate(model, dataloader, verbose=False)
-            if verbose:
-                print(f&#39;\r    sparsity={sparsity:.2f}: accuracy={acc:.2f}%&#39;, end=&#39;&#39;)
-            # restore
-            param.copy_(param_clone)
-            accuracy.append(acc)
-        if verbose:
-            print(f&#39;\r    sparsity=[{&quot;,&quot;.join([&quot;{:.2f}&quot;.format(x) for x in sparsities])}]: accuracy=[{&quot;, &quot;.join([&quot;{:.2f}%&quot;.format(x) for x in accuracy])}]&#39;, end=&#39;&#39;)
-        accuracies.append(accuracy)
-    return sparsities, accuracies
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nd">@torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">()</span>
+<span class="k">def</span> <span class="nf">sensitivity_scan</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">dataloader</span><span class="p">,</span> <span class="n">scan_step</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">scan_start</span><span class="o">=</span><span class="mf">0.4</span><span class="p">,</span> <span class="n">scan_end</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="n">sparsities</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">start</span><span class="o">=</span><span class="n">scan_start</span><span class="p">,</span> <span class="n">stop</span><span class="o">=</span><span class="n">scan_end</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="n">scan_step</span><span class="p">)</span>
+    <span class="n">accuracies</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">named_conv_weights</span> <span class="o">=</span> <span class="p">[(</span><span class="n">name</span><span class="p">,</span> <span class="n">param</span><span class="p">)</span> <span class="k">for</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">param</span><span class="p">)</span> \
+                          <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">named_parameters</span><span class="p">()</span> <span class="k">if</span> <span class="n">param</span><span class="o">.</span><span class="n">dim</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">i_layer</span><span class="p">,</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">param</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">named_conv_weights</span><span class="p">):</span>
+        <span class="n">param_clone</span> <span class="o">=</span> <span class="n">param</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
+        <span class="n">accuracy</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">sparsity</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">sparsities</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;scanning </span><span class="si">{</span><span class="n">i_layer</span><span class="si">}</span><span class="s1">/</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">named_conv_weights</span><span class="p">)</span><span class="si">}</span><span class="s1"> weight - </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">):</span>
+            <span class="n">fine_grained_prune</span><span class="p">(</span><span class="n">param</span><span class="o">.</span><span class="n">detach</span><span class="p">(),</span> <span class="n">sparsity</span><span class="o">=</span><span class="n">sparsity</span><span class="p">)</span>
+            <span class="n">acc</span> <span class="o">=</span> <span class="n">evaluate</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">dataloader</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="se">\r</span><span class="s1">    sparsity=</span><span class="si">{</span><span class="n">sparsity</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1">: accuracy=</span><span class="si">{</span><span class="n">acc</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1">%&#39;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+            <span class="c1"># restore</span>
+            <span class="n">param</span><span class="o">.</span><span class="n">copy_</span><span class="p">(</span><span class="n">param_clone</span><span class="p">)</span>
+            <span class="n">accuracy</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">acc</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="se">\r</span><span class="s1">    sparsity=[</span><span class="si">{</span><span class="s2">&quot;,&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s2">&quot;</span><span class="si">{:.2f}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">sparsities</span><span class="p">])</span><span class="si">}</span><span class="s1">]: accuracy=[</span><span class="si">{</span><span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s2">&quot;</span><span class="si">{:.2f}</span><span class="s2">%&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">accuracy</span><span class="p">])</span><span class="si">}</span><span class="s1">]&#39;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+        <span class="n">accuracies</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">accuracy</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">sparsities</span><span class="p">,</span> <span class="n">accuracies</span>
 </pre></div>
 </div>
 <p>Please run the following cells to plot the sensitivity curves. It should
 take around 2 minutes to finish.</p>
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>sparsities, accuracies = sensitivity_scan(
-    model, dataloader[&#39;test&#39;], scan_step=0.1, scan_start=0.4, scan_end=1.0)
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">sparsities</span><span class="p">,</span> <span class="n">accuracies</span> <span class="o">=</span> <span class="n">sensitivity_scan</span><span class="p">(</span>
+    <span class="n">model</span><span class="p">,</span> <span class="n">dataloader</span><span class="p">[</span><span class="s1">&#39;test&#39;</span><span class="p">],</span> <span class="n">scan_step</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">scan_start</span><span class="o">=</span><span class="mf">0.4</span><span class="p">,</span> <span class="n">scan_end</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
 </pre></div>
 </div>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>scanning 0/9 weight - backbone.conv0.weight:   0%|          | 0/6 [00:00&lt;?, ?it/s]
@@ -758,33 +756,33 @@ take around 2 minutes to finish.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sparsity</span><span class="o">=</span><span class="p">[</span><span class="mf">0.40</span><span class="p">,</span><span class="mf">0.50</span><span class="p">,</span><span class="mf">0.60</span><span class="p">,</span><span class="mf">0.70</span><span class="p">,</span><span class="mf">0.80</span><span class="p">,</span><span class="mf">0.90</span><span class="p">]:</span> <span class="n">accuracy</span><span class="o">=</span><span class="p">[</span><span class="mf">92.91</span><span class="o">%</span><span class="p">,</span> <span class="mf">92.83</span><span class="o">%</span><span class="p">,</span> <span class="mf">92.82</span><span class="o">%</span><span class="p">,</span> <span class="mf">92.96</span><span class="o">%</span><span class="p">,</span> <span class="mf">92.67</span><span class="o">%</span><span class="p">,</span> <span class="mf">92.52</span><span class="o">%</span><span class="p">]</span>
 </pre></div>
 </div>
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>def plot_sensitivity_scan(sparsities, accuracies, dense_model_accuracy):
-    lower_bound_accuracy = 100 - (100 - dense_model_accuracy) * 1.5
-    fig, axes = plt.subplots(3, int(math.ceil(len(accuracies) / 3)),figsize=(15,8))
-    axes = axes.ravel()
-    plot_index = 0
-    for name, param in model.named_parameters():
-        if param.dim() &gt; 1:
-            ax = axes[plot_index]
-            curve = ax.plot(sparsities, accuracies[plot_index])
-            line = ax.plot(sparsities, [lower_bound_accuracy] * len(sparsities))
-            ax.set_xticks(np.arange(start=0.4, stop=1.0, step=0.1))
-            ax.set_ylim(80, 95)
-            ax.set_title(name)
-            ax.set_xlabel(&#39;sparsity&#39;)
-            ax.set_ylabel(&#39;top-1 accuracy&#39;)
-            ax.legend([
-                &#39;accuracy after pruning&#39;,
-                f&#39;{lower_bound_accuracy / dense_model_accuracy * 100:.0f}% of dense model accuracy&#39;
-            ])
-            ax.grid(axis=&#39;x&#39;)
-            plot_index += 1
-    fig.suptitle(&#39;Sensitivity Curves: Validation Accuracy vs. Pruning Sparsity&#39;)
-    fig.tight_layout()
-    fig.subplots_adjust(top=0.925)
-    plt.show()
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">plot_sensitivity_scan</span><span class="p">(</span><span class="n">sparsities</span><span class="p">,</span> <span class="n">accuracies</span><span class="p">,</span> <span class="n">dense_model_accuracy</span><span class="p">):</span>
+    <span class="n">lower_bound_accuracy</span> <span class="o">=</span> <span class="mi">100</span> <span class="o">-</span> <span class="p">(</span><span class="mi">100</span> <span class="o">-</span> <span class="n">dense_model_accuracy</span><span class="p">)</span> <span class="o">*</span> <span class="mf">1.5</span>
+    <span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">accuracies</span><span class="p">)</span> <span class="o">/</span> <span class="mi">3</span><span class="p">)),</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span><span class="mi">8</span><span class="p">))</span>
+    <span class="n">axes</span> <span class="o">=</span> <span class="n">axes</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
+    <span class="n">plot_index</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">named_parameters</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">param</span><span class="o">.</span><span class="n">dim</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">ax</span> <span class="o">=</span> <span class="n">axes</span><span class="p">[</span><span class="n">plot_index</span><span class="p">]</span>
+            <span class="n">curve</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">sparsities</span><span class="p">,</span> <span class="n">accuracies</span><span class="p">[</span><span class="n">plot_index</span><span class="p">])</span>
+            <span class="n">line</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">sparsities</span><span class="p">,</span> <span class="p">[</span><span class="n">lower_bound_accuracy</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">sparsities</span><span class="p">))</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">set_xticks</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">start</span><span class="o">=</span><span class="mf">0.4</span><span class="p">,</span> <span class="n">stop</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="mf">0.1</span><span class="p">))</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="mi">80</span><span class="p">,</span> <span class="mi">95</span><span class="p">)</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;sparsity&#39;</span><span class="p">)</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;top-1 accuracy&#39;</span><span class="p">)</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">([</span>
+                <span class="s1">&#39;accuracy after pruning&#39;</span><span class="p">,</span>
+                <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">lower_bound_accuracy</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">dense_model_accuracy</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">100</span><span class="si">:</span><span class="s1">.0f</span><span class="si">}</span><span class="s1">% of dense model accuracy&#39;</span>
+            <span class="p">])</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="s1">&#39;x&#39;</span><span class="p">)</span>
+            <span class="n">plot_index</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="s1">&#39;Sensitivity Curves: Validation Accuracy vs. Pruning Sparsity&#39;</span><span class="p">)</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">subplots_adjust</span><span class="p">(</span><span class="n">top</span><span class="o">=</span><span class="mf">0.925</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 
-plot_sensitivity_scan(sparsities, accuracies, dense_model_accuracy)
+<span class="n">plot_sensitivity_scan</span><span class="p">(</span><span class="n">sparsities</span><span class="p">,</span> <span class="n">accuracies</span><span class="p">,</span> <span class="n">dense_model_accuracy</span><span class="p">)</span>
 </pre></div>
 </div>
 <img alt="../_images/Pruning_42_0.png" src="../_images/Pruning_42_0.png" />
@@ -796,61 +794,61 @@ affects the decision on sparsity selection. Layers with more #parameters
 require larger sparsities.</p>
 <p>Please run the following code cell to plot the distribution of
 #parameters in the whole model.</p>
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>def plot_num_parameters_distribution(model):
-    num_parameters = dict()
-    for name, param in model.named_parameters():
-        if param.dim() &gt; 1:
-            num_parameters[name] = param.numel()
-    fig = plt.figure(figsize=(8, 6))
-    plt.grid(axis=&#39;y&#39;)
-    plt.bar(list(num_parameters.keys()), list(num_parameters.values()))
-    plt.title(&#39;#Parameter Distribution&#39;)
-    plt.ylabel(&#39;Number of Parameters&#39;)
-    plt.xticks(rotation=60)
-    plt.tight_layout()
-    plt.show()
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">plot_num_parameters_distribution</span><span class="p">(</span><span class="n">model</span><span class="p">):</span>
+    <span class="n">num_parameters</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">named_parameters</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">param</span><span class="o">.</span><span class="n">dim</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">num_parameters</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">param</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span>
+    <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="s1">&#39;y&#39;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">bar</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">num_parameters</span><span class="o">.</span><span class="n">keys</span><span class="p">()),</span> <span class="nb">list</span><span class="p">(</span><span class="n">num_parameters</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;#Parameter Distribution&#39;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;Number of Parameters&#39;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">xticks</span><span class="p">(</span><span class="n">rotation</span><span class="o">=</span><span class="mi">60</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 
-plot_num_parameters_distribution(model)
+<span class="n">plot_num_parameters_distribution</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
 </pre></div>
 </div>
 <img alt="../_images/Pruning_44_0.png" src="../_images/Pruning_44_0.png" />
 </section>
 <section id="select-sparsity-based-on-sensitivity-curves-and-parameters-distribution">
 <h3>Select Sparsity Based on Sensitivity Curves and #Parameters Distribution<a class="headerlink" href="#select-sparsity-based-on-sensitivity-curves-and-parameters-distribution" title="Link to this heading"></a></h3>
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>recover_model()
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">recover_model</span><span class="p">()</span>
 
-sparsity_dict = {
+<span class="n">sparsity_dict</span> <span class="o">=</span> <span class="p">{</span>
 
-    &#39;backbone.conv0.weight&#39;: 0.55,
-    &#39;backbone.conv1.weight&#39;: 0.85,
-    &#39;backbone.conv2.weight&#39;: 0.8,
-    &#39;backbone.conv3.weight&#39;: 0.75,
-    &#39;backbone.conv4.weight&#39;: 0.7,
-    &#39;backbone.conv5.weight&#39;: 0.8,
-    &#39;backbone.conv6.weight&#39;: 0.8,
-    &#39;backbone.conv7.weight&#39;: 0.9,
-    &#39;classifier.weight&#39;: 0.9
+    <span class="s1">&#39;backbone.conv0.weight&#39;</span><span class="p">:</span> <span class="mf">0.55</span><span class="p">,</span>
+    <span class="s1">&#39;backbone.conv1.weight&#39;</span><span class="p">:</span> <span class="mf">0.85</span><span class="p">,</span>
+    <span class="s1">&#39;backbone.conv2.weight&#39;</span><span class="p">:</span> <span class="mf">0.8</span><span class="p">,</span>
+    <span class="s1">&#39;backbone.conv3.weight&#39;</span><span class="p">:</span> <span class="mf">0.75</span><span class="p">,</span>
+    <span class="s1">&#39;backbone.conv4.weight&#39;</span><span class="p">:</span> <span class="mf">0.7</span><span class="p">,</span>
+    <span class="s1">&#39;backbone.conv5.weight&#39;</span><span class="p">:</span> <span class="mf">0.8</span><span class="p">,</span>
+    <span class="s1">&#39;backbone.conv6.weight&#39;</span><span class="p">:</span> <span class="mf">0.8</span><span class="p">,</span>
+    <span class="s1">&#39;backbone.conv7.weight&#39;</span><span class="p">:</span> <span class="mf">0.9</span><span class="p">,</span>
+    <span class="s1">&#39;classifier.weight&#39;</span><span class="p">:</span> <span class="mf">0.9</span>
 
-}
+<span class="p">}</span>
 </pre></div>
 </div>
 <p>Please run the following cell to prune the model according to your
 defined <code class="docutils literal notranslate"><span class="pre">sparsity_dict</span></code>, and print the information of sparse model.</p>
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>pruner = FineGrainedPruner(model, sparsity_dict)
-print(f&#39;After pruning with sparsity dictionary&#39;)
-for name, sparsity in sparsity_dict.items():
-    print(f&#39;  {name}: {sparsity:.2f}&#39;)
-print(f&#39;The sparsity of each layer becomes&#39;)
-for name, param in model.named_parameters():
-    if name in sparsity_dict:
-        print(f&#39;  {name}: {get_sparsity(param):.2f}&#39;)
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">pruner</span> <span class="o">=</span> <span class="n">FineGrainedPruner</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">sparsity_dict</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;After pruning with sparsity dictionary&#39;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">sparsity</span> <span class="ow">in</span> <span class="n">sparsity_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;  </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s1">: </span><span class="si">{</span><span class="n">sparsity</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;The sparsity of each layer becomes&#39;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">named_parameters</span><span class="p">():</span>
+    <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">sparsity_dict</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;  </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s1">: </span><span class="si">{</span><span class="n">get_sparsity</span><span class="p">(</span><span class="n">param</span><span class="p">)</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
 
-sparse_model_size = get_model_size(model, count_nonzero_only=True)
-print(f&quot;Sparse model has size={sparse_model_size / MiB:.2f} MiB = {sparse_model_size / dense_model_size * 100:.2f}% of dense model size&quot;)
-sparse_model_accuracy = evaluate(model, dataloader[&#39;test&#39;])
-print(f&quot;Sparse model has accuracy={sparse_model_accuracy:.2f}% before fintuning&quot;)
+<span class="n">sparse_model_size</span> <span class="o">=</span> <span class="n">get_model_size</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">count_nonzero_only</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Sparse model has size=</span><span class="si">{</span><span class="n">sparse_model_size</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">MiB</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> MiB = </span><span class="si">{</span><span class="n">sparse_model_size</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">dense_model_size</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">100</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">% of dense model size&quot;</span><span class="p">)</span>
+<span class="n">sparse_model_accuracy</span> <span class="o">=</span> <span class="n">evaluate</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">dataloader</span><span class="p">[</span><span class="s1">&#39;test&#39;</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Sparse model has accuracy=</span><span class="si">{</span><span class="n">sparse_model_accuracy</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">% before fintuning&quot;</span><span class="p">)</span>
 
-plot_weight_distribution(model, count_nonzero_only=True)
+<span class="n">plot_weight_distribution</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">count_nonzero_only</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </pre></div>
 </div>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">After</span> <span class="n">pruning</span> <span class="k">with</span> <span class="n">sparsity</span> <span class="n">dictionary</span>
@@ -892,25 +890,25 @@ model also dropped. Therefore, we have to finetune the sparse model to
 recover the accuracy.</p>
 <p>Please run the following cell to finetune the sparse model. It should
 take around 3 minutes to finish.</p>
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>num_finetune_epochs = 5
-optimizer = torch.optim.SGD(model.parameters(), lr=0.01, momentum=0.9, weight_decay=1e-4)
-scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, num_finetune_epochs)
-criterion = nn.CrossEntropyLoss()
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">num_finetune_epochs</span> <span class="o">=</span> <span class="mi">5</span>
+<span class="n">optimizer</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">SGD</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">(),</span> <span class="n">lr</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span> <span class="n">momentum</span><span class="o">=</span><span class="mf">0.9</span><span class="p">,</span> <span class="n">weight_decay</span><span class="o">=</span><span class="mf">1e-4</span><span class="p">)</span>
+<span class="n">scheduler</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">lr_scheduler</span><span class="o">.</span><span class="n">CosineAnnealingLR</span><span class="p">(</span><span class="n">optimizer</span><span class="p">,</span> <span class="n">num_finetune_epochs</span><span class="p">)</span>
+<span class="n">criterion</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">CrossEntropyLoss</span><span class="p">()</span>
 
-best_sparse_model_checkpoint = dict()
-best_accuracy = 0
-print(f&#39;Finetuning Fine-grained Pruned Sparse Model&#39;)
-for epoch in range(num_finetune_epochs):
-    # At the end of each train iteration, we have to apply the pruning mask
-    #    to keep the model sparse during the training
-    train(model, dataloader[&#39;train&#39;], criterion, optimizer, scheduler,
-          callbacks=[lambda: pruner.apply(model)])
-    accuracy = evaluate(model, dataloader[&#39;test&#39;])
-    is_best = accuracy &gt; best_accuracy
-    if is_best:
-        best_sparse_model_checkpoint[&#39;state_dict&#39;] = copy.deepcopy(model.state_dict())
-        best_accuracy = accuracy
-    print(f&#39;    Epoch {epoch+1} Accuracy {accuracy:.2f}% / Best Accuracy: {best_accuracy:.2f}%&#39;)
+<span class="n">best_sparse_model_checkpoint</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+<span class="n">best_accuracy</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Finetuning Fine-grained Pruned Sparse Model&#39;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">epoch</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_finetune_epochs</span><span class="p">):</span>
+    <span class="c1"># At the end of each train iteration, we have to apply the pruning mask</span>
+    <span class="c1">#    to keep the model sparse during the training</span>
+    <span class="n">train</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">dataloader</span><span class="p">[</span><span class="s1">&#39;train&#39;</span><span class="p">],</span> <span class="n">criterion</span><span class="p">,</span> <span class="n">optimizer</span><span class="p">,</span> <span class="n">scheduler</span><span class="p">,</span>
+          <span class="n">callbacks</span><span class="o">=</span><span class="p">[</span><span class="k">lambda</span><span class="p">:</span> <span class="n">pruner</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">model</span><span class="p">)])</span>
+    <span class="n">accuracy</span> <span class="o">=</span> <span class="n">evaluate</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">dataloader</span><span class="p">[</span><span class="s1">&#39;test&#39;</span><span class="p">])</span>
+    <span class="n">is_best</span> <span class="o">=</span> <span class="n">accuracy</span> <span class="o">&gt;</span> <span class="n">best_accuracy</span>
+    <span class="k">if</span> <span class="n">is_best</span><span class="p">:</span>
+        <span class="n">best_sparse_model_checkpoint</span><span class="p">[</span><span class="s1">&#39;state_dict&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">state_dict</span><span class="p">())</span>
+        <span class="n">best_accuracy</span> <span class="o">=</span> <span class="n">accuracy</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;    Epoch </span><span class="si">{</span><span class="n">epoch</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s1"> Accuracy </span><span class="si">{</span><span class="n">accuracy</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1">% / Best Accuracy: </span><span class="si">{</span><span class="n">best_accuracy</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1">%&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Finetuning</span> <span class="n">Fine</span><span class="o">-</span><span class="n">grained</span> <span class="n">Pruned</span> <span class="n">Sparse</span> <span class="n">Model</span>
@@ -963,13 +961,13 @@ for epoch in range(num_finetune_epochs):
 </div>
 <p>Run the following cell to see the information of best finetuned sparse
 model.</p>
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span># load the best sparse model checkpoint to evaluate the final performance
-model.load_state_dict(best_sparse_model_checkpoint[&#39;state_dict&#39;])
-fine_grained_model = copy.deepcopy(model)
-sparse_model_size = get_model_size(model, count_nonzero_only=True)
-print(f&quot;Sparse model has size={sparse_model_size / MiB:.2f} MiB = {sparse_model_size / dense_model_size * 100:.2f}% of dense model size&quot;)
-sparse_model_accuracy = evaluate(model, dataloader[&#39;test&#39;])
-print(f&quot;Sparse model has accuracy={sparse_model_accuracy:.2f}% after fintuning&quot;)
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># load the best sparse model checkpoint to evaluate the final performance</span>
+<span class="n">model</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">best_sparse_model_checkpoint</span><span class="p">[</span><span class="s1">&#39;state_dict&#39;</span><span class="p">])</span>
+<span class="n">fine_grained_model</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+<span class="n">sparse_model_size</span> <span class="o">=</span> <span class="n">get_model_size</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">count_nonzero_only</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Sparse model has size=</span><span class="si">{</span><span class="n">sparse_model_size</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">MiB</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> MiB = </span><span class="si">{</span><span class="n">sparse_model_size</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">dense_model_size</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">100</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">% of dense model size&quot;</span><span class="p">)</span>
+<span class="n">sparse_model_accuracy</span> <span class="o">=</span> <span class="n">evaluate</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">dataloader</span><span class="p">[</span><span class="s1">&#39;test&#39;</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Sparse model has accuracy=</span><span class="si">{</span><span class="n">sparse_model_accuracy</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">% after fintuning&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Sparse</span> <span class="n">model</span> <span class="n">has</span> <span class="n">size</span><span class="o">=</span><span class="mf">6.71</span> <span class="n">MiB</span> <span class="o">=</span> <span class="mf">19.05</span><span class="o">%</span> <span class="n">of</span> <span class="n">dense</span> <span class="n">model</span> <span class="n">size</span>
@@ -989,11 +987,11 @@ print(f&quot;Sparse model has accuracy={sparse_model_accuracy:.2f}% after fintun
 removes an entire channel, so that it can achieve inference speed up on
 existing hardware like GPUs. Similarly, we remove the channels whose
 weights are of smaller magnitudes (measured by Frobenius norm).</p>
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span># firstly, let&#39;s restore the model weights to the original dense version
-#   and check the validation accuracy
-recover_model()
-dense_model_accuracy = evaluate(model, dataloader[&#39;test&#39;])
-print(f&quot;dense model has accuracy={dense_model_accuracy:.2f}%&quot;)
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># firstly, let&#39;s restore the model weights to the original dense version</span>
+<span class="c1">#   and check the validation accuracy</span>
+<span class="n">recover_model</span><span class="p">()</span>
+<span class="n">dense_model_accuracy</span> <span class="o">=</span> <span class="n">evaluate</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">dataloader</span><span class="p">[</span><span class="s1">&#39;test&#39;</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;dense model has accuracy=</span><span class="si">{</span><span class="n">dense_model_accuracy</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">%&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>eval:   0%|          | 0/20 [00:00&lt;?, ?it/s]
@@ -1017,67 +1015,67 @@ different layers. However, we use a uniform pruning rate for all the
 layers for now. We are targeting 2x computation reduction, which is
 roughly 30% uniform pruning rate (think about why).</p>
 <p>You can pass in a list of ratios to the <code class="docutils literal notranslate"><span class="pre">channel_prune</span></code> function.</p>
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>def get_num_channels_to_keep(channels: int, prune_ratio: float) -&gt; int:
-    &quot;&quot;&quot;A function to calculate the number of layers to PRESERVE after pruning
-    Note that preserve_rate = 1. - prune_ratio
-    &quot;&quot;&quot;
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">get_num_channels_to_keep</span><span class="p">(</span><span class="n">channels</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">prune_ratio</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A function to calculate the number of layers to PRESERVE after pruning</span>
+<span class="sd">    Note that preserve_rate = 1. - prune_ratio</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
-    return int(round(channels * (1. - prune_ratio)))
+    <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">channels</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.</span> <span class="o">-</span> <span class="n">prune_ratio</span><span class="p">)))</span>
 
 
-@torch.no_grad()
-def channel_prune(model: nn.Module,
-                  prune_ratio: Union[List, float]) -&gt; nn.Module:
-    &quot;&quot;&quot;Apply channel pruning to each of the conv layer in the backbone
-    Note that for prune_ratio, we can either provide a floating-point number,
-    indicating that we use a uniform pruning rate for all layers, or a list of
-    numbers to indicate per-layer pruning rate.
-    &quot;&quot;&quot;
-    # sanity check of provided prune_ratio
-    assert isinstance(prune_ratio, (float, list))
-    n_conv = len([m for m in model.backbone if isinstance(m, nn.Conv2d)])
-    # note that for the ratios, it affects the previous conv output and next
-    # conv input, i.e., conv0 - ratio0 - conv1 - ratio1-...
-    if isinstance(prune_ratio, list):
-        assert len(prune_ratio) == n_conv - 1
-    else:  # convert float to list
-        prune_ratio = [prune_ratio] * (n_conv - 1)
+<span class="nd">@torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">()</span>
+<span class="k">def</span> <span class="nf">channel_prune</span><span class="p">(</span><span class="n">model</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span>
+                  <span class="n">prune_ratio</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">,</span> <span class="nb">float</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Apply channel pruning to each of the conv layer in the backbone</span>
+<span class="sd">    Note that for prune_ratio, we can either provide a floating-point number,</span>
+<span class="sd">    indicating that we use a uniform pruning rate for all layers, or a list of</span>
+<span class="sd">    numbers to indicate per-layer pruning rate.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># sanity check of provided prune_ratio</span>
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">prune_ratio</span><span class="p">,</span> <span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="nb">list</span><span class="p">))</span>
+    <span class="n">n_conv</span> <span class="o">=</span> <span class="nb">len</span><span class="p">([</span><span class="n">m</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">backbone</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">)])</span>
+    <span class="c1"># note that for the ratios, it affects the previous conv output and next</span>
+    <span class="c1"># conv input, i.e., conv0 - ratio0 - conv1 - ratio1-...</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">prune_ratio</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">prune_ratio</span><span class="p">)</span> <span class="o">==</span> <span class="n">n_conv</span> <span class="o">-</span> <span class="mi">1</span>
+    <span class="k">else</span><span class="p">:</span>  <span class="c1"># convert float to list</span>
+        <span class="n">prune_ratio</span> <span class="o">=</span> <span class="p">[</span><span class="n">prune_ratio</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="n">n_conv</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
 
-    # we prune the convs in the backbone with a uniform ratio
-    model = copy.deepcopy(model)  # prevent overwrite
-    # we only apply pruning to the backbone features
-    all_convs = [m for m in model.backbone if isinstance(m, nn.Conv2d)]
-    all_bns = [m for m in model.backbone if isinstance(m, nn.BatchNorm2d)]
-    # apply pruning. we naively keep the first k channels
-    assert len(all_convs) == len(all_bns)
-    for i_ratio, p_ratio in enumerate(prune_ratio):
-        prev_conv = all_convs[i_ratio]
-        prev_bn = all_bns[i_ratio]
-        next_conv = all_convs[i_ratio + 1]
-        original_channels = prev_conv.out_channels  # same as next_conv.in_channels
-        n_keep = get_num_channels_to_keep(original_channels, p_ratio)
+    <span class="c1"># we prune the convs in the backbone with a uniform ratio</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>  <span class="c1"># prevent overwrite</span>
+    <span class="c1"># we only apply pruning to the backbone features</span>
+    <span class="n">all_convs</span> <span class="o">=</span> <span class="p">[</span><span class="n">m</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">backbone</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">)]</span>
+    <span class="n">all_bns</span> <span class="o">=</span> <span class="p">[</span><span class="n">m</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">backbone</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">BatchNorm2d</span><span class="p">)]</span>
+    <span class="c1"># apply pruning. we naively keep the first k channels</span>
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">all_convs</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">all_bns</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i_ratio</span><span class="p">,</span> <span class="n">p_ratio</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">prune_ratio</span><span class="p">):</span>
+        <span class="n">prev_conv</span> <span class="o">=</span> <span class="n">all_convs</span><span class="p">[</span><span class="n">i_ratio</span><span class="p">]</span>
+        <span class="n">prev_bn</span> <span class="o">=</span> <span class="n">all_bns</span><span class="p">[</span><span class="n">i_ratio</span><span class="p">]</span>
+        <span class="n">next_conv</span> <span class="o">=</span> <span class="n">all_convs</span><span class="p">[</span><span class="n">i_ratio</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="n">original_channels</span> <span class="o">=</span> <span class="n">prev_conv</span><span class="o">.</span><span class="n">out_channels</span>  <span class="c1"># same as next_conv.in_channels</span>
+        <span class="n">n_keep</span> <span class="o">=</span> <span class="n">get_num_channels_to_keep</span><span class="p">(</span><span class="n">original_channels</span><span class="p">,</span> <span class="n">p_ratio</span><span class="p">)</span>
 
-        # prune the output of the previous conv and bn
-        prev_conv.weight.set_(prev_conv.weight.detach()[:n_keep])
-        prev_bn.weight.set_(prev_bn.weight.detach()[:n_keep])
-        prev_bn.bias.set_(prev_bn.bias.detach()[:n_keep])
-        prev_bn.running_mean.set_(prev_bn.running_mean.detach()[:n_keep])
-        prev_bn.running_var.set_(prev_bn.running_var.detach()[:n_keep])
+        <span class="c1"># prune the output of the previous conv and bn</span>
+        <span class="n">prev_conv</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">set_</span><span class="p">(</span><span class="n">prev_conv</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">detach</span><span class="p">()[:</span><span class="n">n_keep</span><span class="p">])</span>
+        <span class="n">prev_bn</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">set_</span><span class="p">(</span><span class="n">prev_bn</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">detach</span><span class="p">()[:</span><span class="n">n_keep</span><span class="p">])</span>
+        <span class="n">prev_bn</span><span class="o">.</span><span class="n">bias</span><span class="o">.</span><span class="n">set_</span><span class="p">(</span><span class="n">prev_bn</span><span class="o">.</span><span class="n">bias</span><span class="o">.</span><span class="n">detach</span><span class="p">()[:</span><span class="n">n_keep</span><span class="p">])</span>
+        <span class="n">prev_bn</span><span class="o">.</span><span class="n">running_mean</span><span class="o">.</span><span class="n">set_</span><span class="p">(</span><span class="n">prev_bn</span><span class="o">.</span><span class="n">running_mean</span><span class="o">.</span><span class="n">detach</span><span class="p">()[:</span><span class="n">n_keep</span><span class="p">])</span>
+        <span class="n">prev_bn</span><span class="o">.</span><span class="n">running_var</span><span class="o">.</span><span class="n">set_</span><span class="p">(</span><span class="n">prev_bn</span><span class="o">.</span><span class="n">running_var</span><span class="o">.</span><span class="n">detach</span><span class="p">()[:</span><span class="n">n_keep</span><span class="p">])</span>
 
-        # prune the input of the next conv
+        <span class="c1"># prune the input of the next conv</span>
 
-        next_conv.weight.set_(next_conv.weight.detach()[:, :n_keep])
+        <span class="n">next_conv</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">set_</span><span class="p">(</span><span class="n">next_conv</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">detach</span><span class="p">()[:,</span> <span class="p">:</span><span class="n">n_keep</span><span class="p">])</span>
 
-    return model
+    <span class="k">return</span> <span class="n">model</span>
 </pre></div>
 </div>
 <p>Run the following cell to perform a sanity check to make sure the
 implementation is correct.</p>
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>dummy_input = torch.randn(1, 3, 32, 32).cuda()
-pruned_model = channel_prune(model, prune_ratio=0.3)
-pruned_macs = get_model_macs(pruned_model, dummy_input)
-assert pruned_macs == 305388064
-print(&#39;* Check passed. Right MACs for the pruned model.&#39;)
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">dummy_input</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">32</span><span class="p">,</span> <span class="mi">32</span><span class="p">)</span><span class="o">.</span><span class="n">cuda</span><span class="p">()</span>
+<span class="n">pruned_model</span> <span class="o">=</span> <span class="n">channel_prune</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">prune_ratio</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
+<span class="n">pruned_macs</span> <span class="o">=</span> <span class="n">get_model_macs</span><span class="p">(</span><span class="n">pruned_model</span><span class="p">,</span> <span class="n">dummy_input</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">pruned_macs</span> <span class="o">==</span> <span class="mi">305388064</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;* Check passed. Right MACs for the pruned model.&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">*</span> <span class="n">Check</span> <span class="n">passed</span><span class="o">.</span> <span class="n">Right</span> <span class="n">MACs</span> <span class="k">for</span> <span class="n">the</span> <span class="n">pruned</span> <span class="n">model</span><span class="o">.</span>
@@ -1087,8 +1085,8 @@ print(&#39;* Check passed. Right MACs for the pruned model.&#39;)
 pruning with 30% pruning rate.</p>
 <p>As you may see, directly removing 30% of the channels leads to low
 accuracy.</p>
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>pruned_model_accuracy = evaluate(pruned_model, dataloader[&#39;test&#39;])
-print(f&quot;pruned model has accuracy={pruned_model_accuracy:.2f}%&quot;)
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">pruned_model_accuracy</span> <span class="o">=</span> <span class="n">evaluate</span><span class="p">(</span><span class="n">pruned_model</span><span class="p">,</span> <span class="n">dataloader</span><span class="p">[</span><span class="s1">&#39;test&#39;</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;pruned model has accuracy=</span><span class="si">{</span><span class="n">pruned_model_accuracy</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">%&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>eval:   0%|          | 0/20 [00:00&lt;?, ?it/s]
@@ -1115,71 +1113,71 @@ and then keep the frst <span class="math notranslate nohighlight">\(k\)</span> c
 <code class="docutils literal notranslate"><span class="pre">`torch.norm</span></code> &lt;<a class="reference external" href="https://pytorch.org/docs/master/generated/torch.norm.html?highlight=torch+norm#torch.norm">https://pytorch.org/docs/master/generated/torch.norm.html?highlight=torch+norm#torch.norm</a>&gt;`__
 APIs.</p></li>
 </ul>
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span># function to sort the channels from important to non-important
-def get_input_channel_importance(weight):
-    in_channels = weight.shape[1]
-    importances = []
-    # compute the importance for each input channel
-    for i_c in range(weight.shape[1]):
-        channel_weight = weight.detach()[:, i_c]
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># function to sort the channels from important to non-important</span>
+<span class="k">def</span> <span class="nf">get_input_channel_importance</span><span class="p">(</span><span class="n">weight</span><span class="p">):</span>
+    <span class="n">in_channels</span> <span class="o">=</span> <span class="n">weight</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">importances</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="c1"># compute the importance for each input channel</span>
+    <span class="k">for</span> <span class="n">i_c</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">weight</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+        <span class="n">channel_weight</span> <span class="o">=</span> <span class="n">weight</span><span class="o">.</span><span class="n">detach</span><span class="p">()[:,</span> <span class="n">i_c</span><span class="p">]</span>
 
-        importance = torch.norm(channel_weight)
+        <span class="n">importance</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">channel_weight</span><span class="p">)</span>
 
-        importances.append(importance.view(1))
-    return torch.cat(importances)
+        <span class="n">importances</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">importance</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span><span class="n">importances</span><span class="p">)</span>
 
-@torch.no_grad()
-def apply_channel_sorting(model):
-    model = copy.deepcopy(model)  # do not modify the original model
-    # fetch all the conv and bn layers from the backbone
-    all_convs = [m for m in model.backbone if isinstance(m, nn.Conv2d)]
-    all_bns = [m for m in model.backbone if isinstance(m, nn.BatchNorm2d)]
-    # iterate through conv layers
-    for i_conv in range(len(all_convs) - 1):
-        # each channel sorting index, we need to apply it to:
-        # - the output dimension of the previous conv
-        # - the previous BN layer
-        # - the input dimension of the next conv (we compute importance here)
-        prev_conv = all_convs[i_conv]
-        prev_bn = all_bns[i_conv]
-        next_conv = all_convs[i_conv + 1]
-        # note that we always compute the importance according to input channels
-        importance = get_input_channel_importance(next_conv.weight)
-        # sorting from large to small
-        sort_idx = torch.argsort(importance, descending=True)
+<span class="nd">@torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">()</span>
+<span class="k">def</span> <span class="nf">apply_channel_sorting</span><span class="p">(</span><span class="n">model</span><span class="p">):</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>  <span class="c1"># do not modify the original model</span>
+    <span class="c1"># fetch all the conv and bn layers from the backbone</span>
+    <span class="n">all_convs</span> <span class="o">=</span> <span class="p">[</span><span class="n">m</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">backbone</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">)]</span>
+    <span class="n">all_bns</span> <span class="o">=</span> <span class="p">[</span><span class="n">m</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">backbone</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">BatchNorm2d</span><span class="p">)]</span>
+    <span class="c1"># iterate through conv layers</span>
+    <span class="k">for</span> <span class="n">i_conv</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">all_convs</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="c1"># each channel sorting index, we need to apply it to:</span>
+        <span class="c1"># - the output dimension of the previous conv</span>
+        <span class="c1"># - the previous BN layer</span>
+        <span class="c1"># - the input dimension of the next conv (we compute importance here)</span>
+        <span class="n">prev_conv</span> <span class="o">=</span> <span class="n">all_convs</span><span class="p">[</span><span class="n">i_conv</span><span class="p">]</span>
+        <span class="n">prev_bn</span> <span class="o">=</span> <span class="n">all_bns</span><span class="p">[</span><span class="n">i_conv</span><span class="p">]</span>
+        <span class="n">next_conv</span> <span class="o">=</span> <span class="n">all_convs</span><span class="p">[</span><span class="n">i_conv</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="c1"># note that we always compute the importance according to input channels</span>
+        <span class="n">importance</span> <span class="o">=</span> <span class="n">get_input_channel_importance</span><span class="p">(</span><span class="n">next_conv</span><span class="o">.</span><span class="n">weight</span><span class="p">)</span>
+        <span class="c1"># sorting from large to small</span>
+        <span class="n">sort_idx</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">importance</span><span class="p">,</span> <span class="n">descending</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
-        # apply to previous conv and its following bn
-        prev_conv.weight.copy_(torch.index_select(
-            prev_conv.weight.detach(), 0, sort_idx))
-        for tensor_name in [&#39;weight&#39;, &#39;bias&#39;, &#39;running_mean&#39;, &#39;running_var&#39;]:
-            tensor_to_apply = getattr(prev_bn, tensor_name)
-            tensor_to_apply.copy_(
-                torch.index_select(tensor_to_apply.detach(), 0, sort_idx)
-            )
+        <span class="c1"># apply to previous conv and its following bn</span>
+        <span class="n">prev_conv</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">copy_</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span>
+            <span class="n">prev_conv</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">detach</span><span class="p">(),</span> <span class="mi">0</span><span class="p">,</span> <span class="n">sort_idx</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">tensor_name</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;weight&#39;</span><span class="p">,</span> <span class="s1">&#39;bias&#39;</span><span class="p">,</span> <span class="s1">&#39;running_mean&#39;</span><span class="p">,</span> <span class="s1">&#39;running_var&#39;</span><span class="p">]:</span>
+            <span class="n">tensor_to_apply</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">prev_bn</span><span class="p">,</span> <span class="n">tensor_name</span><span class="p">)</span>
+            <span class="n">tensor_to_apply</span><span class="o">.</span><span class="n">copy_</span><span class="p">(</span>
+                <span class="n">torch</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="n">tensor_to_apply</span><span class="o">.</span><span class="n">detach</span><span class="p">(),</span> <span class="mi">0</span><span class="p">,</span> <span class="n">sort_idx</span><span class="p">)</span>
+            <span class="p">)</span>
 
-        # apply to the next conv input (hint: one line of code)
+        <span class="c1"># apply to the next conv input (hint: one line of code)</span>
 
-        next_conv.weight.copy_(
-            torch.index_select(next_conv.weight.detach(), 1, sort_idx))
+        <span class="n">next_conv</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">copy_</span><span class="p">(</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="n">next_conv</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">detach</span><span class="p">(),</span> <span class="mi">1</span><span class="p">,</span> <span class="n">sort_idx</span><span class="p">))</span>
 
 
-    return model
+    <span class="k">return</span> <span class="n">model</span>
 </pre></div>
 </div>
 <p>Now run the following cell to sanity check if the results are correct.</p>
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>print(&#39;Before sorting...&#39;)
-dense_model_accuracy = evaluate(model, dataloader[&#39;test&#39;])
-print(f&quot;dense model has accuracy={dense_model_accuracy:.2f}%&quot;)
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Before sorting...&#39;</span><span class="p">)</span>
+<span class="n">dense_model_accuracy</span> <span class="o">=</span> <span class="n">evaluate</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">dataloader</span><span class="p">[</span><span class="s1">&#39;test&#39;</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;dense model has accuracy=</span><span class="si">{</span><span class="n">dense_model_accuracy</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">%&quot;</span><span class="p">)</span>
 
-print(&#39;After sorting...&#39;)
-sorted_model = apply_channel_sorting(model)
-sorted_model_accuracy = evaluate(sorted_model, dataloader[&#39;test&#39;])
-print(f&quot;sorted model has accuracy={sorted_model_accuracy:.2f}%&quot;)
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;After sorting...&#39;</span><span class="p">)</span>
+<span class="n">sorted_model</span> <span class="o">=</span> <span class="n">apply_channel_sorting</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+<span class="n">sorted_model_accuracy</span> <span class="o">=</span> <span class="n">evaluate</span><span class="p">(</span><span class="n">sorted_model</span><span class="p">,</span> <span class="n">dataloader</span><span class="p">[</span><span class="s1">&#39;test&#39;</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;sorted model has accuracy=</span><span class="si">{</span><span class="n">sorted_model_accuracy</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">%&quot;</span><span class="p">)</span>
 
-# make sure accuracy does not change after sorting, since it is
-# equivalent transform
-assert abs(sorted_model_accuracy - dense_model_accuracy) &lt; 0.1
-print(&#39;* Check passed.&#39;)
+<span class="c1"># make sure accuracy does not change after sorting, since it is</span>
+<span class="c1"># equivalent transform</span>
+<span class="k">assert</span> <span class="nb">abs</span><span class="p">(</span><span class="n">sorted_model_accuracy</span> <span class="o">-</span> <span class="n">dense_model_accuracy</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">0.1</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;* Check passed.&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Before</span> <span class="n">sorting</span><span class="o">...</span>
@@ -1201,19 +1199,19 @@ print(&#39;* Check passed.&#39;)
 </div>
 <p>Finally, we compare the pruned models’ accuracy with and without
 sorting.</p>
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>channel_pruning_ratio = 0.3  # pruned-out ratio
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">channel_pruning_ratio</span> <span class="o">=</span> <span class="mf">0.3</span>  <span class="c1"># pruned-out ratio</span>
 
-print(&quot; * Without sorting...&quot;)
-pruned_model = channel_prune(model, channel_pruning_ratio)
-pruned_model_accuracy = evaluate(pruned_model, dataloader[&#39;test&#39;])
-print(f&quot;pruned model has accuracy={pruned_model_accuracy:.2f}%&quot;)
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot; * Without sorting...&quot;</span><span class="p">)</span>
+<span class="n">pruned_model</span> <span class="o">=</span> <span class="n">channel_prune</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">channel_pruning_ratio</span><span class="p">)</span>
+<span class="n">pruned_model_accuracy</span> <span class="o">=</span> <span class="n">evaluate</span><span class="p">(</span><span class="n">pruned_model</span><span class="p">,</span> <span class="n">dataloader</span><span class="p">[</span><span class="s1">&#39;test&#39;</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;pruned model has accuracy=</span><span class="si">{</span><span class="n">pruned_model_accuracy</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">%&quot;</span><span class="p">)</span>
 
 
-print(&quot; * With sorting...&quot;)
-sorted_model = apply_channel_sorting(model)
-pruned_model = channel_prune(sorted_model, channel_pruning_ratio)
-pruned_model_accuracy = evaluate(pruned_model, dataloader[&#39;test&#39;])
-print(f&quot;pruned model has accuracy={pruned_model_accuracy:.2f}%&quot;)
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot; * With sorting...&quot;</span><span class="p">)</span>
+<span class="n">sorted_model</span> <span class="o">=</span> <span class="n">apply_channel_sorting</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+<span class="n">pruned_model</span> <span class="o">=</span> <span class="n">channel_prune</span><span class="p">(</span><span class="n">sorted_model</span><span class="p">,</span> <span class="n">channel_pruning_ratio</span><span class="p">)</span>
+<span class="n">pruned_model_accuracy</span> <span class="o">=</span> <span class="n">evaluate</span><span class="p">(</span><span class="n">pruned_model</span><span class="p">,</span> <span class="n">dataloader</span><span class="p">[</span><span class="s1">&#39;test&#39;</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;pruned model has accuracy=</span><span class="si">{</span><span class="n">pruned_model_accuracy</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">%&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">*</span> <span class="n">Without</span> <span class="n">sorting</span><span class="o">...</span>
@@ -1236,19 +1234,19 @@ print(f&quot;pruned model has accuracy={pruned_model_accuracy:.2f}%&quot;)
 model’s accuracy, but there is still a huge degrade, which is quite
 common for channel pruning. But luckily, we can perform fine-tuning to
 recover the accuracy.</p>
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>num_finetune_epochs = 5
-optimizer = torch.optim.SGD(pruned_model.parameters(), lr=0.01, momentum=0.9, weight_decay=1e-4)
-scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, num_finetune_epochs)
-criterion = nn.CrossEntropyLoss()
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">num_finetune_epochs</span> <span class="o">=</span> <span class="mi">5</span>
+<span class="n">optimizer</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">SGD</span><span class="p">(</span><span class="n">pruned_model</span><span class="o">.</span><span class="n">parameters</span><span class="p">(),</span> <span class="n">lr</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span> <span class="n">momentum</span><span class="o">=</span><span class="mf">0.9</span><span class="p">,</span> <span class="n">weight_decay</span><span class="o">=</span><span class="mf">1e-4</span><span class="p">)</span>
+<span class="n">scheduler</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">lr_scheduler</span><span class="o">.</span><span class="n">CosineAnnealingLR</span><span class="p">(</span><span class="n">optimizer</span><span class="p">,</span> <span class="n">num_finetune_epochs</span><span class="p">)</span>
+<span class="n">criterion</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">CrossEntropyLoss</span><span class="p">()</span>
 
-best_accuracy = 0
-for epoch in range(num_finetune_epochs):
-    train(pruned_model, dataloader[&#39;train&#39;], criterion, optimizer, scheduler)
-    accuracy = evaluate(pruned_model, dataloader[&#39;test&#39;])
-    is_best = accuracy &gt; best_accuracy
-    if is_best:
-        best_accuracy = accuracy
-    print(f&#39;Epoch {epoch+1} Accuracy {accuracy:.2f}% / Best Accuracy: {best_accuracy:.2f}%&#39;)
+<span class="n">best_accuracy</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="k">for</span> <span class="n">epoch</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_finetune_epochs</span><span class="p">):</span>
+    <span class="n">train</span><span class="p">(</span><span class="n">pruned_model</span><span class="p">,</span> <span class="n">dataloader</span><span class="p">[</span><span class="s1">&#39;train&#39;</span><span class="p">],</span> <span class="n">criterion</span><span class="p">,</span> <span class="n">optimizer</span><span class="p">,</span> <span class="n">scheduler</span><span class="p">)</span>
+    <span class="n">accuracy</span> <span class="o">=</span> <span class="n">evaluate</span><span class="p">(</span><span class="n">pruned_model</span><span class="p">,</span> <span class="n">dataloader</span><span class="p">[</span><span class="s1">&#39;test&#39;</span><span class="p">])</span>
+    <span class="n">is_best</span> <span class="o">=</span> <span class="n">accuracy</span> <span class="o">&gt;</span> <span class="n">best_accuracy</span>
+    <span class="k">if</span> <span class="n">is_best</span><span class="p">:</span>
+        <span class="n">best_accuracy</span> <span class="o">=</span> <span class="n">accuracy</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Epoch </span><span class="si">{</span><span class="n">epoch</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s1"> Accuracy </span><span class="si">{</span><span class="n">accuracy</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1">% / Best Accuracy: </span><span class="si">{</span><span class="n">best_accuracy</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1">%&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>train:   0%|          | 0/98 [00:00&lt;?, ?it/s]
@@ -1305,78 +1303,78 @@ recover accuracy compared to fine-grained pruning. However, it directly
 leads to a smaller model size and smaller computation without
 specialized model format. It can also run faster on GPUs. Now we compare
 the model size, computation, and latency of the pruned model.</p>
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span># helper functions to measure latency of a regular PyTorch models.
-#   Unlike fine-grained pruning, channel pruning
-#   can directly leads to model size reduction and speed up.
-@torch.no_grad()
-def measure_latency(model, dummy_input, n_warmup=20, n_test=100):
-    model.eval()
-    # warmup
-    for _ in range(n_warmup):
-        _ = model(dummy_input)
-    # real test
-    t1 = time.time()
-    for _ in range(n_test):
-        _ = model(dummy_input)
-    t2 = time.time()
-    return (t2 - t1) / n_test  # average latency
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># helper functions to measure latency of a regular PyTorch models.</span>
+<span class="c1">#   Unlike fine-grained pruning, channel pruning</span>
+<span class="c1">#   can directly leads to model size reduction and speed up.</span>
+<span class="nd">@torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">()</span>
+<span class="k">def</span> <span class="nf">measure_latency</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">dummy_input</span><span class="p">,</span> <span class="n">n_warmup</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">n_test</span><span class="o">=</span><span class="mi">100</span><span class="p">):</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+    <span class="c1"># warmup</span>
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_warmup</span><span class="p">):</span>
+        <span class="n">_</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">dummy_input</span><span class="p">)</span>
+    <span class="c1"># real test</span>
+    <span class="n">t1</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_test</span><span class="p">):</span>
+        <span class="n">_</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">dummy_input</span><span class="p">)</span>
+    <span class="n">t2</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">t2</span> <span class="o">-</span> <span class="n">t1</span><span class="p">)</span> <span class="o">/</span> <span class="n">n_test</span>  <span class="c1"># average latency</span>
 
-table_template = &quot;{:&lt;9} {:&lt;9} {:&lt;15} {:&lt;18} {:&lt;15} {:&lt;9}&quot;
-print (table_template.format(&#39;&#39;,
-                             &#39;Original|&#39;,
-                             &#39;Channel Pruned|&#39;,
-                             &#39;Red. Ratio Channel Pruning|&#39;,
-                             &#39;Fine Grain Pruned|&#39;,
-                             &#39;Red. Ratio Fine-Grained Prun|&#39; ))
+<span class="n">table_template</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{:&lt;9}</span><span class="s2"> </span><span class="si">{:&lt;9}</span><span class="s2"> </span><span class="si">{:&lt;15}</span><span class="s2"> </span><span class="si">{:&lt;18}</span><span class="s2"> </span><span class="si">{:&lt;15}</span><span class="s2"> </span><span class="si">{:&lt;9}</span><span class="s2">&quot;</span>
+<span class="nb">print</span> <span class="p">(</span><span class="n">table_template</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">,</span>
+                             <span class="s1">&#39;Original|&#39;</span><span class="p">,</span>
+                             <span class="s1">&#39;Channel Pruned|&#39;</span><span class="p">,</span>
+                             <span class="s1">&#39;Red. Ratio Channel Pruning|&#39;</span><span class="p">,</span>
+                             <span class="s1">&#39;Fine Grain Pruned|&#39;</span><span class="p">,</span>
+                             <span class="s1">&#39;Red. Ratio Fine-Grained Prun|&#39;</span> <span class="p">))</span>
 
-# 1. measure the latency of the original model and the pruned model on CPU
-#   which simulates inference on an edge device
-dummy_input = torch.randn(1, 3, 32, 32).to(&#39;cpu&#39;)
-pruned_model = pruned_model.to(&#39;cpu&#39;)
-model = model.to(&#39;cpu&#39;)
-fine_grained_model = copy.deepcopy(model)
-fine_grained_model.load_state_dict(best_sparse_model_checkpoint[&#39;state_dict&#39;])
-fine_grained_model = fine_grained_model.to(&#39;cpu&#39;)
+<span class="c1"># 1. measure the latency of the original model and the pruned model on CPU</span>
+<span class="c1">#   which simulates inference on an edge device</span>
+<span class="n">dummy_input</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">32</span><span class="p">,</span> <span class="mi">32</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;cpu&#39;</span><span class="p">)</span>
+<span class="n">pruned_model</span> <span class="o">=</span> <span class="n">pruned_model</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;cpu&#39;</span><span class="p">)</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;cpu&#39;</span><span class="p">)</span>
+<span class="n">fine_grained_model</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+<span class="n">fine_grained_model</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">best_sparse_model_checkpoint</span><span class="p">[</span><span class="s1">&#39;state_dict&#39;</span><span class="p">])</span>
+<span class="n">fine_grained_model</span> <span class="o">=</span> <span class="n">fine_grained_model</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;cpu&#39;</span><span class="p">)</span>
 
 
-pruned_latency = measure_latency(pruned_model, dummy_input)
-fine_grained_model_latency = measure_latency(fine_grained_model, dummy_input)
-original_latency = measure_latency(model, dummy_input)
-print(table_template.format(&#39;Latency (ms)&#39;,
-                            round(original_latency * 1000, 1),
-                            round(pruned_latency * 1000, 1),
-                            round(original_latency / pruned_latency, 1),
-                            round(fine_grained_model_latency * 1000, 1),
-                            round(original_latency / fine_grained_model_latency, 1)
-                            ))
+<span class="n">pruned_latency</span> <span class="o">=</span> <span class="n">measure_latency</span><span class="p">(</span><span class="n">pruned_model</span><span class="p">,</span> <span class="n">dummy_input</span><span class="p">)</span>
+<span class="n">fine_grained_model_latency</span> <span class="o">=</span> <span class="n">measure_latency</span><span class="p">(</span><span class="n">fine_grained_model</span><span class="p">,</span> <span class="n">dummy_input</span><span class="p">)</span>
+<span class="n">original_latency</span> <span class="o">=</span> <span class="n">measure_latency</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">dummy_input</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">table_template</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;Latency (ms)&#39;</span><span class="p">,</span>
+                            <span class="nb">round</span><span class="p">(</span><span class="n">original_latency</span> <span class="o">*</span> <span class="mi">1000</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+                            <span class="nb">round</span><span class="p">(</span><span class="n">pruned_latency</span> <span class="o">*</span> <span class="mi">1000</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+                            <span class="nb">round</span><span class="p">(</span><span class="n">original_latency</span> <span class="o">/</span> <span class="n">pruned_latency</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+                            <span class="nb">round</span><span class="p">(</span><span class="n">fine_grained_model_latency</span> <span class="o">*</span> <span class="mi">1000</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+                            <span class="nb">round</span><span class="p">(</span><span class="n">original_latency</span> <span class="o">/</span> <span class="n">fine_grained_model_latency</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+                            <span class="p">))</span>
 
-# 2. measure the computation (MACs)
-original_macs = get_model_macs(model, dummy_input)
-pruned_macs = get_model_macs(pruned_model, dummy_input)
-fine_grained_macs = get_model_macs(fine_grained_model, dummy_input)
-print(table_template.format(&#39;MACs (M)    &#39;,
-                            round(original_macs / 1e6),
-                            round(pruned_macs / 1e6),
-                            round(original_macs / pruned_macs, 1),
-                            round(fine_grained_macs / 1e6),
-                            round(original_macs / fine_grained_macs, 1)
-                           ))
+<span class="c1"># 2. measure the computation (MACs)</span>
+<span class="n">original_macs</span> <span class="o">=</span> <span class="n">get_model_macs</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">dummy_input</span><span class="p">)</span>
+<span class="n">pruned_macs</span> <span class="o">=</span> <span class="n">get_model_macs</span><span class="p">(</span><span class="n">pruned_model</span><span class="p">,</span> <span class="n">dummy_input</span><span class="p">)</span>
+<span class="n">fine_grained_macs</span> <span class="o">=</span> <span class="n">get_model_macs</span><span class="p">(</span><span class="n">fine_grained_model</span><span class="p">,</span> <span class="n">dummy_input</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">table_template</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;MACs (M)    &#39;</span><span class="p">,</span>
+                            <span class="nb">round</span><span class="p">(</span><span class="n">original_macs</span> <span class="o">/</span> <span class="mf">1e6</span><span class="p">),</span>
+                            <span class="nb">round</span><span class="p">(</span><span class="n">pruned_macs</span> <span class="o">/</span> <span class="mf">1e6</span><span class="p">),</span>
+                            <span class="nb">round</span><span class="p">(</span><span class="n">original_macs</span> <span class="o">/</span> <span class="n">pruned_macs</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+                            <span class="nb">round</span><span class="p">(</span><span class="n">fine_grained_macs</span> <span class="o">/</span> <span class="mf">1e6</span><span class="p">),</span>
+                            <span class="nb">round</span><span class="p">(</span><span class="n">original_macs</span> <span class="o">/</span> <span class="n">fine_grained_macs</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+                           <span class="p">))</span>
 
-# 3. measure the model size (params)
-original_param = get_num_parameters(model, count_nonzero_only=True).item()
-pruned_param = get_num_parameters(pruned_model, count_nonzero_only=True).item()
-channel_pruned_param = get_num_parameters(fine_grained_model, count_nonzero_only=True).item() # Count only non-zero params
-print(table_template.format(&#39;Param (M)   &#39;,
-                            round(original_param / 1e6, 2),
-                            round(pruned_param / 1e6, 2),
-                            round(original_param / pruned_param, 1),
-                            round(channel_pruned_param / 1e6, 2),
-                            round(original_param / channel_pruned_param, 1)
-                           ))
+<span class="c1"># 3. measure the model size (params)</span>
+<span class="n">original_param</span> <span class="o">=</span> <span class="n">get_num_parameters</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">count_nonzero_only</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+<span class="n">pruned_param</span> <span class="o">=</span> <span class="n">get_num_parameters</span><span class="p">(</span><span class="n">pruned_model</span><span class="p">,</span> <span class="n">count_nonzero_only</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+<span class="n">channel_pruned_param</span> <span class="o">=</span> <span class="n">get_num_parameters</span><span class="p">(</span><span class="n">fine_grained_model</span><span class="p">,</span> <span class="n">count_nonzero_only</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="c1"># Count only non-zero params</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">table_template</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;Param (M)   &#39;</span><span class="p">,</span>
+                            <span class="nb">round</span><span class="p">(</span><span class="n">original_param</span> <span class="o">/</span> <span class="mf">1e6</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span>
+                            <span class="nb">round</span><span class="p">(</span><span class="n">pruned_param</span> <span class="o">/</span> <span class="mf">1e6</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span>
+                            <span class="nb">round</span><span class="p">(</span><span class="n">original_param</span> <span class="o">/</span> <span class="n">pruned_param</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+                            <span class="nb">round</span><span class="p">(</span><span class="n">channel_pruned_param</span> <span class="o">/</span> <span class="mf">1e6</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span>
+                            <span class="nb">round</span><span class="p">(</span><span class="n">original_param</span> <span class="o">/</span> <span class="n">channel_pruned_param</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+                           <span class="p">))</span>
 
-# put model back to cuda
-# pruned_model = pruned_model.to(&#39;cuda&#39;)
-# model = model.to(&#39;cuda&#39;)
+<span class="c1"># put model back to cuda</span>
+<span class="c1"># pruned_model = pruned_model.to(&#39;cuda&#39;)</span>
+<span class="c1"># model = model.to(&#39;cuda&#39;)</span>
 </pre></div>
 </div>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>          <span class="n">Original</span><span class="o">|</span> <span class="n">Channel</span> <span class="n">Pruned</span><span class="o">|</span> <span class="n">Red</span><span class="o">.</span> <span class="n">Ratio</span> <span class="n">Channel</span> <span class="n">Pruning</span><span class="o">|</span> <span class="n">Fine</span> <span class="n">Grain</span> <span class="n">Pruned</span><span class="o">|</span> <span class="n">Red</span><span class="o">.</span> <span class="n">Ratio</span> <span class="n">Fine</span><span class="o">-</span><span class="n">Grained</span> <span class="n">Prun</span><span class="o">|</span>

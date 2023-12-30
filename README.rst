@@ -132,7 +132,7 @@ Quickstart:
 
 
 Define Network:
-----------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^
 
 
 .. code:: python
@@ -158,7 +158,7 @@ Define Network:
            return x
 
 Make a Dict for Dataloader
---------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code:: python
 
@@ -190,8 +190,7 @@ Make a Dict for Dataloader
      )
 
 Define your Configurations:
-----------------------------
-
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. code:: python
 
    # Define all parameters 
@@ -210,7 +209,7 @@ Define your Configurations:
    sconces.prune_mode = "GMP" # Prune Mode: Currently supporting "GMP"(Supports Automated Pruning Ratio Detection), "CWP". Future supports for "OBC" and "sparseGPT"
 
 One Roof Solution [Train -> Compress -> Deploy]:
-------------------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code:: python
 
