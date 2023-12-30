@@ -21,7 +21,7 @@ that we use to train our models. However, the brain does not use gradient descen
 solve complex problems with such ease.
 
 
-.. image:: https://github.com/satabios/sconce/blob/main/docs/source/images/sconce-pipeline.png?raw=true
+.. image:: https://github.com/satabios/sconce/blob/main/docs/source/images/sconce-outline.jpeg?raw=true
         :align: center
        
 
