@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html class="writer-html5" lang="en">
+<html class="writer-html5" lang="en" data-content_root="../">
 <head>
-  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Compression Pipeline &mdash; sconce 0.57 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
-      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css" />
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="../_static/my_theme.css" />
       <link rel="stylesheet" href="../_static/css/default.css" type="text/css" />
 
@@ -15,11 +15,11 @@
     <script src="../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script src="../_static/jquery.js"></script>
-        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
-        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
-        <script src="../_static/doctools.js"></script>
-        <script src="../_static/sphinx_highlight.js"></script>
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=2fd344d2"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
@@ -63,6 +63,7 @@
 <li class="toctree-l2"><a class="reference internal" href="Quantization.html">Quantization</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="../Auto-Sensitivity-Picker.html">Efficient-Hyperparameter Auto Sensitivity Seach</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../Features.html">Features</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../timeline.html">Timeline</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../reference.html">Reference</a></li>
@@ -94,113 +95,113 @@
            <div itemprop="articleBody">
              
   <section id="compression-pipeline">
-<h1>Compression Pipeline<a class="headerlink" href="#compression-pipeline" title="Permalink to this heading"></a></h1>
+<h1>Compression Pipeline<a class="headerlink" href="#compression-pipeline" title="Link to this heading"></a></h1>
 <p>!pip install sconce -q</p>
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">defaultdict</span><span class="p">,</span> <span class="n">OrderedDict</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>from collections import defaultdict, OrderedDict
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">nn</span>
-<span class="kn">from</span> <span class="nn">torch.optim</span> <span class="kn">import</span> <span class="o">*</span>
-<span class="kn">from</span> <span class="nn">torch.optim.lr_scheduler</span> <span class="kn">import</span> <span class="o">*</span>
-<span class="kn">from</span> <span class="nn">torch.utils.data</span> <span class="kn">import</span> <span class="n">DataLoader</span>
-<span class="kn">from</span> <span class="nn">torchvision.datasets</span> <span class="kn">import</span> <span class="o">*</span>
-<span class="kn">from</span> <span class="nn">torchvision.transforms</span> <span class="kn">import</span> <span class="o">*</span>
-<span class="kn">import</span> <span class="nn">torch.optim</span> <span class="k">as</span> <span class="nn">optim</span>
+import numpy as np
+import torch
+from torch import nn
+from torch.optim import *
+from torch.optim.lr_scheduler import *
+from torch.utils.data import DataLoader
+from torchvision.datasets import *
+from torchvision.transforms import *
+import torch.optim as optim
 
-<span class="k">assert</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">(),</span> \
-<span class="s2">&quot;The current runtime does not have CUDA support.&quot;</span> \
-<span class="s2">&quot;Please go to menu bar (Runtime - Change runtime type) and select GPU&quot;</span>
+assert torch.cuda.is_available(), \
+&quot;The current runtime does not have CUDA support.&quot; \
+&quot;Please go to menu bar (Runtime - Change runtime type) and select GPU&quot;
 </pre></div>
 </div>
 <p>Load the Pre-Trained Model Weights</p>
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">google.colab</span> <span class="kn">import</span> <span class="n">drive</span>
-<span class="n">drive</span><span class="o">.</span><span class="n">mount</span><span class="p">(</span><span class="s1">&#39;/content/drive&#39;</span><span class="p">)</span>
-<span class="n">model_path</span> <span class="o">=</span> <span class="s2">&quot;drive/MyDrive/Efficientml/Efficientml.ai/vgg.cifar.pretrained.pth&quot;</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>from google.colab import drive
+drive.mount(&#39;/content/drive&#39;)
+model_path = &quot;drive/MyDrive/Efficientml/Efficientml.ai/vgg.cifar.pretrained.pth&quot;
 </pre></div>
 </div>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Mounted</span> <span class="n">at</span> <span class="o">/</span><span class="n">content</span><span class="o">/</span><span class="n">drive</span>
 </pre></div>
 </div>
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">VGG</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-  <span class="n">ARCH</span> <span class="o">=</span> <span class="p">[</span><span class="mi">64</span><span class="p">,</span> <span class="mi">128</span><span class="p">,</span> <span class="s1">&#39;M&#39;</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="s1">&#39;M&#39;</span><span class="p">,</span> <span class="mi">512</span><span class="p">,</span> <span class="mi">512</span><span class="p">,</span> <span class="s1">&#39;M&#39;</span><span class="p">,</span> <span class="mi">512</span><span class="p">,</span> <span class="mi">512</span><span class="p">,</span> <span class="s1">&#39;M&#39;</span><span class="p">]</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>class VGG(nn.Module):
+  ARCH = [64, 128, &#39;M&#39;, 256, 256, &#39;M&#39;, 512, 512, &#39;M&#39;, 512, 512, &#39;M&#39;]
 
-  <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-    <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+  def __init__(self) -&gt; None:
+    super().__init__()
 
-    <span class="n">layers</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="n">counts</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+    layers = []
+    counts = defaultdict(int)
 
-    <span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">layer</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-      <span class="n">layers</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}{</span><span class="n">counts</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">layer</span><span class="p">))</span>
-      <span class="n">counts</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+    def add(name: str, layer: nn.Module) -&gt; None:
+      layers.append((f&quot;{name}{counts[name]}&quot;, layer))
+      counts[name] += 1
 
-    <span class="n">in_channels</span> <span class="o">=</span> <span class="mi">3</span>
-    <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ARCH</span><span class="p">:</span>
-      <span class="k">if</span> <span class="n">x</span> <span class="o">!=</span> <span class="s1">&#39;M&#39;</span><span class="p">:</span>
-        <span class="c1"># conv-bn-relu</span>
-        <span class="n">add</span><span class="p">(</span><span class="s2">&quot;conv&quot;</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="n">in_channels</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
-        <span class="n">add</span><span class="p">(</span><span class="s2">&quot;bn&quot;</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">BatchNorm2d</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
-        <span class="n">add</span><span class="p">(</span><span class="s2">&quot;relu&quot;</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">(</span><span class="kc">True</span><span class="p">))</span>
-        <span class="n">in_channels</span> <span class="o">=</span> <span class="n">x</span>
-      <span class="k">else</span><span class="p">:</span>
-        <span class="c1"># maxpool</span>
-        <span class="n">add</span><span class="p">(</span><span class="s2">&quot;pool&quot;</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">MaxPool2d</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span>
+    in_channels = 3
+    for x in self.ARCH:
+      if x != &#39;M&#39;:
+        # conv-bn-relu
+        add(&quot;conv&quot;, nn.Conv2d(in_channels, x, 3, padding=1, bias=False))
+        add(&quot;bn&quot;, nn.BatchNorm2d(x))
+        add(&quot;relu&quot;, nn.ReLU(True))
+        in_channels = x
+      else:
+        # maxpool
+        add(&quot;pool&quot;, nn.MaxPool2d(2))
 
-    <span class="bp">self</span><span class="o">.</span><span class="n">backbone</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span><span class="n">OrderedDict</span><span class="p">(</span><span class="n">layers</span><span class="p">))</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">classifier</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="mi">512</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+    self.backbone = nn.Sequential(OrderedDict(layers))
+    self.classifier = nn.Linear(512, 10)
 
-  <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-    <span class="c1"># backbone: [N, 3, 32, 32] =&gt; [N, 512, 2, 2]</span>
-    <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">backbone</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+  def forward(self, x: torch.Tensor) -&gt; torch.Tensor:
+    # backbone: [N, 3, 32, 32] =&gt; [N, 512, 2, 2]
+    x = self.backbone(x)
 
-    <span class="c1"># avgpool: [N, 512, 2, 2] =&gt; [N, 512]</span>
-    <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">mean</span><span class="p">([</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span>
+    # avgpool: [N, 512, 2, 2] =&gt; [N, 512]
+    x = x.mean([2, 3])
 
-    <span class="c1"># classifier: [N, 512] =&gt; [N, 10]</span>
-    <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">classifier</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">x</span>
+    # classifier: [N, 512] =&gt; [N, 10]
+    x = self.classifier(x)
+    return x
 
 
-<span class="c1">#load the pretrained model</span>
+#load the pretrained model
 
-<span class="n">model</span> <span class="o">=</span> <span class="n">VGG</span><span class="p">()</span><span class="o">.</span><span class="n">cuda</span><span class="p">()</span>
-<span class="n">checkpoint</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">model_path</span><span class="p">)</span>
-<span class="n">model</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">checkpoint</span><span class="p">[</span><span class="s1">&#39;state_dict&#39;</span><span class="p">])</span>
+model = VGG().cuda()
+checkpoint = torch.load(model_path)
+model.load_state_dict(checkpoint[&#39;state_dict&#39;])
 </pre></div>
 </div>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">&lt;</span><span class="n">All</span> <span class="n">keys</span> <span class="n">matched</span> <span class="n">successfully</span><span class="o">&gt;</span>
 </pre></div>
 </div>
 <p>Setup the Dataset</p>
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">image_size</span> <span class="o">=</span> <span class="mi">32</span>
-<span class="n">transforms</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s2">&quot;train&quot;</span><span class="p">:</span> <span class="n">transforms</span><span class="o">.</span><span class="n">Compose</span><span class="p">([</span>
-        <span class="n">RandomCrop</span><span class="p">(</span><span class="n">image_size</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="mi">4</span><span class="p">),</span>
-        <span class="n">RandomHorizontalFlip</span><span class="p">(),</span>
-        <span class="n">ToTensor</span><span class="p">(),</span>
-    <span class="p">]),</span>
-    <span class="s2">&quot;test&quot;</span><span class="p">:</span> <span class="n">ToTensor</span><span class="p">(),</span>
-<span class="p">}</span>
-<span class="n">dataset</span> <span class="o">=</span> <span class="p">{}</span>
-<span class="k">for</span> <span class="n">split</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;train&quot;</span><span class="p">,</span> <span class="s2">&quot;test&quot;</span><span class="p">]:</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>image_size = 32
+transforms = {
+    &quot;train&quot;: transforms.Compose([
+        RandomCrop(image_size, padding=4),
+        RandomHorizontalFlip(),
+        ToTensor(),
+    ]),
+    &quot;test&quot;: ToTensor(),
+}
+dataset = {}
+for split in [&quot;train&quot;, &quot;test&quot;]:
 
-    <span class="n">dataset</span><span class="p">[</span><span class="n">split</span><span class="p">]</span> <span class="o">=</span> <span class="n">CIFAR10</span><span class="p">(</span>
-    <span class="n">root</span><span class="o">=</span><span class="s2">&quot;data/cifar10&quot;</span><span class="p">,</span>
-    <span class="n">train</span><span class="o">=</span><span class="p">(</span><span class="n">split</span> <span class="o">==</span> <span class="s2">&quot;train&quot;</span><span class="p">),</span>
-    <span class="n">download</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-    <span class="n">transform</span><span class="o">=</span><span class="n">transforms</span><span class="p">[</span><span class="n">split</span><span class="p">],</span>
-    <span class="p">)</span>
+    dataset[split] = CIFAR10(
+    root=&quot;data/cifar10&quot;,
+    train=(split == &quot;train&quot;),
+    download=True,
+    transform=transforms[split],
+    )
 
-<span class="n">dataloader</span> <span class="o">=</span> <span class="p">{}</span>
-<span class="k">for</span> <span class="n">split</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;train&#39;</span><span class="p">,</span> <span class="s1">&#39;test&#39;</span><span class="p">]:</span>
-  <span class="n">dataloader</span><span class="p">[</span><span class="n">split</span><span class="p">]</span> <span class="o">=</span> <span class="n">DataLoader</span><span class="p">(</span>
-    <span class="n">dataset</span><span class="p">[</span><span class="n">split</span><span class="p">],</span>
-    <span class="n">batch_size</span><span class="o">=</span><span class="mi">512</span><span class="p">,</span>
-    <span class="n">shuffle</span><span class="o">=</span><span class="p">(</span><span class="n">split</span> <span class="o">==</span> <span class="s1">&#39;train&#39;</span><span class="p">),</span>
-    <span class="n">num_workers</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-    <span class="n">pin_memory</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-  <span class="p">)</span>
+dataloader = {}
+for split in [&#39;train&#39;, &#39;test&#39;]:
+  dataloader[split] = DataLoader(
+    dataset[split],
+    batch_size=512,
+    shuffle=(split == &#39;train&#39;),
+    num_workers=0,
+    pin_memory=True,
+  )
 </pre></div>
 </div>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Downloading</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">www</span><span class="o">.</span><span class="n">cs</span><span class="o">.</span><span class="n">toronto</span><span class="o">.</span><span class="n">edu</span><span class="o">/~</span><span class="n">kriz</span><span class="o">/</span><span class="n">cifar</span><span class="o">-</span><span class="mi">10</span><span class="o">-</span><span class="n">python</span><span class="o">.</span><span class="n">tar</span><span class="o">.</span><span class="n">gz</span> <span class="n">to</span> <span class="n">data</span><span class="o">/</span><span class="n">cifar10</span><span class="o">/</span><span class="n">cifar</span><span class="o">-</span><span class="mi">10</span><span class="o">-</span><span class="n">python</span><span class="o">.</span><span class="n">tar</span><span class="o">.</span><span class="n">gz</span>
@@ -214,26 +215,26 @@
 </pre></div>
 </div>
 <p>sconce Configurations</p>
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">sconce</span> <span class="kn">import</span> <span class="n">sconce</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>from sconce import sconce
 
 
-<span class="n">sconces</span> <span class="o">=</span> <span class="n">sconce</span><span class="p">()</span>
-<span class="n">sconces</span><span class="o">.</span><span class="n">model</span><span class="o">=</span> <span class="n">model</span>
-<span class="n">sconces</span><span class="o">.</span><span class="n">criterion</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">CrossEntropyLoss</span><span class="p">()</span> <span class="c1"># Loss</span>
-<span class="n">sconces</span><span class="o">.</span><span class="n">optimizer</span><span class="o">=</span> <span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span><span class="n">sconces</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">(),</span> <span class="n">lr</span><span class="o">=</span><span class="mf">1e-4</span><span class="p">)</span>
-<span class="n">sconces</span><span class="o">.</span><span class="n">scheduler</span> <span class="o">=</span> <span class="n">optim</span><span class="o">.</span><span class="n">lr_scheduler</span><span class="o">.</span><span class="n">CosineAnnealingLR</span><span class="p">(</span><span class="n">sconces</span><span class="o">.</span><span class="n">optimizer</span><span class="p">,</span> <span class="n">T_max</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span>
-<span class="n">sconces</span><span class="o">.</span><span class="n">dataloader</span> <span class="o">=</span> <span class="n">dataloader</span>
-<span class="n">sconces</span><span class="o">.</span><span class="n">epochs</span> <span class="o">=</span> <span class="mi">1</span> <span class="c1">#Number of time we iterate over the data</span>
-<span class="n">sconces</span><span class="o">.</span><span class="n">device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s2">&quot;cuda&quot;</span> <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">()</span> <span class="k">else</span> <span class="s2">&quot;cpu&quot;</span><span class="p">)</span>
-<span class="n">sconces</span><span class="o">.</span><span class="n">experiment_name</span> <span class="o">=</span> <span class="s2">&quot;vgg-gmp&quot;</span>
-<span class="n">sconces</span><span class="o">.</span><span class="n">prune_mode</span> <span class="o">=</span> <span class="s2">&quot;GMP&quot;</span> <span class="c1"># Supports Automated Pruning Ratio Detection</span>
+sconces = sconce()
+sconces.model= model
+sconces.criterion = nn.CrossEntropyLoss() # Loss
+sconces.optimizer= optim.Adam(sconces.model.parameters(), lr=1e-4)
+sconces.scheduler = optim.lr_scheduler.CosineAnnealingLR(sconces.optimizer, T_max=200)
+sconces.dataloader = dataloader
+sconces.epochs = 1 #Number of time we iterate over the data
+sconces.device = torch.device(&quot;cuda&quot; if torch.cuda.is_available() else &quot;cpu&quot;)
+sconces.experiment_name = &quot;vgg-gmp&quot;
+sconces.prune_mode = &quot;GMP&quot; # Supports Automated Pruning Ratio Detection
 </pre></div>
 </div>
 <p>Train and Validated the Model on the given dataset</p>
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Train the model</span>
-<span class="n">sconces</span><span class="o">.</span><span class="n">train</span><span class="p">()</span>
-<span class="c1"># Evaludate the model</span>
-<span class="n">sconces</span><span class="o">.</span><span class="n">evaluate</span><span class="p">()</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span># Train the model
+sconces.train()
+# Evaludate the model
+sconces.evaluate()
 </pre></div>
 </div>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Epoch</span><span class="p">:</span><span class="mi">1</span> <span class="n">Train</span> <span class="n">Loss</span><span class="p">:</span> <span class="mf">0.00000</span> <span class="n">Validation</span> <span class="n">Accuracy</span><span class="p">:</span> <span class="mf">92.92585</span>
@@ -245,23 +246,23 @@
 <p>Magic Happens here: Compress the model(GMP pruning is set as the prune
 mode[sconces.prune_mode] above)</p>
 <section id="compress-the-model-granuarly">
-<h2>Compress the model Granuarly<a class="headerlink" href="#compress-the-model-granuarly" title="Permalink to this heading"></a></h2>
+<h2>Compress the model Granuarly<a class="headerlink" href="#compress-the-model-granuarly" title="Link to this heading"></a></h2>
 <p>sconces.compress()</p>
 <p><strong>Channel-Wise Pruning</strong></p>
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">sconces</span> <span class="o">=</span> <span class="n">sconce</span><span class="p">()</span>
-<span class="n">sconces</span><span class="o">.</span><span class="n">model</span><span class="o">=</span> <span class="n">model</span>
-<span class="n">sconces</span><span class="o">.</span><span class="n">criterion</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">CrossEntropyLoss</span><span class="p">()</span> <span class="c1"># Loss</span>
-<span class="n">sconces</span><span class="o">.</span><span class="n">optimizer</span><span class="o">=</span> <span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span><span class="n">sconces</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">(),</span> <span class="n">lr</span><span class="o">=</span><span class="mf">1e-4</span><span class="p">)</span>
-<span class="n">sconces</span><span class="o">.</span><span class="n">scheduler</span> <span class="o">=</span> <span class="n">optim</span><span class="o">.</span><span class="n">lr_scheduler</span><span class="o">.</span><span class="n">CosineAnnealingLR</span><span class="p">(</span><span class="n">sconces</span><span class="o">.</span><span class="n">optimizer</span><span class="p">,</span> <span class="n">T_max</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span>
-<span class="n">sconces</span><span class="o">.</span><span class="n">dataloader</span> <span class="o">=</span> <span class="n">dataloader</span>
-<span class="n">sconces</span><span class="o">.</span><span class="n">epochs</span> <span class="o">=</span> <span class="mi">1</span> <span class="c1">#Number of time we iterate over the data</span>
-<span class="n">sconces</span><span class="o">.</span><span class="n">device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s2">&quot;cuda&quot;</span> <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">()</span> <span class="k">else</span> <span class="s2">&quot;cpu&quot;</span><span class="p">)</span>
-<span class="n">sconces</span><span class="o">.</span><span class="n">experiment_name</span> <span class="o">=</span> <span class="s2">&quot;vgg-cwp&quot;</span>
-<span class="n">sconces</span><span class="o">.</span><span class="n">prune_mode</span> <span class="o">=</span> <span class="s2">&quot;CWP&quot;</span> <span class="c1"># Supports Automated Pruning Ratio Detection</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>sconces = sconce()
+sconces.model= model
+sconces.criterion = nn.CrossEntropyLoss() # Loss
+sconces.optimizer= optim.Adam(sconces.model.parameters(), lr=1e-4)
+sconces.scheduler = optim.lr_scheduler.CosineAnnealingLR(sconces.optimizer, T_max=200)
+sconces.dataloader = dataloader
+sconces.epochs = 1 #Number of time we iterate over the data
+sconces.device = torch.device(&quot;cuda&quot; if torch.cuda.is_available() else &quot;cpu&quot;)
+sconces.experiment_name = &quot;vgg-cwp&quot;
+sconces.prune_mode = &quot;CWP&quot; # Supports Automated Pruning Ratio Detection
 </pre></div>
 </div>
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Compress the model Channel-Wise</span>
-<span class="n">sconces</span><span class="o">.</span><span class="n">compress</span><span class="p">()</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span># Compress the model Channel-Wise
+sconces.compress()
 </pre></div>
 </div>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Original</span> <span class="n">Dense</span> <span class="n">Model</span> <span class="n">Size</span> <span class="n">Model</span><span class="o">=</span><span class="mf">21.94</span> <span class="n">MiB</span>
@@ -376,18 +377,18 @@ curacies
 <p>The catch is that GMP stores the zeros in the weight, which contributes
 to the higher values of model size.</p>
 <p><strong>Venum Pruning a better version of Wanda Pruning</strong></p>
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">sconce</span> <span class="kn">import</span> <span class="n">sconce</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>from sconce import sconce
 
-<span class="n">sconces</span> <span class="o">=</span> <span class="n">sconce</span><span class="p">()</span>
-<span class="n">sconces</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
-<span class="n">sconces</span><span class="o">.</span><span class="n">criterion</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">CrossEntropyLoss</span><span class="p">()</span>  <span class="c1"># Loss</span>
-<span class="n">sconces</span><span class="o">.</span><span class="n">optimizer</span> <span class="o">=</span> <span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span><span class="n">sconces</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">(),</span> <span class="n">lr</span><span class="o">=</span><span class="mf">1e-4</span><span class="p">)</span>
-<span class="n">sconces</span><span class="o">.</span><span class="n">scheduler</span> <span class="o">=</span> <span class="n">optim</span><span class="o">.</span><span class="n">lr_scheduler</span><span class="o">.</span><span class="n">CosineAnnealingLR</span><span class="p">(</span><span class="n">sconces</span><span class="o">.</span><span class="n">optimizer</span><span class="p">,</span> <span class="n">T_max</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span>
-<span class="n">sconces</span><span class="o">.</span><span class="n">dataloader</span> <span class="o">=</span> <span class="n">dataloader</span>
-<span class="n">sconces</span><span class="o">.</span><span class="n">device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s2">&quot;cuda&quot;</span> <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">()</span> <span class="k">else</span> <span class="s2">&quot;cpu&quot;</span><span class="p">)</span>
-<span class="n">sconces</span><span class="o">.</span><span class="n">experiment_name</span> <span class="o">=</span> <span class="s2">&quot;vgg-venum&quot;</span>
-<span class="n">sconces</span><span class="o">.</span><span class="n">prune_mode</span> <span class="o">=</span> <span class="s2">&quot;venum&quot;</span>  <span class="c1"># Supports Automated Pruning Ratio Detection</span>
-<span class="n">sconces</span><span class="o">.</span><span class="n">compress</span><span class="p">()</span>
+sconces = sconce()
+sconces.model = model
+sconces.criterion = nn.CrossEntropyLoss()  # Loss
+sconces.optimizer = optim.Adam(sconces.model.parameters(), lr=1e-4)
+sconces.scheduler = optim.lr_scheduler.CosineAnnealingLR(sconces.optimizer, T_max=200)
+sconces.dataloader = dataloader
+sconces.device = torch.device(&quot;cuda&quot; if torch.cuda.is_available() else &quot;cpu&quot;)
+sconces.experiment_name = &quot;vgg-venum&quot;
+sconces.prune_mode = &quot;venum&quot;  # Supports Automated Pruning Ratio Detection
+sconces.compress()
 </pre></div>
 </div>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Original</span> <span class="n">Dense</span> <span class="n">Model</span> <span class="n">Size</span> <span class="n">Model</span><span class="o">=</span><span class="mf">35.20</span> <span class="n">MiB</span>
@@ -420,112 +421,112 @@ to the higher values of model size.</p>
 </section>
 </section>
 <section id="spiking-neural-network-compression">
-<h1>Spiking Neural Network Compression<a class="headerlink" href="#spiking-neural-network-compression" title="Permalink to this heading"></a></h1>
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">!</span>pip<span class="w"> </span>install<span class="w"> </span>snntorch<span class="w"> </span>-q
+<h1>Spiking Neural Network Compression<a class="headerlink" href="#spiking-neural-network-compression" title="Link to this heading"></a></h1>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>!pip install snntorch -q
 </pre></div>
 </div>
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Import snntorch libraries</span>
-<span class="kn">import</span> <span class="nn">snntorch</span> <span class="k">as</span> <span class="nn">snn</span>
-<span class="kn">from</span> <span class="nn">snntorch</span> <span class="kn">import</span> <span class="n">surrogate</span>
-<span class="kn">from</span> <span class="nn">snntorch</span> <span class="kn">import</span> <span class="n">backprop</span>
-<span class="kn">from</span> <span class="nn">snntorch</span> <span class="kn">import</span> <span class="n">functional</span> <span class="k">as</span> <span class="n">SF</span>
-<span class="kn">from</span> <span class="nn">snntorch</span> <span class="kn">import</span> <span class="n">utils</span>
-<span class="kn">from</span> <span class="nn">snntorch</span> <span class="kn">import</span> <span class="n">spikeplot</span> <span class="k">as</span> <span class="n">splt</span>
-<span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">optim</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span># Import snntorch libraries
+import snntorch as snn
+from snntorch import surrogate
+from snntorch import backprop
+from snntorch import functional as SF
+from snntorch import utils
+from snntorch import spikeplot as splt
+from torch import optim
 
-<span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
-<span class="kn">from</span> <span class="nn">torch.utils.data</span> <span class="kn">import</span> <span class="n">DataLoader</span>
-<span class="kn">from</span> <span class="nn">torchvision</span> <span class="kn">import</span> <span class="n">datasets</span><span class="p">,</span> <span class="n">transforms</span>
-<span class="kn">import</span> <span class="nn">torch.nn.functional</span> <span class="k">as</span> <span class="nn">F</span>
+import torch
+import torch.nn as nn
+from torch.utils.data import DataLoader
+from torchvision import datasets, transforms
+import torch.nn.functional as F
 
-<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">itertools</span>
+import matplotlib.pyplot as plt
+import numpy as np
+import itertools
 </pre></div>
 </div>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">&lt;</span><span class="n">ipython</span><span class="o">-</span><span class="nb">input</span><span class="o">-</span><span class="mi">3</span><span class="o">-</span><span class="n">b898cb6c07c2</span><span class="o">&gt;</span><span class="p">:</span><span class="mi">4</span><span class="p">:</span> <span class="ne">DeprecationWarning</span><span class="p">:</span> <span class="n">The</span> <span class="n">module</span> <span class="n">snntorch</span><span class="o">.</span><span class="n">backprop</span> <span class="n">will</span> <span class="n">be</span> <span class="n">deprecated</span> <span class="ow">in</span>  <span class="n">a</span> <span class="n">future</span> <span class="n">release</span><span class="o">.</span> <span class="n">Writing</span> <span class="n">out</span> <span class="n">your</span> <span class="n">own</span> <span class="n">training</span> <span class="n">loop</span> <span class="n">will</span> <span class="n">lead</span> <span class="n">to</span> <span class="n">substantially</span> <span class="n">faster</span> <span class="n">performance</span><span class="o">.</span>
   <span class="kn">from</span> <span class="nn">snntorch</span> <span class="kn">import</span> <span class="n">backprop</span>
 </pre></div>
 </div>
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Event Drive Data</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span># Event Drive Data
 
-<span class="c1"># dataloader arguments</span>
-<span class="n">batch_size</span> <span class="o">=</span> <span class="mi">128</span>
-<span class="n">data_path</span> <span class="o">=</span> <span class="s2">&quot;./data/mnist&quot;</span>
+# dataloader arguments
+batch_size = 128
+data_path = &quot;./data/mnist&quot;
 
-<span class="n">dtype</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">float</span>
-<span class="n">device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s2">&quot;cuda&quot;</span><span class="p">)</span> <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">()</span> <span class="k">else</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s2">&quot;cpu&quot;</span><span class="p">)</span>
+dtype = torch.float
+device = torch.device(&quot;cuda&quot;) if torch.cuda.is_available() else torch.device(&quot;cpu&quot;)
 
-<span class="c1"># Define a transform</span>
-<span class="n">transform</span> <span class="o">=</span> <span class="n">transforms</span><span class="o">.</span><span class="n">Compose</span><span class="p">(</span>
-    <span class="p">[</span>
-        <span class="n">transforms</span><span class="o">.</span><span class="n">Resize</span><span class="p">((</span><span class="mi">28</span><span class="p">,</span> <span class="mi">28</span><span class="p">)),</span>
-        <span class="n">transforms</span><span class="o">.</span><span class="n">Grayscale</span><span class="p">(),</span>
-        <span class="n">transforms</span><span class="o">.</span><span class="n">ToTensor</span><span class="p">(),</span>
-        <span class="n">transforms</span><span class="o">.</span><span class="n">Normalize</span><span class="p">((</span><span class="mi">0</span><span class="p">,),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,)),</span>
-    <span class="p">]</span>
-<span class="p">)</span>
+# Define a transform
+transform = transforms.Compose(
+    [
+        transforms.Resize((28, 28)),
+        transforms.Grayscale(),
+        transforms.ToTensor(),
+        transforms.Normalize((0,), (1,)),
+    ]
+)
 
-<span class="n">mnist_train</span> <span class="o">=</span> <span class="n">datasets</span><span class="o">.</span><span class="n">MNIST</span><span class="p">(</span><span class="n">data_path</span><span class="p">,</span> <span class="n">train</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">download</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="n">transform</span><span class="p">)</span>
-<span class="n">mnist_test</span> <span class="o">=</span> <span class="n">datasets</span><span class="o">.</span><span class="n">MNIST</span><span class="p">(</span><span class="n">data_path</span><span class="p">,</span> <span class="n">train</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">download</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="n">transform</span><span class="p">)</span>
+mnist_train = datasets.MNIST(data_path, train=True, download=True, transform=transform)
+mnist_test = datasets.MNIST(data_path, train=False, download=True, transform=transform)
 
-<span class="c1"># Create DataLoaders</span>
-<span class="n">train_loader</span> <span class="o">=</span> <span class="n">DataLoader</span><span class="p">(</span>
-    <span class="n">mnist_train</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">shuffle</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">drop_last</span><span class="o">=</span><span class="kc">True</span>
-<span class="p">)</span>
-<span class="n">test_loader</span> <span class="o">=</span> <span class="n">DataLoader</span><span class="p">(</span>
-    <span class="n">mnist_test</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">shuffle</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">drop_last</span><span class="o">=</span><span class="kc">True</span>
-<span class="p">)</span>
+# Create DataLoaders
+train_loader = DataLoader(
+    mnist_train, batch_size=batch_size, shuffle=True, drop_last=True
+)
+test_loader = DataLoader(
+    mnist_test, batch_size=batch_size, shuffle=True, drop_last=True
+)
 </pre></div>
 </div>
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">sconce</span> <span class="kn">import</span> <span class="n">sconce</span>
-<span class="n">sconces</span> <span class="o">=</span> <span class="n">sconce</span><span class="p">()</span>
-<span class="c1"># Set you Dataloader</span>
-<span class="n">dataloader</span> <span class="o">=</span> <span class="p">{}</span>
-<span class="n">dataloader</span><span class="p">[</span><span class="s2">&quot;train&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">train_loader</span>
-<span class="n">dataloader</span><span class="p">[</span><span class="s2">&quot;test&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">test_loader</span>
-<span class="n">sconces</span><span class="o">.</span><span class="n">dataloader</span> <span class="o">=</span> <span class="n">dataloader</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>from sconce import sconce
+sconces = sconce()
+# Set you Dataloader
+dataloader = {}
+dataloader[&quot;train&quot;] = train_loader
+dataloader[&quot;test&quot;] = test_loader
+sconces.dataloader = dataloader
 </pre></div>
 </div>
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">#Enable snn in sconce</span>
-<span class="n">sconces</span><span class="o">.</span><span class="n">snn</span> <span class="o">=</span> <span class="kc">True</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>#Enable snn in sconce
+sconces.snn = True
 
-<span class="c1"># Load your snn Model</span>
-<span class="n">spike_grad</span> <span class="o">=</span> <span class="n">surrogate</span><span class="o">.</span><span class="n">fast_sigmoid</span><span class="p">(</span><span class="n">slope</span><span class="o">=</span><span class="mi">25</span><span class="p">)</span>
-<span class="n">beta</span> <span class="o">=</span> <span class="mf">0.5</span>
-<span class="n">snn_model</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span>
-    <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">5</span><span class="p">),</span>
-    <span class="n">nn</span><span class="o">.</span><span class="n">MaxPool2d</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span>
-    <span class="n">snn</span><span class="o">.</span><span class="n">Leaky</span><span class="p">(</span><span class="n">beta</span><span class="o">=</span><span class="n">beta</span><span class="p">,</span> <span class="n">spike_grad</span><span class="o">=</span><span class="n">spike_grad</span><span class="p">,</span> <span class="n">init_hidden</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
-    <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="mi">5</span><span class="p">),</span>
-    <span class="n">nn</span><span class="o">.</span><span class="n">MaxPool2d</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span>
-    <span class="n">snn</span><span class="o">.</span><span class="n">Leaky</span><span class="p">(</span><span class="n">beta</span><span class="o">=</span><span class="n">beta</span><span class="p">,</span> <span class="n">spike_grad</span><span class="o">=</span><span class="n">spike_grad</span><span class="p">,</span> <span class="n">init_hidden</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
-    <span class="n">nn</span><span class="o">.</span><span class="n">Flatten</span><span class="p">(),</span>
-    <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="mi">64</span> <span class="o">*</span> <span class="mi">4</span> <span class="o">*</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span>
-    <span class="n">snn</span><span class="o">.</span><span class="n">Leaky</span><span class="p">(</span><span class="n">beta</span><span class="o">=</span><span class="n">beta</span><span class="p">,</span> <span class="n">spike_grad</span><span class="o">=</span><span class="n">spike_grad</span><span class="p">,</span> <span class="n">init_hidden</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">output</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
-<span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;cuda&#39;</span><span class="p">)</span>
+# Load your snn Model
+spike_grad = surrogate.fast_sigmoid(slope=25)
+beta = 0.5
+snn_model = nn.Sequential(
+    nn.Conv2d(1, 12, 5),
+    nn.MaxPool2d(2),
+    snn.Leaky(beta=beta, spike_grad=spike_grad, init_hidden=True),
+    nn.Conv2d(12, 64, 5),
+    nn.MaxPool2d(2),
+    snn.Leaky(beta=beta, spike_grad=spike_grad, init_hidden=True),
+    nn.Flatten(),
+    nn.Linear(64 * 4 * 4, 10),
+    snn.Leaky(beta=beta, spike_grad=spike_grad, init_hidden=True, output=True),
+).to(&#39;cuda&#39;)
 
 
-<span class="c1">#Load the pretrained weights</span>
-<span class="n">snn_pretrained_model_path</span> <span class="o">=</span> <span class="s2">&quot;drive/MyDrive/Efficientml/Efficientml.ai/snn_model.pth&quot;</span>
-<span class="n">snn_model</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">snn_pretrained_model_path</span><span class="p">))</span>  <span class="c1"># Model Definition</span>
-<span class="n">sconces</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">snn_model</span>
+#Load the pretrained weights
+snn_pretrained_model_path = &quot;drive/MyDrive/Efficientml/Efficientml.ai/snn_model.pth&quot;
+snn_model.load_state_dict(torch.load(snn_pretrained_model_path))  # Model Definition
+sconces.model = snn_model
 </pre></div>
 </div>
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">sconces</span><span class="o">.</span><span class="n">optimizer</span> <span class="o">=</span> <span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span><span class="n">sconces</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">(),</span> <span class="n">lr</span><span class="o">=</span><span class="mf">1e-4</span><span class="p">)</span>
-<span class="n">sconces</span><span class="o">.</span><span class="n">scheduler</span> <span class="o">=</span> <span class="n">optim</span><span class="o">.</span><span class="n">lr_scheduler</span><span class="o">.</span><span class="n">CosineAnnealingLR</span><span class="p">(</span><span class="n">sconces</span><span class="o">.</span><span class="n">optimizer</span><span class="p">,</span> <span class="n">T_max</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>sconces.optimizer = optim.Adam(sconces.model.parameters(), lr=1e-4)
+sconces.scheduler = optim.lr_scheduler.CosineAnnealingLR(sconces.optimizer, T_max=200)
 
-<span class="n">sconces</span><span class="o">.</span><span class="n">criterion</span> <span class="o">=</span> <span class="n">SF</span><span class="o">.</span><span class="n">ce_rate_loss</span><span class="p">()</span>
+sconces.criterion = SF.ce_rate_loss()
 
-<span class="n">sconces</span><span class="o">.</span><span class="n">epochs</span> <span class="o">=</span> <span class="mi">10</span>  <span class="c1"># Number of time we iterate over the data</span>
-<span class="n">sconces</span><span class="o">.</span><span class="n">device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s2">&quot;cuda&quot;</span> <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">()</span> <span class="k">else</span> <span class="s2">&quot;cpu&quot;</span><span class="p">)</span>
-<span class="n">sconces</span><span class="o">.</span><span class="n">experiment_name</span> <span class="o">=</span> <span class="s2">&quot;snn-gmp&quot;</span>  <span class="c1"># Define your experiment name here</span>
-<span class="n">sconces</span><span class="o">.</span><span class="n">prune_mode</span> <span class="o">=</span> <span class="s2">&quot;GMP&quot;</span>
-<span class="n">sconces</span><span class="o">.</span><span class="n">num_finetune_epochs</span> <span class="o">=</span> <span class="mi">1</span>
+sconces.epochs = 10  # Number of time we iterate over the data
+sconces.device = torch.device(&quot;cuda&quot; if torch.cuda.is_available() else &quot;cpu&quot;)
+sconces.experiment_name = &quot;snn-gmp&quot;  # Define your experiment name here
+sconces.prune_mode = &quot;GMP&quot;
+sconces.num_finetune_epochs = 1
 </pre></div>
 </div>
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">sconces</span><span class="o">.</span><span class="n">compress</span><span class="p">()</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>sconces.compress()
 </pre></div>
 </div>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Original</span> <span class="n">Dense</span> <span class="n">Model</span> <span class="n">Size</span> <span class="n">Model</span><span class="o">=</span><span class="mf">0.11</span> <span class="n">MiB</span>
