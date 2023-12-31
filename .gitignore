@@ -4,7 +4,7 @@ test/
 test/*.pth
 tutorials/.ipynb_checkpoints/*
 .idea/
-
+sconce/__pycache__/
 
 examples/data/
 
