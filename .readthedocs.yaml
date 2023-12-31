@@ -9,7 +9,8 @@ python:
    install:
    - requirements: docs/requirements.txt
    - method: pip
-     path: sconce/
+     path: .
+
 sphinx:
   configuration: docs/source/conf.py
 
