@@ -40,6 +40,18 @@ import ipdb
 import snntorch
 from snntorch import functional as SF
 
+
+import warnings
+
+# Suppress all warnings
+warnings.filterwarnings("ignore")
+
+# Your code using torch goes here
+
+# Optionally, you can reset the warning filter to default
+warnings.filterwarnings("default")
+
+
 random.seed(321)
 np.random.seed(432)
 torch.manual_seed(223)
@@ -145,16 +157,15 @@ class sconce:
 
     def forward_pass_snn(self, data, mem_out_rec=None):
         """
-        snn Forward Pass
+        Perform a forward pass through the spiking neural network (SNN).
 
-        :param data: Input from the data loader
-        :param mem_out_rec: Record Membrane Potential, if set to a value return both Membrane potential and Spikes
-        :return: Return the Membrane Potential output of the network
-        # :example:
-        # .. jupyter-execute::
-        #
-        #   import sconce
-        #   print(your_package_name.some_documented_func(1))
+        Args:
+            data: Input data for the SNN.
+            mem_out_rec: Optional tensor to record the membrane potential at each time step.
+
+        Returns:
+            If mem_out_rec is not None, returns a tuple containing the spike outputs and membrane potentials
+            as tensors. Otherwise, returns only the spike outputs as a tensor.
         """
         spk_rec = []
         mem_rec = []
@@ -400,6 +411,15 @@ class sconce:
         return 1 - float(num_nonzeros) / num_elements
 
     def get_model_size_weights(self, mdl):
+        """
+        Calculates the size of the model's weights in megabytes.
+
+        Args:
+            mdl (torch.nn.Module): The model whose weights size needs to be calculated.
+
+        Returns:
+            float: The size of the model's weights in megabytes.
+        """
         torch.save(mdl.state_dict(), "tmp.pt")
         mdl_size = round(os.path.getsize("tmp.pt") / 1e6, 3)
         os.remove("tmp.pt")
@@ -407,15 +427,12 @@ class sconce:
 
     def get_num_parameters(self, model: nn.Module, count_nonzero_only=False) -> int:
         """
-        Calculate the total number of parameters of a PyTorch model.
+        Calculates the total number of parameters in a given PyTorch model.
 
-        Args:
-          model (nn.Module): The PyTorch model to count the parameters of.
-          count_nonzero_only (bool, optional): Whether to count only the nonzero weights.
-            Defaults to False.
+        :param model (nn.Module): The PyTorch model.
+        :param count_nonzero_only (bool, optional): If True, only counts the number of non-zero parameters.
+                                                    If False, counts all parameters. Defaults to False.
 
-        Returns:
-          int: The total number of parameters of the model.
         """
 
         num_counted_elements = 0
@@ -551,6 +568,7 @@ class sconce:
             for (name, param) in self.model.named_parameters()
             if param.dim() > 2
         ]
+        param_names = [i[0] for i in named_all_weights]
         original_model = copy.deepcopy(self.model)
         # original_dense_model_accuracy = self.evaluate()
         conv_layers = [
@@ -606,9 +624,16 @@ class sconce:
                         self.venum_apply(sparsity_dict)
 
                     hit_flag = True
-                if self.prune_mode == "GMP":
-                    self.fine_grained_prune(param.detach(), sparsity=sparsity)
+                elif self.prune_mode == "GMP":
+                    sparse_list = np.zeros(len(named_all_weights))
+                    sparse_list[i_layer] = sparsity
+                    local_sparsity_dict = dict(zip(param_names, sparse_list))
+                    self.GMP_Pruning(
+                        prune_dict=local_sparsity_dict
+                    )  # FineGrained Pruning
+                    self.callbacks = [lambda: self.GMP_apply()]
                     hit_flag = True
+
                 elif (
                     self.prune_mode == "CWP"
                     and len(param.shape) > 2
@@ -634,25 +659,24 @@ class sconce:
                         break
                     elif sparsity == scan_start:
                         accuracy = np.asarray(accuracy)
-                        best_possible_sparsity = sparsities[
-                            np.where(accuracy == np.max(accuracy))[0][0]
-                        ]
+
+                        if np.max(accuracy) > -2.5:  # Allowed Degradation
+                            acc_x = np.where(accuracy == np.max(accuracy))[0][0]
+                            best_possible_sparsity = sparsities[acc_x]
+
+                        else:
+                            best_possible_sparsity = 0
                         self.sparsity_dict[name] = best_possible_sparsity
                         self.model = copy.deepcopy(original_model)
                     else:
-                        # restore
-                        #
-                        if "venum" in self.prune_mode:
-                            self.model = copy.deepcopy(original_model)
-                        else:
-                            param.copy_(param_clone)
                         accuracy.append(acc)
                         hit_flag = False
-                # break
+                    self.model = copy.deepcopy(original_model)
 
     def fine_grained_prune(self, tensor: torch.Tensor, sparsity: float) -> torch.Tensor:
         """
-        magnitude-based pruning for single tensor
+        Magnitude-based pruning for single tensor
+
         :param tensor: torch.(cuda.)Tensor, weight of conv/fc layer
         :param sparsity: float, pruning sparsity
             sparsity = #zeros / #elements = 1 - #nonzeros / #elements
@@ -730,17 +754,20 @@ class sconce:
 
     # @staticmethod
     @torch.no_grad()
-    def GMP_Pruning(self):
+    def GMP_Pruning(self, model=None, prune_dict=None):
         """
         Applies Group-wise Magnitude Pruning (GMP) to the model's convolutional and fully-connected weights.
         The pruning is performed based on the sparsity levels specified in the `sparsity_dict` attribute.
         The pruned weights are stored in the `masks` attribute.
         """
+        if prune_dict != None:
+            sparse_dict = prune_dict
+        else:
+            sparse_dict = self.sparsity_dict
+
         for name, param in self.model.named_parameters():
             if param.dim() > 1:  # we only prune conv and fc weights
-                self.masks[name] = self.fine_grained_prune(
-                    param, self.sparsity_dict[name]
-                )
+                self.masks[name] = self.fine_grained_prune(param, sparse_dict[name])
 
     def venum_prune(self, W, X, s, in_channel=0, kernel_size=0, cnn=False):
         metric = W.abs() * X.norm(p=2, dim=0)  # get the venum pruning metric
@@ -880,6 +907,7 @@ class sconce:
         Returns:
           None
         """
+        sensitivity_start_time, sensitivity_start_end = 0, 0
         original_experiment_name = self.experiment_name
         if self.snn:
             original_dense_model = self.model
@@ -892,23 +920,6 @@ class sconce:
 
         current_device = next(original_dense_model.parameters()).device
         dummy_input = torch.randn(input_shape).to(current_device)
-
-        self.params.append(
-            [
-                self.evaluate(model=original_dense_model),
-                self.measure_latency(
-                    model=original_dense_model, dummy_input=dummy_input
-                ),
-                self.get_num_parameters(model=original_dense_model),
-                self.get_model_size(
-                    model=original_dense_model, count_nonzero_only=True
-                ),
-            ]
-        )
-        save_file_name = self.experiment_name + "_original.pt"
-        self.save_torchscript_model(
-            model=original_dense_model, model_dir="./", model_filename=save_file_name
-        )
 
         dense_model_size = self.get_model_size(
             model=self.model, count_nonzero_only=True
@@ -924,8 +935,19 @@ class sconce:
             self.sensitivity_scan(
                 dense_model_accuracy=dense_validation_acc, verbose=False
             )
-            sensitivity_start_end = time.time() - sensitivity_start_time
-            print("Sensitivity Scan Time(mins):", sensitivity_start_end / 60)
+            sensitivity_start_end = time.time()
+            print(
+                "Sensitivity Scan Time(mins):",
+                (sensitivity_start_end - sensitivity_start_time) / 60,
+            )
+
+            # Sparsity
+            # for each Layer: {'backbone.conv0.weight': 0.45000000000000007, 'backbone.conv1.weight': 0.7500000000000002,
+            #                  'backbone.conv2.weight': 0.7000000000000002, 'backbone.conv3.weight': 0.6500000000000001,
+            #                  'backbone.conv4.weight': 0.6000000000000002, 'backbone.conv5.weight': 0.7000000000000002,
+            #                  'backbone.conv6.weight': 0.7000000000000002, 'backbone.conv7.weight': 0.8500000000000002,
+            #                  'classifier.weight': 0.9500000000000003}
+
             # self.sparsity_dict = {'0.weight': 0.6500000000000001, '3.weight': 0.5000000000000001, '7.weight': 0.7000000000000002}
             # self.sparsity_dict = {'backbone.conv0.weight': 0.20000000000000004, 'backbone.conv1.weight': 0.45000000000000007, 'backbone.conv2.weight': 0.25000000000000006, 'backbone.conv3.weight': 0.25000000000000006, 'backbone.conv4.weight': 0.25000000000000006, 'backbone.conv5.weight': 0.25000000000000006, 'backbone.conv6.weight': 0.3500000000000001, 'backbone.conv7.weight': 0.3500000000000001, 'classifier.weight': 0.7000000000000002}
 
@@ -937,22 +959,17 @@ class sconce:
         elif self.prune_mode == "CWP":
             print("\n Channel-Wise Pruning")
             sensitivity_start_time = time.time()
-            # self.sensitivity_scan(
-            #     dense_model_accuracy=dense_validation_acc, verbose=False
-            # )
-            sensitivity_start_end = time.time() - sensitivity_start_time
-            print("Sensitivity Scan Time(mins):", sensitivity_start_end / 60)
+            self.sensitivity_scan(
+                dense_model_accuracy=dense_validation_acc, verbose=False
+            )
+            sensitivity_start_end = time.time()
+            print(
+                "Sensitivity Scan Time(mins):",
+                (sensitivity_start_end - sensitivity_start_time) / 60,
+            )
 
-            self.sparsity_dict = {
-                "backbone.conv0.weight": 0.15000000000000002,
-                "backbone.conv1.weight": 0.15,
-                "backbone.conv2.weight": 0.15,
-                "backbone.conv3.weight": 0.15000000000000002,
-                "backbone.conv4.weight": 0.20000000000000004,
-                "backbone.conv5.weight": 0.20000000000000004,
-                "backbone.conv6.weight": 0.45000000000000007,
-            }
-            print(f"Sparsity for each Layer: {self.sparsity_dict}")
+            # self.sparsity_dict = {'backbone.conv0.weight': 0.15000000000000002, 'backbone.conv1.weight': 0.15, 'backbone.conv2.weight': 0.15, 'backbone.conv3.weight': 0.15000000000000002, 'backbone.conv4.weight': 0.20000000000000004, 'backbone.conv5.weight': 0.20000000000000004, 'backbone.conv6.weight': 0.45000000000000007}
+            print(f"Sparsity for each Layer: {self.sparsity_dict} \n\n\n")
             self.CWP_Pruning()  # Channelwise Pruning
             self.fine_tune = True
 
@@ -975,8 +992,11 @@ class sconce:
             self.sensitivity_scan(
                 dense_model_accuracy=dense_validation_acc, verbose=False
             )
-            sensitivity_start_end = time.time() - sensitivity_start_time
-            print("Sensitivity Scan Time(mins):", sensitivity_start_end / 60)
+            sensitivity_start_end = time.time()
+            print(
+                "Sensitivity Scan Time(mins):",
+                (sensitivity_start_end - sensitivity_start_time) / 60,
+            )
 
             # self.sparsity_dict = {'backbone.conv0.weight': 0.3500000000000001, 'backbone.conv1.weight': 0.15000000000000002, 'backbone.conv2.weight': 0.1, 'backbone.conv3.weight': 0.15000000000000002, 'backbone.conv4.weight': 0.20, 'backbone.conv5.weight': 0.20, 'backbone.conv6.weight': 0.30000000000000004}
             print(f"Sparsity for each Layer: {self.sparsity_dict}")
@@ -986,8 +1006,7 @@ class sconce:
             self.fine_tune = True
 
         print(
-            "Pruning Time Consumed (mins):",
-            (time.time() - sensitivity_start_end / 60) / 60,
+            "Pruning Time Consumed (mins):", (time.time() - sensitivity_start_end) / 60
         )
         print(
             "Total Pruning Time Consumed (mins):",
