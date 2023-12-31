@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: sconce
-Version: 0.92
+Version: 0.93
 Summary: sconce: Compression and Deployment made Easy
 Home-page: https://github.com/satabios/sconce
 Author: Sathyaprakash Narayanan
@@ -30,10 +30,6 @@ Introduction
         :target: https://sconce.readthedocs.io/en/latest/?badge=latest
         :alt: Documentation Status
 
-.. image:: https://github.com/satabios/sconce/blob/main/docs/source/images/sconce-punch-bk_removed.png?raw=true
-        :align: center
-        :width: 400
-        :height: 400
 
 Advancement of deep learning has been largely driven by the availability of large datasets and the computational power to train large models.
 The amount of complexity increases with each day passing and it is becoming increasingly difficult to train these models. Neverthless, infer 
@@ -45,11 +41,6 @@ that we use to train our models. However, the brain does not use gradient descen
 solve complex problems with such ease.
 
 
-.. image:: https://github.com/satabios/sconce/blob/main/docs/source/images/sconce-outline.jpeg?raw=true
-        :align: center
-       
-
-
 To bridge this gap, this package aids to perform a series of aids:
 
 * Make **Training**, **Testing**, **Inference**, **Model Profiling**, etc.. pipelined. Thus easing your way through research and development.
@@ -59,6 +50,13 @@ To bridge this gap, this package aids to perform a series of aids:
 * **Deployments** of the model on hardware.
 * Support `Spiking Neural Networks(snnTorch) <https://github.com/jeshraghian/snntorch>`_ in this compression pipeline [Future integerations are expected].
 * **Auto-Sensitivity Scan**: Each model would require a set of ingredients of its own to make it efficient. sconce enables an auto-search algorithm that picks the best possible solution from a corpus amount of possible techniques in the fastest manner possible with the least amount of human intervention.
+
+
+
+.. image:: https://github.com/satabios/sconce/blob/main/docs/source/images/sconce-outline.jpeg?raw=true
+        :align: center
+        :width: 1510px
+
 
 
 If you like this project, please consider starring ⭐ this repo as it is the easiest and best way to support it.
@@ -152,11 +150,11 @@ Here are a few ways you can get started with sconce:
 .. _Tutorials: https://sconce.readthedocs.io/en/latest/tutorials/index.html
 
 Quickstart:
-================
+^^^^^^^^^^^^^^^^^^^^^^^^
 
 
 Define Network:
-----------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^
 
 
 .. code:: python
@@ -182,7 +180,7 @@ Define Network:
            return x
 
 Make a Dict for Dataloader
---------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code:: python
 
@@ -214,8 +212,7 @@ Make a Dict for Dataloader
      )
 
 Define your Configurations:
-----------------------------
-
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. code:: python
 
    # Define all parameters 
@@ -234,7 +231,7 @@ Define your Configurations:
    sconces.prune_mode = "GMP" # Prune Mode: Currently supporting "GMP"(Supports Automated Pruning Ratio Detection), "CWP". Future supports for "OBC" and "sparseGPT"
 
 One Roof Solution [Train -> Compress -> Deploy]:
-------------------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code:: python
 
