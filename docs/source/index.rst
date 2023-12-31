@@ -11,6 +11,7 @@ sconce Documentation
    tutorials/index
    Auto-Sensitivity-Picker
    Workflow
+   Features
    timeline
    reference
  
