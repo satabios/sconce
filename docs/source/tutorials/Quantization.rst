@@ -1056,7 +1056,7 @@ represented as
 :math:`r = S(q-Z)`
 
 Scale
-~~~~~
+^^^^^^
 
 Linear quantization projects the floating point range [*fp_min*,
 *fp_max*] to the quantized range [*quantized_min*, *quantized_max*].
@@ -1079,7 +1079,7 @@ and :math:`r_{\mathrm{max}}` of a floating point tensor ``fp_tensor``.
    divergence to determine the *fp_max*.
 
 zero point
-~~~~~~~~~~
+^^^^^^^^^^^
 
 Once we determine the scaling factor :math:`S`, we can directly use the
 relationship between :math:`r_{\mathrm{min}}` and
@@ -1213,7 +1213,7 @@ We directly use the maximum magnitude of weight values as
         return fp_max / quantized_max
 
 Per-channel Linear Quantization
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Recall that for 2D convolution, the weight tensor is a 4-D tensor in the
 shape of (num_output_channels, num_input_channels, kernel_height,
@@ -1252,7 +1252,7 @@ independently.
         return quantized_tensor, scale, 0
 
 A Quick Peek at Linear Quantization on Weights
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Now let’s have a peek on the weight distribution and model size when
 applying linear quantization on weights with different bitwidths.
@@ -1374,7 +1374,7 @@ From the above deduction, we know that
         return quantized_bias, bias_scale, 0
 
 Quantized Fully-Connected Layer
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 For quantized fully-connected layer, we first precompute
 :math:`Q_{\mathrm{bias}}`. Recall that
@@ -1475,7 +1475,7 @@ layer.
 
 
 Quantized Convolution
-~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^
 
 For quantized convolution layer, we first precompute
 :math:`Q_{\mathrm{bias}}`. Recall that
