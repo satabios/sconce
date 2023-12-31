@@ -13,3 +13,4 @@ sconce.egg-info/not-zip-safe
 sconce.egg-info/requires.txt
 sconce.egg-info/top_level.txt
 test/test-package.py
+test/test_model.py

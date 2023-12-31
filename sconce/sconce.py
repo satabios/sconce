@@ -40,6 +40,18 @@ import ipdb
 import snntorch
 from snntorch import functional as SF
 
+
+import warnings
+
+# Suppress all warnings
+warnings.filterwarnings("ignore")
+
+# Your code using torch goes here
+
+# Optionally, you can reset the warning filter to default
+warnings.filterwarnings("default")
+
+
 random.seed(321)
 np.random.seed(432)
 torch.manual_seed(223)
@@ -149,14 +161,12 @@ class sconce:
 
         Args:
             data: Input data for the SNN.
-            mem_out_rec: Optional tensor to record the membrane potentials of the neurons.
+            mem_out_rec: Optional tensor to record the membrane potential at each time step.
 
         Returns:
-            If `mem_out_rec` is not None, returns a tuple containing the spike outputs and membrane potentials
-            of the neurons at each time step. Otherwise, returns only the spike outputs.
-
+            If mem_out_rec is not None, returns a tuple containing the spike outputs and membrane potentials
+            as tensors. Otherwise, returns only the spike outputs as a tensor.
         """
-
         spk_rec = []
         mem_rec = []
         utils.reset(self.model)  # resets hidden states for all LIF neurons in net
@@ -333,22 +343,8 @@ class sconce:
         return profile_macs(model, inputs)
 
     def measure_inference_latency(
-            self, model, device, input_data, num_samples=100, num_warmups=10
-        ):
-    
-        """
-        Measures the inference latency of a given model on a specific device.
-
-        Args:
-            model (torch.nn.Module): The model to measure the inference latency for.
-            device (torch.device): The device to run the inference on.
-            input_data (torch.Tensor): The input data for the model.
-            num_samples (int, optional): The number of samples to measure the latency for. Defaults to 100.
-            num_warmups (int, optional): The number of warmup iterations to run before measuring the latency. Defaults to 10.
-
-        Returns:
-            float: The average inference latency in seconds.
-        """
+        self, model, device, input_data, num_samples=100, num_warmups=10
+    ):
         model.to(device)
         model.eval()
 
@@ -371,17 +367,6 @@ class sconce:
         return elapsed_time_ave
 
     def save_torchscript_model(self, model, model_dir, model_filename):
-        """
-        Save a PyTorch model as a TorchScript model.
-
-        Args:
-            model (torch.nn.Module): The PyTorch model to be saved.
-            model_dir (str): The directory where the TorchScript model will be saved.
-            model_filename (str): The filename of the TorchScript model.
-
-        Returns:
-            None
-        """
         if not os.path.exists(model_dir):
             os.makedirs(model_dir)
         model_filepath = os.path.join(model_dir, model_filename)
@@ -389,29 +374,14 @@ class sconce:
         torch.jit.save(torch.jit.script(model), model_filepath)
 
     def load_torchscript_model(self, model_filepath, device):
-        """
-        Load a TorchScript model from the specified filepath and move it to the specified device.
-
-        Args:
-            model_filepath (str): The filepath of the TorchScript model.
-            device (str or torch.device): The device to move the model to.
-
-        Returns:
-            torch.jit.ScriptModule: The loaded TorchScript model.
-        """
         model = torch.jit.load(model_filepath, map_location=device)
 
         return model
 
     def get_sparsity(self, tensor: torch.Tensor) -> float:
         """
-        Calculate the sparsity of a tensor.
-
-        Parameters:
-            tensor (torch.Tensor): The input tensor.
-
-        Returns:
-            float: The sparsity of the tensor, defined as 1 - (number of non-zero elements / total number of elements).
+        calculate the sparsity of the given tensor
+            sparsity = #zeros / #elements = 1 - #nonzeros / #elements
         """
         return 1 - float(tensor.count_nonzero()) / tensor.numel()
 
@@ -456,6 +426,15 @@ class sconce:
         return mdl_size
 
     def get_num_parameters(self, model: nn.Module, count_nonzero_only=False) -> int:
+        """
+        Calculates the total number of parameters in a given PyTorch model.
+
+        :param model (nn.Module): The PyTorch model.
+        :param count_nonzero_only (bool, optional): If True, only counts the number of non-zero parameters.
+                                                    If False, counts all parameters. Defaults to False.
+
+        """
+
         num_counted_elements = 0
         for param in model.parameters():
             if count_nonzero_only:
@@ -468,15 +447,9 @@ class sconce:
         self, model: nn.Module, data_width=32, count_nonzero_only=False
     ) -> int:
         """
-        Calculates the size of a model in terms of memory usage.
-
-        Args:
-            model (nn.Module): The model to calculate the size for.
-            data_width (int, optional): The width of each data element in bits. Defaults to 32.
-            count_nonzero_only (bool, optional): Whether to count only the non-zero parameters. Defaults to False.
-
-        Returns:
-            int: The size of the model in memory, in bits.
+        calculate the model size in bits
+        :param data_width: #bits per element
+        :param count_nonzero_only: only count nonzero weights
         """
         return self.get_num_parameters(model, count_nonzero_only) * data_width
 
@@ -570,18 +543,18 @@ class sconce:
         verbose=True,
     ):
         """
-        Perform sensitivity scan to determine the sparsity levels for weight pruning.
+        Scans the sensitivity of the model to weight pruning by gradually increasing the sparsity of each layer's weights
+        and measuring the resulting accuracy. Returns a dictionary mapping layer names to the sparsity values that resulted
+        in the highest accuracy for each layer.
 
-        Parameters:
-        - dense_model_accuracy (float): The accuracy of the dense model.
-        - scan_step (float): The step size for the sparsity scan. Default is 0.05.
-        - scan_start (float): The starting sparsity level for the scan. Default is 0.1.
-        - scan_end (float): The ending sparsity level for the scan. Default is 1.0.
-        - verbose (bool): Whether to display progress information. Default is True.
-
-        Returns:
-        - None
+        :param dense_model_accuracy: the accuracy of the original dense model
+        :param scan_step: the step size for the sparsity scan
+        :param scan_start: the starting sparsity for the scan
+        :param scan_end: the ending sparsity for the scan
+        :param verbose: whether to print progress information during the scan
+        :return: a dictionary mapping layer names to the sparsity values that resulted in the highest accuracy for each layer
         """
+
         self.sparsity_dict = {}
         sparsities = np.flip(np.arange(start=scan_start, stop=scan_end, step=scan_step))
         accuracies = []
@@ -595,7 +568,9 @@ class sconce:
             for (name, param) in self.model.named_parameters()
             if param.dim() > 2
         ]
+        param_names = [i[0] for i in named_all_weights]
         original_model = copy.deepcopy(self.model)
+        # original_dense_model_accuracy = self.evaluate()
         conv_layers = [
             module for module in self.model.modules() if (isinstance(module, nn.Conv2d))
         ]
@@ -634,6 +609,7 @@ class sconce:
                     and len(param.shape) > 2
                     and i_layer < (len(conv_layers) - 1)
                 ):
+                    # self.temp_sparsity_list[i_layer] = sparsity
                     self.layer_idx = i_layer
                     self.prune_mode = original_prune_mode
 
@@ -648,50 +624,64 @@ class sconce:
                         self.venum_apply(sparsity_dict)
 
                     hit_flag = True
-                if self.prune_mode == "GMP":
-                    self.fine_grained_prune(param.detach(), sparsity=sparsity)
+                elif self.prune_mode == "GMP":
+                    sparse_list = np.zeros(len(named_all_weights))
+                    sparse_list[i_layer] = sparsity
+                    local_sparsity_dict = dict(zip(param_names, sparse_list))
+                    self.GMP_Pruning(
+                        prune_dict=local_sparsity_dict
+                    )  # FineGrained Pruning
+                    self.callbacks = [lambda: self.GMP_apply()]
                     hit_flag = True
+
                 elif (
                     self.prune_mode == "CWP"
                     and len(param.shape) > 2
                     and i_layer < (len(conv_layers) - 1)
                 ):
+                    # self.model = sorted_model
                     self.model = self.channel_prune_layerwise(
                         sorted_model, sparsity, i_layer
                     )
                     hit_flag = True
+                ## TODO:
+                ## Add conv CWP and linear CWP
 
                 if hit_flag == True:
+                    # if self.prune_mode == "venum_sensitivity":
+                    #     self.prune_mode = original_prune_mode
                     acc = self.evaluate(Tqdm=False) - dense_model_accuracy
+                    # if ("venum" in self.prune_mode):
+                    #     self.prune_mode = "venum_sensitivity"
                     if abs(acc) <= self.degradation_value:
                         self.sparsity_dict[name] = sparsity
                         self.model = copy.deepcopy(original_model)
                         break
                     elif sparsity == scan_start:
                         accuracy = np.asarray(accuracy)
-                        best_possible_sparsity = sparsities[
-                            np.where(accuracy == np.max(accuracy))[0][0]
-                        ]
+
+                        if np.max(accuracy) > -2.5:  # Allowed Degradation
+                            acc_x = np.where(accuracy == np.max(accuracy))[0][0]
+                            best_possible_sparsity = sparsities[acc_x]
+
+                        else:
+                            best_possible_sparsity = 0
                         self.sparsity_dict[name] = best_possible_sparsity
                         self.model = copy.deepcopy(original_model)
                     else:
-                        param.copy_(param_clone)
                         accuracy.append(acc)
                         hit_flag = False
+                    self.model = copy.deepcopy(original_model)
 
     def fine_grained_prune(self, tensor: torch.Tensor, sparsity: float) -> torch.Tensor:
         """
-        Prunes a tensor in a fine-grained manner based on the desired sparsity level.
+        Magnitude-based pruning for single tensor
 
-        Args:
-            tensor (torch.Tensor): The input tensor to be pruned.
-            sparsity (float): The desired sparsity level, ranging from 0.0 to 1.0.
-
-        Returns:
-            torch.Tensor: The pruned tensor with the same shape as the input tensor.
-
-        Raises:
-            None.
+        :param tensor: torch.(cuda.)Tensor, weight of conv/fc layer
+        :param sparsity: float, pruning sparsity
+            sparsity = #zeros / #elements = 1 - #nonzeros / #elements
+        :return:
+            torch.(cuda.)Tensor, mask for zeros
         """
         sparsity = min(max(0.0, sparsity), 1.0)
         if sparsity == 1.0:
@@ -718,15 +708,6 @@ class sconce:
 
     @torch.no_grad()
     def venum_apply(self, sparsity_dict):
-        """
-        Applies sparsity to the model layers based on the given sparsity dictionary.
-
-        Args:
-            sparsity_dict (dict): A dictionary containing layer IDs as keys and corresponding sparsity values.
-
-        Returns:
-            None
-        """
         for layer_id, (_, sparsity) in enumerate(sparsity_dict.items()):
             if sparsity > 0:
                 self.layer_idx = layer_id
@@ -738,7 +719,19 @@ class sconce:
         for handle in self.handles:
             handle.remove()
 
-   
+    # @torch.no_grad()
+    # def venum_apply(self, sparsity_dict):
+    #
+    #     for layer_id, (_, sparsity) in enumerate(sparsity_dict.items()):
+    #         self.layer_idx = layer_id
+    #         self.find_instance(obj=self.model, sparsity=sparsity)
+    #
+    #     self.prune_mode = "venum_sensitivity"
+    #     self.venum_evaluate(Tqdm=False)
+    #     self.prune_mode = "venum"
+    #
+    #     for handle in self.handles:
+    #         handle.remove()
 
     @torch.no_grad()
     def GMP_apply(self):
@@ -761,17 +754,20 @@ class sconce:
 
     # @staticmethod
     @torch.no_grad()
-    def GMP_Pruning(self):
+    def GMP_Pruning(self, model=None, prune_dict=None):
         """
         Applies Group-wise Magnitude Pruning (GMP) to the model's convolutional and fully-connected weights.
         The pruning is performed based on the sparsity levels specified in the `sparsity_dict` attribute.
         The pruned weights are stored in the `masks` attribute.
         """
+        if prune_dict != None:
+            sparse_dict = prune_dict
+        else:
+            sparse_dict = self.sparsity_dict
+
         for name, param in self.model.named_parameters():
             if param.dim() > 1:  # we only prune conv and fc weights
-                self.masks[name] = self.fine_grained_prune(
-                    param, self.sparsity_dict[name]
-                )
+                self.masks[name] = self.fine_grained_prune(param, sparse_dict[name])
 
     def venum_prune(self, W, X, s, in_channel=0, kernel_size=0, cnn=False):
         metric = W.abs() * X.norm(p=2, dim=0)  # get the venum pruning metric
@@ -911,6 +907,7 @@ class sconce:
         Returns:
           None
         """
+        sensitivity_start_time, sensitivity_start_end = 0, 0
         original_experiment_name = self.experiment_name
         if self.snn:
             original_dense_model = self.model
@@ -923,23 +920,6 @@ class sconce:
 
         current_device = next(original_dense_model.parameters()).device
         dummy_input = torch.randn(input_shape).to(current_device)
-
-        self.params.append(
-            [
-                self.evaluate(model=original_dense_model),
-                self.measure_latency(
-                    model=original_dense_model, dummy_input=dummy_input
-                ),
-                self.get_num_parameters(model=original_dense_model),
-                self.get_model_size(
-                    model=original_dense_model, count_nonzero_only=True
-                ),
-            ]
-        )
-        save_file_name = self.experiment_name + "_original.pt"
-        self.save_torchscript_model(
-            model=original_dense_model, model_dir="./", model_filename=save_file_name
-        )
 
         dense_model_size = self.get_model_size(
             model=self.model, count_nonzero_only=True
@@ -955,8 +935,19 @@ class sconce:
             self.sensitivity_scan(
                 dense_model_accuracy=dense_validation_acc, verbose=False
             )
-            sensitivity_start_end = time.time() - sensitivity_start_time
-            print("Sensitivity Scan Time(mins):", sensitivity_start_end / 60)
+            sensitivity_start_end = time.time()
+            print(
+                "Sensitivity Scan Time(mins):",
+                (sensitivity_start_end - sensitivity_start_time) / 60,
+            )
+
+            # Sparsity
+            # for each Layer: {'backbone.conv0.weight': 0.45000000000000007, 'backbone.conv1.weight': 0.7500000000000002,
+            #                  'backbone.conv2.weight': 0.7000000000000002, 'backbone.conv3.weight': 0.6500000000000001,
+            #                  'backbone.conv4.weight': 0.6000000000000002, 'backbone.conv5.weight': 0.7000000000000002,
+            #                  'backbone.conv6.weight': 0.7000000000000002, 'backbone.conv7.weight': 0.8500000000000002,
+            #                  'classifier.weight': 0.9500000000000003}
+
             # self.sparsity_dict = {'0.weight': 0.6500000000000001, '3.weight': 0.5000000000000001, '7.weight': 0.7000000000000002}
             # self.sparsity_dict = {'backbone.conv0.weight': 0.20000000000000004, 'backbone.conv1.weight': 0.45000000000000007, 'backbone.conv2.weight': 0.25000000000000006, 'backbone.conv3.weight': 0.25000000000000006, 'backbone.conv4.weight': 0.25000000000000006, 'backbone.conv5.weight': 0.25000000000000006, 'backbone.conv6.weight': 0.3500000000000001, 'backbone.conv7.weight': 0.3500000000000001, 'classifier.weight': 0.7000000000000002}
 
@@ -971,19 +962,14 @@ class sconce:
             self.sensitivity_scan(
                 dense_model_accuracy=dense_validation_acc, verbose=False
             )
-            sensitivity_start_end = time.time() - sensitivity_start_time
-            print("Sensitivity Scan Time(mins):", sensitivity_start_end / 60)
+            sensitivity_start_end = time.time()
+            print(
+                "Sensitivity Scan Time(mins):",
+                (sensitivity_start_end - sensitivity_start_time) / 60,
+            )
 
-            # self.sparsity_dict = {
-            #     "backbone.conv0.weight": 0.15000000000000002,
-            #     "backbone.conv1.weight": 0.15,
-            #     "backbone.conv2.weight": 0.15,
-            #     "backbone.conv3.weight": 0.15000000000000002,
-            #     "backbone.conv4.weight": 0.20000000000000004,
-            #     "backbone.conv5.weight": 0.20000000000000004,
-            #     "backbone.conv6.weight": 0.45000000000000007,
-            # }
-            print(f"Sparsity for each Layer: {self.sparsity_dict}")
+            # self.sparsity_dict = {'backbone.conv0.weight': 0.15000000000000002, 'backbone.conv1.weight': 0.15, 'backbone.conv2.weight': 0.15, 'backbone.conv3.weight': 0.15000000000000002, 'backbone.conv4.weight': 0.20000000000000004, 'backbone.conv5.weight': 0.20000000000000004, 'backbone.conv6.weight': 0.45000000000000007}
+            print(f"Sparsity for each Layer: {self.sparsity_dict} \n\n\n")
             self.CWP_Pruning()  # Channelwise Pruning
             self.fine_tune = True
 
@@ -1006,8 +992,11 @@ class sconce:
             self.sensitivity_scan(
                 dense_model_accuracy=dense_validation_acc, verbose=False
             )
-            sensitivity_start_end = time.time() - sensitivity_start_time
-            print("Sensitivity Scan Time(mins):", sensitivity_start_end / 60)
+            sensitivity_start_end = time.time()
+            print(
+                "Sensitivity Scan Time(mins):",
+                (sensitivity_start_end - sensitivity_start_time) / 60,
+            )
 
             # self.sparsity_dict = {'backbone.conv0.weight': 0.3500000000000001, 'backbone.conv1.weight': 0.15000000000000002, 'backbone.conv2.weight': 0.1, 'backbone.conv3.weight': 0.15000000000000002, 'backbone.conv4.weight': 0.20, 'backbone.conv5.weight': 0.20, 'backbone.conv6.weight': 0.30000000000000004}
             print(f"Sparsity for each Layer: {self.sparsity_dict}")
@@ -1017,8 +1006,7 @@ class sconce:
             self.fine_tune = True
 
         print(
-            "Pruning Time Consumed (mins):",
-            (time.time() - sensitivity_start_end / 60) / 60,
+            "Pruning Time Consumed (mins):", (time.time() - sensitivity_start_end) / 60
         )
         print(
             "Total Pruning Time Consumed (mins):",
