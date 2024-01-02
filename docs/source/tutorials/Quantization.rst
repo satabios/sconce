@@ -962,7 +962,7 @@ quantization scaling factor. Both constant :math:`Z` and :math:`S` are
 quantization parameters.
 
 *n*-bit Integer
----------------
+^^^^^^^^^^^^^^^^
 
 A *n*-bit signed integer is usually represented in `two’s
 complement <https://en.wikipedia.org/wiki/Two%27s_complement>`__
