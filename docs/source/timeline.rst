@@ -1,27 +1,23 @@
-Timeline
+ToDo
 =========
 
 
-- 2022-10: **1.0.0**
-  - **Tomoco:** Previous release of the Package
+.. Feature Integration, Fixes, Documentation
+.. list-table::  
+   :header-rows: 1
 
-- 2022-12: Inception of **sconce**
-
-- 2023-06: Introduction of **Granular-Magnitude Pruning (GMP)**
-
-- 2023-07: Added **Channel-Wise Pruning (CWP)**
-
-- 2023-09: Added **Venum Pruning (venum)**
-
-Future Works
-------------
-
-- 2024-01: Add **WANDA Pruning** [non-LLM models]
-
-- 2024-02: Add **Activation Aware Pruning**
-
-- 2024-02: Add **SparseGPT Pruning/Quant** [non-LLM models]
-
-- 2023-12: Add support for **LLM’s**
-
-- 2024-01-01: Add **SparseGPT Pruning/Quant**, **WANDA Pruning**
+   * - Feature Integration
+     - Fixes
+     - Documentation
+   * - NAS	[X]
+     - CWP Bug [X]
+     - Pruning Theory/Documentation [X]
+   * - Wanda Pruning	[X]
+     - Test Cases	[X]
+     - Quantization Theory/Documentation [X]
+   * - Venum Pruning [X]
+     - Python Package: Github Action [X]
+     - NAS Documentation Theory/Documentation [X]
+   * - AWQ Pruning [X]
+     - Quantization Workflow Image [X]
+     - Wanda Pruning Theory/Documentation [X]
