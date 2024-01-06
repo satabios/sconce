@@ -61,7 +61,9 @@ KiB = 1024 * Byte
 MiB = 1024 * KiB
 GiB = 1024 * MiB
 
-torch.cuda.synchronize()
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+if( device=='cuda'):
+    torch.cuda.synchronize()
 
 
 class sconce:
