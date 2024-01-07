@@ -62,7 +62,11 @@ MiB = 1024 * KiB
 GiB = 1024 * MiB
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+<<<<<<< HEAD
 if device == "cuda":
+=======
+if( device=='cuda'):
+>>>>>>> d56f0d8a578de940a086f7ccf8e316c5ab4201ab
     torch.cuda.synchronize()
 
 
