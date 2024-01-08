@@ -6,7 +6,7 @@ name: pypi upload
 on:
   workflow_run: 
     workflows: ["build tag"]
-    branches: [main] 
+    # branches: [main] 
     types:
       - completed
 
