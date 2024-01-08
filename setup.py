@@ -54,7 +54,7 @@ setup(
     ],
     description="Model Compresion Made Easy",
     long_description_content_type="text/x-rst",
-    long_description=long_description,
+    long_description=readme,
     install_requires=install_requirements,
     license="MIT License",
     include_package_data=True,
