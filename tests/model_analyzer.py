@@ -9,6 +9,21 @@ from torchsummary import summary
 
 
 
+def name_fixer(name_list):
+  return_list = []
+  for idx in range(len(name_list)):
+      string = name_list[idx]
+      matches = re.finditer(r'\.\[(\d+)\]', string)
+      pop_list = [m.start(0) for m in matches]
+      pop_list.sort(reverse=True)
+      if(len(pop_list)>0):
+        string = list(string)
+        for id in pop_list:
+          string.pop(id)
+        string = ''.join(string)
+
+      return_list.append(string)
+  return  return_list
 
 from collections import defaultdict, OrderedDict
 
@@ -185,13 +200,13 @@ def summary_string_fixed(model, input_size, model_name=None, batch_size=-1, devi
       nonlocal module_idx  # Add this line to access the outer module_idx variable
 
       m_key = all_layers[module_idx][0]
-      print(m_key)
       m_key = model_name +"."+ m_key
 
       try:
-        print(type(eval(m_key)))
+        eval(m_key)
       except:
-        print("Not able to parse:",m_key)
+        m_key = name_fixer([m_key])[0]
+        # print("Not able to parse:",eval(m_key))
 
       summary[m_key] = OrderedDict()
       summary[m_key]["type"] = str(type(module)).split('.')[-1][:-2]
@@ -351,6 +366,8 @@ def prune_cwp(model):
       layer.running_var.set_(layer.running_var.detach()[importance_list_indices])
 
     for prev_layer, next_layers in iter_layers:
+      print("Prev:",prev_layer.weight.shape)
+      print("Next:", [ next.weight.shape for next in next_layers])
 
       if (str(type(prev_layer)).split('.')[-1][:-2] == 'BatchNorm2d'):  # BatchNorm2d
         prune_bn(prev_layer, importance_list_indices)
@@ -368,6 +385,7 @@ def prune_cwp(model):
               next_layer.groups = len(importance_list_indices)
 
             else:
+
               next_layer.weight.set_(next_layer.weight.detach()[:, importance_list_indices])
 
   return pruned_model, model
@@ -398,21 +416,6 @@ for key in model_summary.keys():
 #         name_type_shape.append([key, data['type'], 0 ])
 name_type_shape = np.asarray(name_type_shape)
 
-def name_fixer(name_list):
-  return_list = []
-  for idx in range(len(name_list)):
-      string = name_list[idx]
-      matches = re.finditer(r'\.\[(\d+)\]', string)
-      pop_list = [m.start(0) for m in matches]
-      pop_list.sort(reverse=True)
-      if(len(pop_list)>0):
-        string = list(string)
-        for id in pop_list:
-          string.pop(id)
-        string = ''.join(string)
-
-      return_list.append(string)
-  return  return_list
 
 
 
@@ -497,7 +500,7 @@ possible_indices_ranges = possible_indices_ranges[:-1]
 # for p1, p2, p3 in  zip(model1.named_parameters(), model2.named_parameters(), model3.named_parameters()):
 #     print(p1[0],p2[0],p3[0])
 
-# summary(model,(3,32,32))
+summary(model,(3,32,32))
 
 pruned_model, original_model = prune_cwp(model)
 
