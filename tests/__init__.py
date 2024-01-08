@@ -1,1 +1,1 @@
-"""Unit test package for snntorch."""
+"""Unit test package for sconce."""
