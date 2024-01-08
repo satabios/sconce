@@ -12,7 +12,7 @@ with open("README.rst", encoding="utf-8") as readme_file:
     readme = readme_file.read()
 
 # fmt: off
-__version__ = '0.96'
+version = "0.96"
 # fmt: on
 
 requirements = [
@@ -25,7 +25,7 @@ requirements = [
 
 test_requirements = ["pytest>=6"]
 
-version = __version__
+
 
 lib_folder = os.path.dirname(os.path.realpath(__file__))
 requirement_path = lib_folder + '/requirements.txt'
@@ -64,7 +64,7 @@ setup(
     test_suite="tests",
     tests_require=test_requirements,
     url="https://github.com/satabios/sconce",
-    version=__version__,
+    version=version,
     zip_safe=False,
 )
 
