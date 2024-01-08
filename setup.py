@@ -7,7 +7,7 @@ with open("README.rst", encoding="utf-8") as readme_file:
     readme = readme_file.read()
 
 # fmt: off
-__version__ = '0.57'
+__version__ = '0.93'
 # fmt: on
 
 requirements = [
@@ -15,8 +15,6 @@ requirements = [
     "pandas",
     "matplotlib",
     "numpy>=1.17",
-    "nir",
-    "nirtorch",
 ]
 
 
