@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: sconce
-Version: 0.95
+Version: 0.96
 Summary: sconce: Compression and Deployment made Easy
 Home-page: https://github.com/satabios/sconce
 Author: Sathyaprakash Narayanan
@@ -20,6 +20,7 @@ Classifier: Programming Language :: Python :: 3.9
 Classifier: Programming Language :: Python :: 3.10
 Classifier: Operating System :: OS Independent
 Requires-Python: >=3.7
+Description-Content-Type: text/x-rst
 License-File: LICENSE.txt
 
 ================
