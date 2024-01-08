@@ -26,18 +26,20 @@ if [[ $(uname) == "Darwin" ]]; then
     echo "Running on macOS"
     # Run your macOS command here
     sed -i "" "7s/.*/$version/" pyproject.toml
-    # sed -i "" "7s/.*/$version/" setup.py
-    __version__ = '0.95'
+    sed -i "" "15s/.*/$version/" setup.py
+   
 elif [[ $(uname) == "Linux" ]]; then
     # Linux
     echo "Running on Linux"
     # Run your Linux command here
     sed -i "7s/.*/$version/" pyproject.toml
+    sed -i "15s/.*/$version/" setup.py
 else
     # Assume Windows (or any other OS)
     echo "Running on Windows or another OS"
     # Run your Windows or other OS command here
     sed -i "7s/.*/$version/" pyproject.toml
+    sed -i "15s/.*/$version/" setup.py
 fi
 
 

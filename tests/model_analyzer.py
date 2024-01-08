@@ -385,8 +385,12 @@ def prune_cwp(model):
               next_layer.groups = len(importance_list_indices)
 
             else:
-
+              # try:
               next_layer.weight.set_(next_layer.weight.detach()[:, importance_list_indices])
+              next_layer.groups = len(importance_list_indices)
+              # except:
+              #   next_layer.weight.set_(next_layer.weight.detach()[ importance_list_indices,:])
+              #   next_layer.groups = len(importance_list_indices)
 
   return pruned_model, model
 
@@ -399,6 +403,8 @@ def prune_cwp(model):
 model = torch.hub.load('pytorch/vision', 'resnet18', pretrained=True)
 # model = torch.hub.load('pytorch/vision:v0.10.0', 'densenet121', pretrained=False)
 # model = torch.hub.load('pytorch/vision:v0.10.0', 'mobilenet_v2', pretrained=True)
+# model = torch.hub.load('pytorch/vision:v0.10.0', 'mobilenet_v3_small', pretrained=True)
+# super_net = torch.hub.load('mit-han-lab/once-for-all', super_net_name, pretrained=True).eval()
 
 # model = VGG()
 
