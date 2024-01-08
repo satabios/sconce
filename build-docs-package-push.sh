@@ -21,7 +21,24 @@ black sconce test
 echo "Version-To-Update?"
 read value
 version="version = \"${value}\""
-sed -i "7s/.*/$version/" pyproject.toml
+if [[ $(uname) == "Darwin" ]]; then
+    # macOS
+    echo "Running on macOS"
+    # Run your macOS command here
+    sed -i "" "7s/.*/$version/" pyproject.toml
+elif [[ $(uname) == "Linux" ]]; then
+    # Linux
+    echo "Running on Linux"
+    # Run your Linux command here
+    sed -i "7s/.*/$version/" pyproject.toml
+else
+    # Assume Windows (or any other OS)
+    echo "Running on Windows or another OS"
+    # Run your Windows or other OS command here
+    sed -i "7s/.*/$version/" pyproject.toml
+fi
+
+
 
 
 #Generate rst for tutorials
@@ -39,7 +56,7 @@ cd ../
 
 #Build Package
 python3 setup.py clean --all sdist bdist_wheel
-twine upload dist/* --verbose
+# twine upload dist/* --verbose
 
 #Push to GitHub
 
