@@ -52,7 +52,6 @@ warnings.filterwarnings("ignore")
 warnings.filterwarnings("default")
 
 
-
 random.seed(321)
 np.random.seed(432)
 torch.manual_seed(223)
@@ -62,7 +61,9 @@ KiB = 1024 * Byte
 MiB = 1024 * KiB
 GiB = 1024 * MiB
 
-torch.cuda.synchronize()
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+if( device=='cuda'):
+    torch.cuda.synchronize()
 
 
 class sconce:
@@ -115,7 +116,7 @@ class sconce:
         self.learning_rate = 1e-4
         self.dense_model_valid_acc = 0
         self.params = []
-        self.qat_config = 'x86'
+        self.qat_config = "x86"
 
         self.fine_tune_epochs = 10
         self.fine_tune = False
@@ -147,10 +148,10 @@ class sconce:
         self.conv_layer = []
         self.linear_layer = []
         self.handles = []
-        self.temp_sparsity_list=[]
-        self.prune_indexes =[]
-        self.record_prune_indexes=False
-        self.layer_idx=0
+        self.temp_sparsity_list = []
+        self.prune_indexes = []
+        self.record_prune_indexes = False
+        self.layer_idx = 0
 
         self.bitwidth = 4
 
@@ -158,16 +159,15 @@ class sconce:
 
     def forward_pass_snn(self, data, mem_out_rec=None):
         """
-        snn Forward Pass
+        Perform a forward pass through the spiking neural network (SNN).
 
-        :param data: Input from the data loader
-        :param mem_out_rec: Record Membrane Potential, if set to a value return both Membrane potential and Spikes
-        :return: Return the Membrane Potential output of the network
-        # :example:
-        # .. jupyter-execute::
-        #
-        #   import sconce
-        #   print(your_package_name.some_documented_func(1))
+        Args:
+            data: Input data for the SNN.
+            mem_out_rec: Optional tensor to record the membrane potential at each time step.
+
+        Returns:
+            If mem_out_rec is not None, returns a tuple containing the spike outputs and membrane potentials
+            as tensors. Otherwise, returns only the spike outputs as a tensor.
         """
         spk_rec = []
         mem_rec = []
@@ -265,7 +265,6 @@ class sconce:
         self.model.to(self.device)
         self.model.eval()
         with torch.no_grad():
-
             correct = 0
             total = 0
             local_acc = []
@@ -281,7 +280,7 @@ class sconce:
             return
 
     @torch.no_grad()
-    def evaluate(self,model =None, device=None, Tqdm=True, verbose=False):
+    def evaluate(self, model=None, device=None, Tqdm=True, verbose=False):
         """
         Evaluates the model on the test dataset and returns the accuracy.
 
@@ -291,12 +290,12 @@ class sconce:
         Returns:
           float: The test accuracy as a percentage.
         """
-        if(model!=None):
+        if model != None:
             self.model = model
-        if(device!=None):
+        if device != None:
             final_device = device
         else:
-            final_device= self.device
+            final_device = self.device
 
         self.model.to(final_device)
         self.model.eval()
@@ -345,12 +344,9 @@ class sconce:
         """
         return profile_macs(model, inputs)
 
-    def measure_inference_latency(self, model,
-                                  device,
-                                  input_data,
-                                  num_samples=100,
-                                  num_warmups=10):
-
+    def measure_inference_latency(
+        self, model, device, input_data, num_samples=100, num_warmups=10
+    ):
         model.to(device)
         model.eval()
 
@@ -371,8 +367,8 @@ class sconce:
         elapsed_time_ave = elapsed_time / num_samples
 
         return elapsed_time_ave
-    def save_torchscript_model(self, model, model_dir, model_filename):
 
+    def save_torchscript_model(self, model, model_dir, model_filename):
         if not os.path.exists(model_dir):
             os.makedirs(model_dir)
         model_filepath = os.path.join(model_dir, model_filename)
@@ -380,7 +376,6 @@ class sconce:
         torch.jit.save(torch.jit.script(model), model_filepath)
 
     def load_torchscript_model(self, model_filepath, device):
-
         model = torch.jit.load(model_filepath, map_location=device)
 
         return model
@@ -418,22 +413,28 @@ class sconce:
         return 1 - float(num_nonzeros) / num_elements
 
     def get_model_size_weights(self, mdl):
+        """
+        Calculates the size of the model's weights in megabytes.
+
+        Args:
+            mdl (torch.nn.Module): The model whose weights size needs to be calculated.
+
+        Returns:
+            float: The size of the model's weights in megabytes.
+        """
         torch.save(mdl.state_dict(), "tmp.pt")
-        mdl_size =  round (os.path.getsize("tmp.pt") / 1e6, 3)
-        os.remove('tmp.pt')
+        mdl_size = round(os.path.getsize("tmp.pt") / 1e6, 3)
+        os.remove("tmp.pt")
         return mdl_size
 
     def get_num_parameters(self, model: nn.Module, count_nonzero_only=False) -> int:
         """
-        Calculate the total number of parameters of a PyTorch model.
+        Calculates the total number of parameters in a given PyTorch model.
 
-        Args:
-          model (nn.Module): The PyTorch model to count the parameters of.
-          count_nonzero_only (bool, optional): Whether to count only the nonzero weights.
-            Defaults to False.
+        :param model (nn.Module): The PyTorch model.
+        :param count_nonzero_only (bool, optional): If True, only counts the number of non-zero parameters.
+                                                    If False, counts all parameters. Defaults to False.
 
-        Returns:
-          int: The total number of parameters of the model.
         """
 
         num_counted_elements = 0
@@ -536,12 +537,12 @@ class sconce:
 
     @torch.no_grad()
     def sensitivity_scan(
-            self,
-            dense_model_accuracy,
-            scan_step=0.05,
-            scan_start=0.1,
-            scan_end=1.0,
-            verbose=True,
+        self,
+        dense_model_accuracy,
+        scan_step=0.05,
+        scan_start=0.1,
+        scan_end=1.0,
+        verbose=True,
     ):
         """
         Scans the sensitivity of the model to weight pruning by gradually increasing the sparsity of each layer's weights
@@ -569,7 +570,7 @@ class sconce:
             for (name, param) in self.model.named_parameters()
             if param.dim() > 2
         ]
-        param_names = [ i[0] for i in named_all_weights]
+        param_names = [i[0] for i in named_all_weights]
         original_model = copy.deepcopy(self.model)
         # original_dense_model_accuracy = self.evaluate()
         conv_layers = [
@@ -584,18 +585,16 @@ class sconce:
             sorted_model = copy.deepcopy(sortd)
 
         if "venum" in self.prune_mode:
-            if self.prune_mode == 'venum-cwp':
+            if self.prune_mode == "venum-cwp":
                 named_all_weights = named_conv_weights
 
             list_of_sparsities = [0] * (len(named_all_weights) - 1)
             sparsity_dict = {count: ele for count, ele in enumerate(list_of_sparsities)}
             self.venum_apply(sparsity_dict)
 
-
         layer_iter = tqdm(named_all_weights, desc="layer", leave=False)
         original_prune_mode = self.prune_mode
         for i_layer, (name, param) in enumerate(layer_iter):
-
             param_clone = param.detach().clone()
             accuracy = []
             desc = None
@@ -607,15 +606,21 @@ class sconce:
             hit_flag = False
 
             for sparsity in picker:
-                if ("venum" in self.prune_mode and len(param.shape) > 2 and i_layer < (len(conv_layers) - 1)):
+                if (
+                    "venum" in self.prune_mode
+                    and len(param.shape) > 2
+                    and i_layer < (len(conv_layers) - 1)
+                ):
                     # self.temp_sparsity_list[i_layer] = sparsity
                     self.layer_idx = i_layer
                     self.prune_mode = original_prune_mode
 
-                    list_of_sparsities =  [0] * (len(layer_iter)-1)
+                    list_of_sparsities = [0] * (len(layer_iter) - 1)
                     list_of_sparsities[i_layer] = sparsity
-                    sparsity_dict = { count:ele for count, ele in enumerate(list_of_sparsities)}
-                    if(self.prune_mode=="venum-cwp"):
+                    sparsity_dict = {
+                        count: ele for count, ele in enumerate(list_of_sparsities)
+                    }
+                    if self.prune_mode == "venum-cwp":
                         self.venum_CWP_Pruning(original_model, sparsity_dict)
                     else:
                         self.venum_apply(sparsity_dict)
@@ -625,15 +630,16 @@ class sconce:
                     sparse_list = np.zeros(len(named_all_weights))
                     sparse_list[i_layer] = sparsity
                     local_sparsity_dict = dict(zip(param_names, sparse_list))
-                    self.GMP_Pruning(prune_dict=local_sparsity_dict)  # FineGrained Pruning
+                    self.GMP_Pruning(
+                        prune_dict=local_sparsity_dict
+                    )  # FineGrained Pruning
                     self.callbacks = [lambda: self.GMP_apply()]
                     hit_flag = True
 
-
                 elif (
-                        self.prune_mode == "CWP"
-                        and len(param.shape) > 2
-                        and i_layer < (len(conv_layers) - 1)
+                    self.prune_mode == "CWP"
+                    and len(param.shape) > 2
+                    and i_layer < (len(conv_layers) - 1)
                 ):
                     # self.model = sorted_model
                     self.model = self.channel_prune_layerwise(
@@ -656,31 +662,28 @@ class sconce:
                     elif sparsity == scan_start:
                         accuracy = np.asarray(accuracy)
 
-                        if(np.max(accuracy)> -2.5):  #Allowed Degradation
+                        if np.max(accuracy) > -2.5:  # Allowed Degradation
                             acc_x = np.where(accuracy == np.max(accuracy))[0][0]
                             best_possible_sparsity = sparsities[acc_x]
-
 
                         else:
                             best_possible_sparsity = 0
                         self.sparsity_dict[name] = best_possible_sparsity
                         self.model = copy.deepcopy(original_model)
                     else:
-
                         accuracy.append(acc)
                         hit_flag = False
                     self.model = copy.deepcopy(original_model)
-                # break
 
     def fine_grained_prune(self, tensor: torch.Tensor, sparsity: float) -> torch.Tensor:
         """
-        magnitude-based pruning for single tensor
+        Magnitude-based pruning for single tensor
+
         :param tensor: torch.(cuda.)Tensor, weight of conv/fc layer
         :param sparsity: float, pruning sparsity
             sparsity = #zeros / #elements = 1 - #nonzeros / #elements
         :return:
             torch.(cuda.)Tensor, mask for zeros
-            
         """
         sparsity = min(max(0.0, sparsity), 1.0)
         if sparsity == 1.0:
@@ -707,9 +710,8 @@ class sconce:
 
     @torch.no_grad()
     def venum_apply(self, sparsity_dict):
-
         for layer_id, (_, sparsity) in enumerate(sparsity_dict.items()):
-            if(sparsity>0):
+            if sparsity > 0:
                 self.layer_idx = layer_id
                 self.find_instance(obj=self.model, sparsity=sparsity)
 
@@ -760,52 +762,53 @@ class sconce:
         The pruning is performed based on the sparsity levels specified in the `sparsity_dict` attribute.
         The pruned weights are stored in the `masks` attribute.
         """
-        if(prune_dict!=None):
-            sparse_dict= prune_dict
+        if prune_dict != None:
+            sparse_dict = prune_dict
         else:
-            sparse_dict= self.sparsity_dict
-
+            sparse_dict = self.sparsity_dict
 
         for name, param in self.model.named_parameters():
             if param.dim() > 1:  # we only prune conv and fc weights
-                self.masks[name] = self.fine_grained_prune(
-                    param, sparse_dict[name]
-                )
+                self.masks[name] = self.fine_grained_prune(param, sparse_dict[name])
 
     def venum_prune(self, W, X, s, in_channel=0, kernel_size=0, cnn=False):
         metric = W.abs() * X.norm(p=2, dim=0)  # get the venum pruning metric
 
-        if(self.prune_mode=="venum_cwp" and cnn==True):
+        if self.prune_mode == "venum_cwp" and cnn == True:
             norm = torch.norm(metric, dim=1)
             _, sorted_idx = torch.sort(norm)
             self.venum_sorted_list.append(sorted_idx)
 
         else:
-            #Venum GMP
+            # Venum GMP
 
             _, sorted_idx = torch.sort(metric, dim=1)  # sort the weights per output
 
-            if (cnn):
-                pruned_idx = sorted_idx[:, :int(in_channel * kernel_size[0] * kernel_size[1] * s)]
+            if cnn:
+                pruned_idx = sorted_idx[
+                    :, : int(in_channel * kernel_size[0] * kernel_size[1] * s)
+                ]
             else:
-                pruned_idx = sorted_idx[:, :int(in_channel * s)]  # get the indices of the weights to be pruned
+                pruned_idx = sorted_idx[
+                    :, : int(in_channel * s)
+                ]  # get the indices of the weights to be pruned
 
-            if(self.record_prune_indexes):
+            if self.record_prune_indexes:
                 self.prune_indexes.append(pruned_idx)
             with torch.no_grad():
                 zeros_tensor = torch.zeros_like(W)
                 # Use scatter_ to set the pruned indices to zero
                 W.scatter_(dim=1, index=pruned_idx, src=zeros_tensor)
-            if (cnn):
-                W = W.unflatten(dim=1, sizes=(in_channel, kernel_size[0], kernel_size[1]))
+            if cnn:
+                W = W.unflatten(
+                    dim=1, sizes=(in_channel, kernel_size[0], kernel_size[1])
+                )
 
             return W
 
     def venum(self, sparstiy):
         def prune(module, inp, out):
-
-            if (isinstance(module, nn.Conv2d)):
-
+            if isinstance(module, nn.Conv2d):
                 in_channel = module.in_channels
                 kernel_size = module.kernel_size
                 weights = module.weight.flatten(1).clone()
@@ -814,7 +817,7 @@ class sconce:
                     module.kernel_size,
                     dilation=module.dilation,
                     padding=module.padding,
-                    stride=module.stride
+                    stride=module.stride,
                 )
                 torch.cuda.empty_cache()
                 inp_unfolded = unfold(inp[0])
@@ -823,17 +826,31 @@ class sconce:
 
                 with torch.no_grad():
                     # print("cPre:",torch.count_nonzero(weights))
-                    if(self.prune_mode=="venum_cwp"):
-                        self.venum_prune(W=weights, X=inp_unfolded, s=sparstiy, in_channel=in_channel, kernel_size=kernel_size, cnn=True)
+                    if self.prune_mode == "venum_cwp":
+                        self.venum_prune(
+                            W=weights,
+                            X=inp_unfolded,
+                            s=sparstiy,
+                            in_channel=in_channel,
+                            kernel_size=kernel_size,
+                            cnn=True,
+                        )
                     else:
-                        self.venum_prune(W=weights, X=inp_unfolded, s=sparstiy, in_channel=in_channel,
-                                         kernel_size=kernel_size, cnn=True)
+                        self.venum_prune(
+                            W=weights,
+                            X=inp_unfolded,
+                            s=sparstiy,
+                            in_channel=in_channel,
+                            kernel_size=kernel_size,
+                            cnn=True,
+                        )
 
-
-            elif (isinstance(module, nn.Linear)):
+            elif isinstance(module, nn.Linear):
                 weights = module.weight.data
                 # print("LPre:",torch.count_nonzero(weights))
-                module.weight.data = self.venum_prune(W=weights, X=inp[0], s=sparstiy, cnn=False)
+                module.weight.data = self.venum_prune(
+                    W=weights, X=inp[0], s=sparstiy, cnn=False
+                )
                 # print("LPost:",torch.count_nonzero(module.weight.data))
 
             gc.collect()
@@ -841,18 +858,20 @@ class sconce:
 
         return prune
 
-    def find_instance(self, obj, object_of_importance=(nn.Conv2d, nn.Linear), sparsity=None):
+    def find_instance(
+        self, obj, object_of_importance=(nn.Conv2d, nn.Linear), sparsity=None
+    ):
         if isinstance(obj, object_of_importance):
-            if("venum" in self.prune_mode):
-                if(self.layer_idx==0):
+            if "venum" in self.prune_mode:
+                if self.layer_idx == 0:
                     # print("LID, sp:", obj, self.layer_idx, sparsity)
                     self.handles.append(obj.register_forward_hook(self.venum(sparsity)))
-                    self.layer_idx-= 1
-                elif(self.layer_idx<0):
+                    self.layer_idx -= 1
+                elif self.layer_idx < 0:
                     return
                 else:
-                    self.layer_idx-=1
-            #Add Wanda and SparseGPT here
+                    self.layer_idx -= 1
+            # Add Wanda and SparseGPT here
             else:
                 if object_of_importance == nn.Conv2d:
                     self.conv_layer.append(obj)
@@ -873,8 +892,6 @@ class sconce:
         elif isinstance(obj, OrderedDict):
             for key, value in obj.items():
                 self.find_instance(value, object_of_importance, sparsity)
-
-
 
     def compress(self, verbose=True) -> None:
         """
@@ -921,7 +938,10 @@ class sconce:
                 dense_model_accuracy=dense_validation_acc, verbose=False
             )
             sensitivity_start_end = time.time()
-            print("Sensitivity Scan Time(mins):", (sensitivity_start_end - sensitivity_start_time) / 60)
+            print(
+                "Sensitivity Scan Time(mins):",
+                (sensitivity_start_end - sensitivity_start_time) / 60,
+            )
 
             # Sparsity
             # for each Layer: {'backbone.conv0.weight': 0.45000000000000007, 'backbone.conv1.weight': 0.7500000000000002,
@@ -945,7 +965,10 @@ class sconce:
                 dense_model_accuracy=dense_validation_acc, verbose=False
             )
             sensitivity_start_end = time.time()
-            print("Sensitivity Scan Time(mins):", (sensitivity_start_end-sensitivity_start_time)/60)
+            print(
+                "Sensitivity Scan Time(mins):",
+                (sensitivity_start_end - sensitivity_start_time) / 60,
+            )
 
             # self.sparsity_dict = {'backbone.conv0.weight': 0.15000000000000002, 'backbone.conv1.weight': 0.15, 'backbone.conv2.weight': 0.15, 'backbone.conv3.weight': 0.15000000000000002, 'backbone.conv4.weight': 0.20000000000000004, 'backbone.conv5.weight': 0.20000000000000004, 'backbone.conv6.weight': 0.45000000000000007}
             print(f"Sparsity for each Layer: {self.sparsity_dict} \n\n\n")
@@ -966,35 +989,36 @@ class sconce:
         #     self.fine_tune=True
 
         elif "venum" in self.prune_mode:
-
             print("\n Venum CWP Pruning")
             sensitivity_start_time = time.time()
             self.sensitivity_scan(
                 dense_model_accuracy=dense_validation_acc, verbose=False
             )
             sensitivity_start_end = time.time()
-            print("Sensitivity Scan Time(mins):", (sensitivity_start_end - sensitivity_start_time) / 60)
+            print(
+                "Sensitivity Scan Time(mins):",
+                (sensitivity_start_end - sensitivity_start_time) / 60,
+            )
 
             # self.sparsity_dict = {'backbone.conv0.weight': 0.3500000000000001, 'backbone.conv1.weight': 0.15000000000000002, 'backbone.conv2.weight': 0.1, 'backbone.conv3.weight': 0.15000000000000002, 'backbone.conv4.weight': 0.20, 'backbone.conv5.weight': 0.20, 'backbone.conv6.weight': 0.30000000000000004}
             print(f"Sparsity for each Layer: {self.sparsity_dict}")
             self.venum_apply(self.sparsity_dict)
-            if(self.prune_mode ==  "venum-cwp"):
+            if self.prune_mode == "venum-cwp":
                 self.venum_CWP_Pruning(original_dense_model, self.sparsity_dict)
             self.fine_tune = True
 
-
-
-
-        print("Pruning Time Consumed (mins):", (time.time()- sensitivity_start_end)/60)
-        print("Total Pruning Time Consumed (mins):", (time.time()- sensitivity_start_time)/60)
-
+        print(
+            "Pruning Time Consumed (mins):", (time.time() - sensitivity_start_end) / 60
+        )
+        print(
+            "Total Pruning Time Consumed (mins):",
+            (time.time() - sensitivity_start_time) / 60,
+        )
 
         pruned_model = copy.deepcopy(self.model)
 
         current_device = next(pruned_model.parameters()).device
         dummy_input = torch.randn(input_shape).to(current_device)
-
-
 
         pruned_model_size = self.get_model_size(
             model=pruned_model, count_nonzero_only=True
@@ -1009,8 +1033,6 @@ class sconce:
             f"\nPruned Model has Accuracy={pruned_model_acc :.2f} MiB(non-zeros) = {pruned_model_acc - dense_validation_acc :.2f}% of Original model Accuracy"
         )
 
-
-
         if self.fine_tune:
             print("\n \n==================== Fine-Tuning ====================")
             self.optimizer = torch.optim.SGD(
@@ -1022,15 +1044,14 @@ class sconce:
 
             self.train()
             save_file_name = self.experiment_name + "_pruned_fine_tuned" + ".pt"
-            self.save_torchscript_model(model=self.model, model_dir="./", model_filename=save_file_name)
+            self.save_torchscript_model(
+                model=self.model, model_dir="./", model_filename=save_file_name
+            )
 
-
-            if(self.prune_mode == "venum"):
+            if self.prune_mode == "venum":
                 self.venum_apply(self.sparsity_dict)
 
-
             pruned_model = copy.deepcopy(self.model)
-
 
         fine_tuned_pruned_model_size = self.get_model_size(
             model=pruned_model, count_nonzero_only=True
@@ -1046,17 +1067,13 @@ class sconce:
                 fine_tuned_validation_acc,
             )
 
-
         quantized_model, model_fp32_trained = self.qat()
-
 
         model_list = [original_dense_model, pruned_model, quantized_model]
 
         self.compare_models(model_list=model_list)
 
-
     def evaluate_model(self, model, test_loader, device, criterion=None):
-
         model.eval()
         model.to(device)
 
@@ -1064,7 +1081,6 @@ class sconce:
         running_corrects = 0
 
         for inputs, labels in test_loader:
-
             inputs = inputs.to(device)
             labels = labels.to(device)
 
@@ -1088,10 +1104,14 @@ class sconce:
     def print_model_size(self, mdl):
         torch.save(mdl.state_dict(), "tmp.pt")
         print("%.2f MB" % (os.path.getsize("tmp.pt") / 1e6))
-        os.remove('tmp.pt')
+        os.remove("tmp.pt")
+
     def qat(self):
-        print("\n \n==================== Quantization-Aware Training(QAT) ====================")
-        def get_all_layers(model, parent_name=''):
+        print(
+            "\n \n==================== Quantization-Aware Training(QAT) ===================="
+        )
+
+        def get_all_layers(model, parent_name=""):
             layers = []
             for name, module in model.named_children():
                 full_name = f"{parent_name}.{name}" if parent_name else name
@@ -1100,21 +1120,44 @@ class sconce:
                     layers.extend(get_all_layers(module, parent_name=full_name))
             return layers
 
-        fusing_layers = [torch.nn.modules.conv.Conv2d, torch.nn.modules.batchnorm.BatchNorm2d,
-                         torch.nn.modules.activation.ReLU, torch.nn.modules.linear.Linear,
-                         torch.nn.modules.batchnorm.BatchNorm1d]
-
+        fusing_layers = [
+            torch.nn.modules.conv.Conv2d,
+            torch.nn.modules.batchnorm.BatchNorm2d,
+            torch.nn.modules.activation.ReLU,
+            torch.nn.modules.linear.Linear,
+            torch.nn.modules.batchnorm.BatchNorm1d,
+        ]
+        import timm
+        def layer_to_type(layer):
+            if( isinstance(layer,timm.layers.norm_act.BatchNormAct2d)):
+                return torch.nn.modules.batchnorm.BatchNorm2d
+            else:
+                return type(layer)
         def detect_sequences(lst):
             detected_sequences = []
 
+
             i = 0
             while i < len(lst):
-                if i + 2 < len(lst) and [type(l) for l in lst[i:i + 3]] == [fusing_layers[0], fusing_layers[1],
-                                                                            fusing_layers[2]]:
-                    detected_sequences.append(np.take(name_list, [i for i in range(i, i + 3)]).tolist())
+                three = [layer_to_type(l) for l in lst[i: i + 3]]
+                two = [layer_to_type(l) for l in lst[i: i + 2]]
+
+                if i + 2 < len(lst) and  three == [
+                    fusing_layers[0],
+                    fusing_layers[1],
+                    fusing_layers[2],
+                ]:
+                    detected_sequences.append(
+                        np.take(name_list, [i for i in range(i, i + 3)]).tolist()
+                    )
                     i += 3
-                elif i + 1 < len(lst) and [type(l) for l in lst[i:i + 2]] == [fusing_layers[0], fusing_layers[1]]:
-                    detected_sequences.append(np.take(name_list, [i for i in range(i, i + 2)]).tolist())
+                elif i + 1 < len(lst) and two == [
+                    fusing_layers[0],
+                    fusing_layers[1],
+                ]:
+                    detected_sequences.append(
+                        np.take(name_list, [i for i in range(i, i + 2)]).tolist()
+                    )
                     i += 2
                 # if i + 1 < len(lst) and [ type(l) for l in lst[i:i+2]] == [fusing_layers[0], fusing_layers[2]]:
                 #     detected_sequences.append(np.take(name_list,[i for i in range(i,i+2)]).tolist())
@@ -1122,11 +1165,21 @@ class sconce:
                 # elif i + 1 < len(lst) and [ type(l) for l in lst[i:i+2]] == [fusing_layers[1], fusing_layers[2]]:
                 #     detected_sequences.append(np.take(name_list,[i for i in range(i,i+2)]).tolist())
                 #     i += 2
-                elif i + 1 < len(lst) and [type(l) for l in lst[i:i + 2]] == [fusing_layers[3], fusing_layers[2]]:
-                    detected_sequences.append(np.take(name_list, [i for i in range(i, i + 2)]).tolist())
+                elif i + 1 < len(lst) and two == [
+                    fusing_layers[3],
+                    fusing_layers[2],
+                ]:
+                    detected_sequences.append(
+                        np.take(name_list, [i for i in range(i, i + 2)]).tolist()
+                    )
                     i += 2
-                elif i + 1 < len(lst) and [type(l) for l in lst[i:i + 2]] == [fusing_layers[3], fusing_layers[4]]:
-                    detected_sequences.append(np.take(name_list, [i for i in range(i, i + 2)]).tolist())
+                elif i + 1 < len(lst) and two == [
+                    fusing_layers[3],
+                    fusing_layers[4],
+                ]:
+                    detected_sequences.append(
+                        np.take(name_list, [i for i in range(i, i + 2)]).tolist()
+                    )
                     i += 2
                 else:
                     i += 1
@@ -1135,11 +1188,10 @@ class sconce:
 
         original_model = copy.deepcopy(self.model)
 
-
         model_fp32 = copy.deepcopy(self.model)
-        model_fp32 = nn.Sequential(torch.quantization.QuantStub(),
-                                   model_fp32,
-                                   torch.quantization.DeQuantStub())
+        model_fp32 = nn.Sequential(
+            torch.quantization.QuantStub(), model_fp32, torch.quantization.DeQuantStub()
+        )
 
         model_fp32.eval()
 
@@ -1152,18 +1204,21 @@ class sconce:
 
         fusion_layers = detect_sequences(layer_list)
 
-        model_fp32.qconfig = torch.ao.quantization.get_default_qat_qconfig(self.qat_config)
+        model_fp32.qconfig = torch.ao.quantization.get_default_qat_qconfig(
+            self.qat_config
+        )
 
         # fuse the activations to preceding layers, where applicable
         # this needs to be done manually depending on the model architecture
-        model_fp32_fused = torch.ao.quantization.fuse_modules(model_fp32,
-                                                              fusion_layers)
+        model_fp32_fused = torch.ao.quantization.fuse_modules(model_fp32, fusion_layers)
 
         # Prepare the model for QAT. This inserts observers and fake_quants in
         # the model needs to be set to train for QAT logic to work
         # the model that will observe weight and activation tensors during calibration.
-        model_fp32_prepared = torch.ao.quantization.prepare_qat(model_fp32_fused.train())
-        self.model  = model_fp32_prepared
+        model_fp32_prepared = torch.ao.quantization.prepare_qat(
+            model_fp32_fused.train()
+        )
+        self.model = model_fp32_prepared
         self.train()
 
         # Convert the observed model to a quantized model. This does several things:
@@ -1171,10 +1226,8 @@ class sconce:
         # used with each activation tensor, fuses modules where appropriate,
         # and replaces key operators with quantized implementations.
         model_fp32_trained = copy.deepcopy(self.model)
-        model_fp32_trained.to('cpu')
+        model_fp32_trained.to("cpu")
         model_fp32_trained.eval()
-
-
 
         model_int8 = torch.ao.quantization.convert(model_fp32_trained, inplace=True)
         model_int8.eval()
@@ -1223,10 +1276,10 @@ class sconce:
         # print("INT8 JIT CPU Inference Latency: {:.2f} ms / sample".format(int8_jit_cpu_inference_latency * 1000))
 
         return model_int8, model_fp32_trained
+
     # def compare_models(self, original_dense_model, pruned_fine_tuned_model, quantization=False,accuracies=None):
 
-    def compare_models(self,model_list, model_tags=None):
-
+    def compare_models(self, model_list, model_tags=None):
         """
         Compares the performance of two PyTorch models: an original dense model and a pruned and fine-tuned model.
         Prints a table of metrics including latency, MACs, and model size for both models and their reduction ratios.
@@ -1255,12 +1308,12 @@ class sconce:
         input_shape = list(next(iter(self.dataloader["test"]))[0].size())
         input_shape[0] = 1
         dummy_input = torch.randn(input_shape).to("cpu")
-        file_name_list = ['original_model','pruned_model','quantized_model']
-        if not os.path.exists('weights/'):
-            os.makedirs('weights/')
-        for model, model_file_name in zip(model_list,file_name_list):
+        file_name_list = ["original_model", "pruned_model", "quantized_model"]
+        if not os.path.exists("weights/"):
+            os.makedirs("weights/")
+        for model, model_file_name in zip(model_list, file_name_list):
             # print(str(model))
-                # # Parse through snn model and send to cpu
+            # # Parse through snn model and send to cpu
             if self.snn:
                 if isinstance(model, nn.Sequential):
                     for layer_id in range(len(model)):
@@ -1272,51 +1325,59 @@ class sconce:
                         if isinstance((layer), snntorch._neurons.leaky.Leaky):
                             layer.mem = layer.mem.to("cpu")
 
-            table_data['accuracy'].append(round(self.evaluate(model= model, device='cpu'),3))
-            table_data['latency'].append(round(self.measure_latency(model=model.to("cpu"), dummy_input=dummy_input) * 1000, 1))
-            table_data['size'].append(self.get_model_size_weights(model))
+            table_data["accuracy"].append(
+                round(self.evaluate(model=model, device="cpu"), 3)
+            )
+            table_data["latency"].append(
+                round(
+                    self.measure_latency(model=model.to("cpu"), dummy_input=dummy_input)
+                    * 1000,
+                    1,
+                )
+            )
+            table_data["size"].append(self.get_model_size_weights(model))
 
             try:
                 model_params = self.get_num_parameters(model, count_nonzero_only=True)
                 if torch.is_tensor(model_params):
-                    model_params =model_params.item()
+                    model_params = model_params.item()
                 model_params = round(model_params / 1e6, 2)
-                if(model_params==0):
-                    table_data['params'].append("*")
+                if model_params == 0:
+                    table_data["params"].append("*")
                 else:
-                    table_data['params'].append(model_params)
+                    table_data["params"].append(model_params)
             except RuntimeError as e:
-                table_data['params'].append("*")
-            if (skip == 1):
-                table_data['mac'].append("*")
+                table_data["params"].append("*")
+            if skip == 1:
+                table_data["mac"].append("*")
                 pass
             else:
                 try:
-
                     mac = self.get_model_macs(model, dummy_input)
-                    table_data['mac'].append(round(mac/ 1e6))
+                    table_data["mac"].append(round(mac / 1e6))
                 except AttributeError as e:
-                    table_data['mac'].append("-")
+                    table_data["mac"].append("-")
 
             ########################################
 
-            folder_file_name = 'weights/'+model_file_name+"/"
+            folder_file_name = "weights/" + model_file_name + "/"
             if not os.path.exists(folder_file_name):
                 os.makedirs(folder_file_name)
-            folder_file_name+=model_file_name
-            torch.save(model,folder_file_name+'.pt')
-            torch.save(model.state_dict(), folder_file_name + '_weights.pt')
+            folder_file_name += model_file_name
+            torch.save(model, folder_file_name + ".pt")
+            torch.save(model.state_dict(), folder_file_name + "_weights.pt")
             traced_model = torch.jit.trace(model, dummy_input)
-            torch.jit.save(torch.jit.script(traced_model), folder_file_name+'.pt')
+            torch.jit.save(torch.jit.script(traced_model), folder_file_name + ".pt")
 
             ########################################
-            #Save model with pt,.pth and jit
-            skip-=1
-
+            # Save model with pt,.pth and jit
+            skip -= 1
 
         for key, value in table_data.items():
             table.add_row(value)
-        print("\n \n============================== Comparison Table ==============================")
+        print(
+            "\n \n============================== Comparison Table =============================="
+        )
         print(table)
 
         # # accuracies = accuracies
@@ -1330,8 +1391,6 @@ class sconce:
         # dummy_input = torch.randn(input_shape).to("cpu")
         # original_dense_model.to("cpu")
         # pruned_fine_tuned_model.to("cpu")
-
-
 
         # # Parse through snn model and send to cpu
         # if self.snn:
@@ -1420,7 +1479,6 @@ class sconce:
         # self.model = self.channel_prune(sorted_model, self.channel_pruning_ratio)
         self.sparsity_dict = [value for key, value in self.sparsity_dict.items()]
         self.model = self.channel_prune(sorted_model, self.sparsity_dict)
-
 
     def venum_CWP_Pruning(self, original_dense_model, sparsity_dict):
         """
@@ -1648,10 +1706,8 @@ class sconce:
         n_conv = len(all_convs)
         # note that for the ratios, it affects the previous conv output and next
         # conv input, i.e., conv0 - ratio0 - conv1 - ratio1-...
-        if (not isinstance(prune_ratio, list)):
-
+        if not isinstance(prune_ratio, list):
             prune_ratio = [prune_ratio] * (n_conv - 1)
-
 
         assert len(all_convs) == len(all_bns)
 
@@ -1660,9 +1716,8 @@ class sconce:
             prev_bn = all_bns[i_ratio]
             next_conv = all_convs[i_ratio + 1]
             original_channels = prev_conv.out_channels  # same as next_conv.in_channels
-            if(self.prune_mode!="venum_cwp"):
+            if self.prune_mode != "venum_cwp":
                 n_keep = self.get_num_channels_to_keep(original_channels, p_ratio)
-
 
                 # prune the output of the previous conv and bn
                 prev_conv.weight.set_(prev_conv.weight.detach()[:n_keep])
@@ -1676,13 +1731,15 @@ class sconce:
                 next_conv.weight.set_(next_conv.weight.detach()[:, :n_keep])
             else:
                 pick_list = self.venum_sorted_list[i_ratio]
-                salient_indices = pick_list[int(original_channels * p_ratio):]
+                salient_indices = pick_list[int(original_channels * p_ratio) :]
 
                 # prune the output of the previous conv and bn
                 prev_conv.weight.set_(prev_conv.weight.detach()[salient_indices])
                 prev_bn.weight.set_(prev_bn.weight.detach()[salient_indices])
                 prev_bn.bias.set_(prev_bn.bias.detach()[salient_indices])
-                prev_bn.running_mean.set_(prev_bn.running_mean.detach()[salient_indices])
+                prev_bn.running_mean.set_(
+                    prev_bn.running_mean.detach()[salient_indices]
+                )
                 prev_bn.running_var.set_(prev_bn.running_var.detach()[salient_indices])
 
                 # prune the input of the next conv (hint: just one line of code)
