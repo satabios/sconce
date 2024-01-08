@@ -6,9 +6,6 @@ Introduction
         :target: https://sconce.readthedocs.io/en/latest/?badge=latest
         :alt: Documentation Status
 
-.. image:: https://github.com/satabios/sconce/actions/workflows/pypi.yml/badge.svg?branch=main&event=push
-        :target: https://github.com/satabios/sconce/actions/workflows/pypi.yml
-        :alt: pypi Build Status
 
 Advancement of deep learning has been largely driven by the availability of large datasets and the computational power to train large models.
 The amount of complexity increases with each day passing and it is becoming increasingly difficult to train these models. Neverthless, infer 
