@@ -3,14 +3,14 @@ from setuptools import setup, find_packages
 import os
 import pypandoc
 
-try:
+# try:
    
-   long_description = pypandoc.convert_file('README.md', 'rst')
-except(IOError, ImportError):
-   long_description = open('README.md').read()
+#    long_description = pypandoc.convert_file('README.md', 'rst')
+# except(IOError, ImportError):
+#    long_description = open('README.md').read()
 
-# with open("README.rst", encoding="utf-8") as readme_file:
-#     readme = readme_file.read()
+with open("README.rst", encoding="utf-8") as readme_file:
+    readme = readme_file.read()
 
 # fmt: off
 __version__ = '0.93'
@@ -54,6 +54,7 @@ setup(
         "Operating System :: OS Independent",
     ],
     description="Model Compresion Made Easy",
+    long_description_content_type="text/x-rst",
     long_description=long_description,
     install_requires=install_requirements,
     license="MIT License",
