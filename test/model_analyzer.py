@@ -114,11 +114,19 @@ def detect_sequences(lst):
       i += 1
 
 
+
+
 def get_all_layers(model, parent_name=''):
   layers = []
   for name, module in model.named_children():
     full_name = f"{parent_name}.{name}" if parent_name else name
-    layers.append((reformat_layer_name(full_name), module))
+    test_name = "model."+full_name
+    try:
+
+      eval(test_name)
+      layers.append((full_name, module))
+    except:
+      layers.append((reformat_layer_name(full_name), module))
     if isinstance(module, nn.Module):
       layers.extend(get_all_layers(module, parent_name=full_name))
   return layers
@@ -177,8 +185,13 @@ def summary_string_fixed(model, input_size, model_name=None, batch_size=-1, devi
       nonlocal module_idx  # Add this line to access the outer module_idx variable
 
       m_key = all_layers[module_idx][0]
-
+      print(m_key)
       m_key = model_name +"."+ m_key
+
+      try:
+        print(type(eval(m_key)))
+      except:
+        print("Not able to parse:",m_key)
 
       summary[m_key] = OrderedDict()
       summary[m_key]["type"] = str(type(module)).split('.')[-1][:-2]
@@ -365,8 +378,9 @@ def prune_cwp(model):
 # #load the pretrained model
 
 # model = timm.create_model('mobilenetv2_100', num_classes=10)
-# model = torch.hub.load('pytorch/vision', 'resnet18', pretrained=True)
-model = torch.hub.load('pytorch/vision:v0.10.0', 'mobilenet_v2', pretrained=True)
+model = torch.hub.load('pytorch/vision', 'resnet18', pretrained=True)
+# model = torch.hub.load('pytorch/vision:v0.10.0', 'densenet121', pretrained=False)
+# model = torch.hub.load('pytorch/vision:v0.10.0', 'mobilenet_v2', pretrained=True)
 
 # model = VGG()
 
@@ -384,9 +398,44 @@ for key in model_summary.keys():
 #         name_type_shape.append([key, data['type'], 0 ])
 name_type_shape = np.asarray(name_type_shape)
 
+def name_fixer(name_list):
+  return_list = []
+  for idx in range(len(name_list)):
+      string = name_list[idx]
+      matches = re.finditer(r'\.\[(\d+)\]', string)
+      pop_list = [m.start(0) for m in matches]
+      pop_list.sort(reverse=True)
+      if(len(pop_list)>0):
+        string = list(string)
+        for id in pop_list:
+          string.pop(id)
+        string = ''.join(string)
+
+      return_list.append(string)
+  return  return_list
+
+
+
+
+
 name_list = name_type_shape[:, 0]
+
+r_name_list = np.asarray(name_list)
+random_picks = np.random.randint(0, len(r_name_list),10)
+test_name_list = r_name_list[random_picks]
+eval_hit = False
+for layer in test_name_list:
+  try:
+    eval(layer)
+
+  except:
+    eval_hit = True
+    break
+if(eval_hit):
+  fixed_name_list = name_fixer(r_name_list)
+  name_type_shape[:, 0] = fixed_name_list
+
 layer_types = name_type_shape[:, 1]
-layer_types[layer_types == 'BatchNormAct2d'] = 'BatchNorm2d'
 layer_shapes = name_type_shape[:, 2]
 mapped_layers = {'model_layer': [], 'Conv2d_BatchNorm2d_ReLU': [], 'Conv2d_BatchNorm2d': [], 'Linear_ReLU': [],
                  'Linear_BatchNorm1d': []}
@@ -429,11 +478,9 @@ def string_fixer(name_list):
 #   r_name_list.append(name)
 
 
-r_name_list = name_type_shape[:,0]
-# r_name_list = string_fixer(r_name_list)
-# possible_indices_ranges = cwp_possible_layers(string_fixer(r_name_list))
+name_list = name_type_shape[:,0]
 
-possible_indices_ranges = cwp_possible_layers(r_name_list)
+possible_indices_ranges = cwp_possible_layers(name_list)
 possible_indices_ranges = [lst for lst in possible_indices_ranges if len(lst) > 1]
 possible_indices_ranges = possible_indices_ranges[:-1]
 
@@ -450,7 +497,7 @@ possible_indices_ranges = possible_indices_ranges[:-1]
 # for p1, p2, p3 in  zip(model1.named_parameters(), model2.named_parameters(), model3.named_parameters()):
 #     print(p1[0],p2[0],p3[0])
 
-summary(model,(3,32,32))
+# summary(model,(3,32,32))
 
 pruned_model, original_model = prune_cwp(model)
 
