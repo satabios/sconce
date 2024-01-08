@@ -137,11 +137,19 @@ def reformat_layer_name(str_data):
     iters_a = re.finditer(r'[a-zA-Z]\.\[', final_string)
     indices = [m.start(0) + 1 for m in iters_a]
     iters = re.finditer(r'\]\.\[', final_string)
-    indices.extend([m.start(0) for m in iters])
+    indices.extend([m.start(0)+1 for m in iters])
 
+    # Remove elements from the original list using pop()
+    # indices.sort(reverse=True)
     final_string = list(final_string)
-    for ind in indices:
-      final_string.pop(ind)
+
+
+    final_string = [final_string[i] for i in range(len(final_string)) if i not in indices]
+
+    # for index in indices:
+    #   if 0 <= index < len(final_string):
+    #     final_string.pop(index)
+
     str_data = ''.join(final_string)
 
   except:
@@ -167,12 +175,11 @@ def summary_string_fixed(model, input_size, model_name=None, batch_size=-1, devi
   def register_hook(module, layer_name, module_idx):
     def hook(module, input, output):
       nonlocal module_idx  # Add this line to access the outer module_idx variable
-      #             class_name = str(module.__class__).split(".")[-1].split("'")[0]
 
-      m_key = reformat_layer_name(all_layers[module_idx][0])
+      m_key = all_layers[module_idx][0]
 
       m_key = model_name +"."+ m_key
-      print(m_key)
+
       summary[m_key] = OrderedDict()
       summary[m_key]["type"] = str(type(module)).split('.')[-1][:-2]
       summary[m_key]["input_shape"] = list(input[0].size())
@@ -331,22 +338,22 @@ def prune_cwp(model):
       layer.running_var.set_(layer.running_var.detach()[importance_list_indices])
 
     for prev_layer, next_layers in iter_layers:
-      #             print("prev:",prev_layer.weight.shape)
-      #             print("next:",[ i.weight.shape for i in next_layers])
 
-      if (str(type(prev_layer)).split('.')[-1][:-2] != 'Conv2d'):  # BatchNorm2d
+      if (str(type(prev_layer)).split('.')[-1][:-2] == 'BatchNorm2d'):  # BatchNorm2d
         prune_bn(prev_layer, importance_list_indices)
       else:
         prev_layer.weight.set_(prev_conv.weight.detach()[importance_list_indices, :])
 
       if (len(next_layers) != 0):
         for next_layer in next_layers:
-          if (str(type(next_layer)).split('.')[-1][:-2] != 'Conv2d'):  # BatchNorm2d
+          if (str(type(next_layer)).split('.')[-1][:-2] == 'BatchNorm2d'):  # BatchNorm2d
             prune_bn(next_layer, importance_list_indices)
           else:
             if (next_layer.weight.shape[1] == 1):
 
               next_layer.weight.set_(next_layer.weight.detach()[importance_list_indices, :])
+              next_layer.groups = len(importance_list_indices)
+
             else:
               next_layer.weight.set_(next_layer.weight.detach()[:, importance_list_indices])
 
@@ -357,7 +364,10 @@ def prune_cwp(model):
 
 # #load the pretrained model
 
-model = timm.create_model('mobilenetv2_100', num_classes=10)
+# model = timm.create_model('mobilenetv2_100', num_classes=10)
+# model = torch.hub.load('pytorch/vision', 'resnet18', pretrained=True)
+model = torch.hub.load('pytorch/vision:v0.10.0', 'mobilenet_v2', pretrained=True)
+
 # model = VGG()
 
 
@@ -400,9 +410,7 @@ pruning_layer_of_interest, qat_layer_of_interest = [], []
 for keys in keys_to_lookout:
   data = mapped_layers[keys]
   if (len(data) != 0):
-    pruning_layer_of_interest.append(data)  # If there are three exclude the 3rd variable (ReLU)
     qat_layer_of_interest.append(data)
-pruning_layer_of_interest = np.asarray(pruning_layer_of_interest)
 qat_layer_of_interest = np.asarray(qat_layer_of_interest)
 
 # GMP
@@ -410,8 +418,22 @@ qat_layer_of_interest = np.asarray(qat_layer_of_interest)
 #         Check for all with weights
 # Wanda
 
+def string_fixer(name_list):
 
-possible_indices_ranges = cwp_possible_layers(name_type_shape[:,0])
+  for ind in range(len(name_list)):
+    modified_string = re.sub(r'\.(\[)', r'\1', name_list[ind] )
+    name_list[ind] = modified_string
+
+# r_name_list = []
+# for name, module in model.named_parameters():
+#   r_name_list.append(name)
+
+
+r_name_list = name_type_shape[:,0]
+# r_name_list = string_fixer(r_name_list)
+# possible_indices_ranges = cwp_possible_layers(string_fixer(r_name_list))
+
+possible_indices_ranges = cwp_possible_layers(r_name_list)
 possible_indices_ranges = [lst for lst in possible_indices_ranges if len(lst) > 1]
 possible_indices_ranges = possible_indices_ranges[:-1]
 
@@ -421,8 +443,16 @@ possible_indices_ranges = possible_indices_ranges[:-1]
 
 
 
-pruned_model, original_model = prune_cwp(model)
 
+# model = VGG()
+# model = torch.hub.load('pytorch/vision', 'resnet18', pretrained=True)
+# model = torch.hub.load('pytorch/vision:v0.10.0', 'mobilenet_v2', pretrained=True)
+# for p1, p2, p3 in  zip(model1.named_parameters(), model2.named_parameters(), model3.named_parameters()):
+#     print(p1[0],p2[0],p3[0])
+
+summary(model,(3,32,32))
+
+pruned_model, original_model = prune_cwp(model)
 
 summary(pruned_model,(3,32,32))
 
