@@ -400,11 +400,11 @@ def prune_cwp(model):
 # #load the pretrained model
 
 # model = timm.create_model('mobilenetv2_100', num_classes=10)
-model = torch.hub.load('pytorch/vision', 'resnet18', pretrained=True)
+# model = torch.hub.load('pytorch/vision', 'resnet18', pretrained=True)
 # model = torch.hub.load('pytorch/vision:v0.10.0', 'densenet121', pretrained=False)
 # model = torch.hub.load('pytorch/vision:v0.10.0', 'mobilenet_v2', pretrained=True)
 # model = torch.hub.load('pytorch/vision:v0.10.0', 'mobilenet_v3_small', pretrained=True)
-# super_net = torch.hub.load('mit-han-lab/once-for-all', super_net_name, pretrained=True).eval()
+model = torch.hub.load('mit-han-lab/once-for-all', 'ofa_supernet_mbv3_w10', pretrained=True)
 
 # model = VGG()
 

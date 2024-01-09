@@ -60,6 +60,5 @@ Workflow
 
 
 
-.. image:: https://github.com/satabios/sconce/blob/main/docs/source/images/sconce-workflow-tier1.jpeg?raw=true
+.. image:: https://github.com/satabios/sconce/blob/main/docs/source/images/sconce-workflow.jpeg?raw=true
         :align: center
-        
