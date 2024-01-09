@@ -73,5 +73,19 @@ Pruning Techniques
 Quantization Techniques
 ########################
 
+Currently, the package only suports Eager Mode Quantization, FX Graph Mode Quantization I look forward to integerate in the near future.
 
-Quantization Techniques
+There are three types of quantization supported:
+
+1. Dynamic Quantization:
+   - Weights are quantized with activations read/stored in floating point and quantized for compute.
+
+2. Static Quantization:
+   - Weights are quantized.
+   - Activations are quantized.
+   - Calibration is required post-training.
+
+3. Static Quantization Aware Training:
+   - Weights are quantized.
+   - Activations are quantized.
+   - Quantization numerics are modeled during training.

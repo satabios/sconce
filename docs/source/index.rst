@@ -5,14 +5,13 @@ sconce Documentation
 
 .. toctree::
    :maxdepth: 1
-   
+
    usage
+   Workflow
+   Auto-Sensitivity-Picker
    Model Compression Techniques
    tutorials/index
-   Auto-Sensitivity-Picker
-   Workflow
    Features
-   timeline
    reference
- 
-   
+   timeline
+
