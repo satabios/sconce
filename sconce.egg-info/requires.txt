@@ -1,6 +1,5 @@
 alabaster==0.7.13
 anyio==4.0.0
-thop
 prettytable
 argon2-cffi==23.1.0
 argon2-cffi-bindings==21.2.0
