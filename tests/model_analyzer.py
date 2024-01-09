@@ -366,28 +366,32 @@ def prune_cwp(model):
       layer.running_var.set_(layer.running_var.detach()[importance_list_indices])
 
     for prev_layer, next_layers in iter_layers:
-      print("Prev:",prev_layer.weight.shape)
-      print("Next:", [ next.weight.shape for next in next_layers])
+      # print("Prev:",prev_layer.weight.shape)
+      # print("Next:", [ next.weight.shape for next in next_layers])
 
-      # if (str(type(prev_layer)).split('.')[-1][:-2] == 'BatchNorm2d'):  # BatchNorm2d
-      #   prune_bn(prev_layer, importance_list_indices)
-      # else:
-      #   prev_layer.weight.set_(prev_conv.weight.detach()[importance_list_indices, :])
-      #
-      # if (len(next_layers) != 0):
-      #   for next_layer in next_layers:
-      #     if (str(type(next_layer)).split('.')[-1][:-2] == 'BatchNorm2d'):  # BatchNorm2d
-      #       prune_bn(next_layer, importance_list_indices)
-      #     else:
-      #       if (next_layer.weight.shape[1] == 1):
-      #
-      #         next_layer.weight.set_(next_layer.weight.detach()[importance_list_indices, :])
-      #         next_layer.groups = len(importance_list_indices)
-      #
-      #       else:
-      #         # try:
-      #         next_layer.weight.set_(next_layer.weight.detach()[:, importance_list_indices])
-      #         next_layer.groups = len(importance_list_indices)
+      if (str(type(prev_layer)).split('.')[-1][:-2] == 'BatchNorm2d'):  # BatchNorm2d
+        prune_bn(prev_layer, importance_list_indices)
+      else:
+
+        prev_layer.weight.set_(prev_conv.weight.detach()[importance_list_indices, :])
+        prev_layer.groups = len(importance_list_indices)
+
+
+
+      if (len(next_layers) != 0):
+        for next_layer in next_layers:
+          if (str(type(next_layer)).split('.')[-1][:-2] == 'BatchNorm2d'):  # BatchNorm2d
+            prune_bn(next_layer, importance_list_indices)
+          else:
+            if (next_layer.weight.shape[1] == 1):
+
+              next_layer.weight.set_(next_layer.weight.detach()[importance_list_indices, :])
+              next_layer.groups = len(importance_list_indices)
+
+            else:
+              # try:
+              next_layer.weight.set_(next_layer.weight.detach()[:, importance_list_indices])
+              next_layer.groups = len(importance_list_indices)
               # except:
               #   next_layer.weight.set_(next_layer.weight.detach()[ importance_list_indices,:])
               #   next_layer.groups = len(importance_list_indices)
@@ -400,11 +404,11 @@ def prune_cwp(model):
 # #load the pretrained model
 
 # model = timm.create_model('mobilenetv2_100', num_classes=10)
-model = torch.hub.load('pytorch/vision', 'resnet18', pretrained=True)
+# model = torch.hub.load('pytorch/vision', 'resnet18', pretrained=True)
 # model = torch.hub.load('pytorch/vision:v0.10.0', 'densenet121', pretrained=False)
 # model = torch.hub.load('pytorch/vision:v0.10.0', 'mobilenet_v2', pretrained=True)
 # model = torch.hub.load('pytorch/vision:v0.10.0', 'mobilenet_v3_small', pretrained=True)
-# model = torch.hub.load('mit-han-lab/once-for-all', 'ofa_supernet_mbv3_w10', pretrained=True)
+model = torch.hub.load('mit-han-lab/once-for-all', 'ofa_supernet_mbv3_w10', pretrained=True)
 
 # model = VGG()
 
@@ -503,10 +507,10 @@ possible_indices_ranges = possible_indices_ranges[:-1]
 # for p1, p2, p3 in  zip(model1.named_parameters(), model2.named_parameters(), model3.named_parameters()):
 #     print(p1[0],p2[0],p3[0])
 
-# summary(model,(3,32,32))
-
 pruned_model, original_model = prune_cwp(model)
 
-# summary(pruned_model,(3,32,32))
+print("Pruned Model:")
+
+summary(pruned_model,(3,32,32))
 
 # summary_string_fixed(pruned_model, (3, 64, 64),model_name ='pruned_model')
