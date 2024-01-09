@@ -8,9 +8,9 @@ sconce Documentation
 
    usage
    Workflow
-   Auto-Sensitivity-Picker
    Model Compression Techniques
    tutorials/index
+   Auto-Sensitivity-Picker
    Features
    reference
    timeline
