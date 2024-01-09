@@ -73,7 +73,7 @@ Pruning Techniques
 Quantization Techniques
 ########################
 
-Currently, the package only suports Eager Mode Quantization, FX Graph Mode Quantization I look forward to integerate in the near future.
+Currently, the package only suports Eager Mode Quantization. I look forward to integerate FX Graph Mode Quantization in the near future.
 
 There are three types of quantization supported:
 
