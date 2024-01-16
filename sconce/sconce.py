@@ -16,7 +16,7 @@ import time
 from collections import OrderedDict, defaultdict
 from typing import Union, List
 
-from thop import profile
+
 from prettytable import PrettyTable
 import numpy as np
 import torch

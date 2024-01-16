@@ -195,16 +195,7 @@ Train and Validated the Model on the given dataset
 
 .. parsed-literal::
 
-    
-
-.. parsed-literal::
-
     Epoch:1 Train Loss: 0.00000 Validation Accuracy: 92.90581
-
-
-.. parsed-literal::
-
-    
 
 
 
@@ -230,17 +221,9 @@ mode[sconces.prune_mode] above)
 
 .. parsed-literal::
 
-    
-
-.. parsed-literal::
-
     Original Model Validation Accuracy: 92.90581162324649 %
     Granular-Magnitude Pruning
 
-
-.. parsed-literal::
-
-    
 
 .. parsed-literal::
 
@@ -249,20 +232,10 @@ mode[sconces.prune_mode] above)
     Pruning Time Consumed (mins): 6.053447723388672e-05
     Total Pruning Time Consumed (mins): 2.669320074717204
 
-
-.. parsed-literal::
-
-    
-
 .. parsed-literal::
 
     
     Pruned Model has size=9.77 MiB(non-zeros) = 27.76% of Original model size
-
-
-.. parsed-literal::
-
-    
 
 .. parsed-literal::
 
@@ -275,25 +248,12 @@ mode[sconces.prune_mode] above)
 
 .. parsed-literal::
 
-    
-
-.. parsed-literal::
-
     Epoch:1 Train Loss: 0.00000 Validation Accuracy: 91.88377
 
 
 .. parsed-literal::
 
-    
-
-.. parsed-literal::
-
     Epoch:2 Train Loss: 0.00000 Validation Accuracy: 91.81363
-
-
-.. parsed-literal::
-
-    
 
 .. parsed-literal::
 
@@ -302,16 +262,8 @@ mode[sconces.prune_mode] above)
 
 .. parsed-literal::
 
-    
-
-.. parsed-literal::
-
     Epoch:4 Train Loss: 0.00000 Validation Accuracy: 91.87375
 
-
-.. parsed-literal::
-
-    
 
 .. parsed-literal::
 
@@ -348,16 +300,8 @@ mode[sconces.prune_mode] above)
 
 .. parsed-literal::
 
-    
-
-.. parsed-literal::
-
     Epoch:2 Train Loss: 0.00000 Validation Accuracy: 92.05411
 
-
-.. parsed-literal::
-
-    
 
 .. parsed-literal::
 
@@ -366,16 +310,8 @@ mode[sconces.prune_mode] above)
 
 .. parsed-literal::
 
-    
-
-.. parsed-literal::
-
     Epoch:4 Train Loss: 0.00000 Validation Accuracy: 92.02405
 
-
-.. parsed-literal::
-
-    
 
 .. parsed-literal::
 
@@ -436,18 +372,10 @@ mode[sconces.prune_mode] above)
 
 .. parsed-literal::
 
-    
-
-.. parsed-literal::
-
     Original Model Validation Accuracy: 93.13627254509018 %
     
      Channel-Wise Pruning
 
-
-.. parsed-literal::
-
-    
 
 .. parsed-literal::
 
@@ -463,16 +391,8 @@ mode[sconces.prune_mode] above)
 .. parsed-literal::
 
     
-
-.. parsed-literal::
-
-    
     Pruned Model has size=27.21 MiB(non-zeros) = 77.29% of Original model size
 
-
-.. parsed-literal::
-
-    
 
 .. parsed-literal::
 
@@ -485,16 +405,8 @@ mode[sconces.prune_mode] above)
 
 .. parsed-literal::
 
-    
-
-.. parsed-literal::
-
     Epoch:1 Train Loss: 0.00000 Validation Accuracy: 91.24248
 
-
-.. parsed-literal::
-
-    
 
 .. parsed-literal::
 
@@ -503,25 +415,13 @@ mode[sconces.prune_mode] above)
 
 .. parsed-literal::
 
-    
-
-.. parsed-literal::
-
     Epoch:3 Train Loss: 0.00000 Validation Accuracy: 91.46293
 
 
 .. parsed-literal::
 
-    
-
-.. parsed-literal::
-
     Epoch:4 Train Loss: 0.00000 Validation Accuracy: 91.46293
 
-
-.. parsed-literal::
-
-    
 
 .. parsed-literal::
 
@@ -545,16 +445,8 @@ mode[sconces.prune_mode] above)
 
 .. parsed-literal::
 
-    
-
-.. parsed-literal::
-
     Epoch:1 Train Loss: 0.00000 Validation Accuracy: 91.63327
 
-
-.. parsed-literal::
-
-    
 
 .. parsed-literal::
 
@@ -563,25 +455,13 @@ mode[sconces.prune_mode] above)
 
 .. parsed-literal::
 
-    
-
-.. parsed-literal::
-
     Epoch:3 Train Loss: 0.00000 Validation Accuracy: 91.53307
 
 
 .. parsed-literal::
 
-    
-
-.. parsed-literal::
-
     Epoch:4 Train Loss: 0.00000 Validation Accuracy: 91.55311
 
-
-.. parsed-literal::
-
-    
 
 .. parsed-literal::
 
@@ -612,54 +492,6 @@ mode[sconces.prune_mode] above)
     +---------------------+----------------+--------------+-----------------+
 
 
-.. raw:: html
-
-   <h1>
-
-.. raw:: html
-
-   <center>
-
-Benchmarking on RTX4090
-
-.. raw:: html
-
-   </center>
-
-.. raw:: html
-
-   </h1>
-
--  **Dense Model** has a size of *35.20MiB* and accuracy of *92.89%*.
--  **Post Pruning(GMP) Pruned Model** size *21.94MiB* with accuracy of
-   *92.86%*.
--  **Post Pruning(CMP) Pruned Model** size *20.76MiB* with accuracy of
-   *90.59%*.
-
-+-------------+------+-------+-------+---------------+---------------+
-| Metric      | Orig | CWP   | GMP   | CWP Reduction | GMP Reduction |
-|             | inal | P     | P     | Ratio         | Ratio         |
-|             |      | runed | runed |               |               |
-+=============+======+=======+=======+===============+===============+
-| **Latency   | 5.90 | 4.20  | 5.70  | 1.4           | 1             |
-| (ms) [↓]**  |      |       |       |               |               |
-+-------------+------+-------+-------+---------------+---------------+
-| **MACs (M)  | 606  | 406   | 606   | 1.5           | 1             |
-| [↓]**       |      |       |       |               |               |
-+-------------+------+-------+-------+---------------+---------------+
-| **Param     | 9.23 | 5.36  | 4.42  | 1.7           | 2.1           |
-| (M)         |      |       |       |               |               |
-| [Non-Zeros] |      |       |       |               |               |
-| [↓]**       |      |       |       |               |               |
-+-------------+------+-------+-------+---------------+---------------+
-| *           | 93   | 9     | 9     | -2.745        | -0.19         |
-| *Accuracies | .136 | 0.391 | 2.946 |               |               |
-| (%) [↑]**   |      |       |       |               |               |
-+-------------+------+-------+-------+---------------+---------------+
-
-The catch is that GMP stores the zeros in the weight, which contributes
-to the higher values of model size.
-
 **Venum Pruning a better version of Wanda Pruning**
 
 .. code:: ipython3
@@ -683,9 +515,6 @@ to the higher values of model size.
     
     Original Dense Model Size Model=35.20 MiB
 
-
-.. parsed-literal::
-
                                                          
 
 .. parsed-literal::
@@ -695,9 +524,6 @@ to the higher values of model size.
      Venum Pruning
 
 
-.. parsed-literal::
-
-                                                        
 
 .. parsed-literal::
 
@@ -707,8 +533,6 @@ to the higher values of model size.
     Total Pruning Time Consumed (mins): 2.8907041509946185
 
 
-.. parsed-literal::
-
                                                          
 
 .. parsed-literal::
@@ -717,12 +541,9 @@ to the higher values of model size.
     Pruned Model has size=9.94 MiB(non-zeros) = 28.22% of Original model size
 
 
-.. parsed-literal::
-
                                                          
 
 .. parsed-literal::
-
     
      ................. Comparison Table  .................
                     Original        Pruned          Reduction Ratio
@@ -868,17 +689,9 @@ Spiking Neural Network Compression
 
 .. parsed-literal::
 
-    
-
-.. parsed-literal::
-
     Original Model Validation Accuracy: 97.11538461538461 %
     Granular-Magnitude Pruning
 
-
-.. parsed-literal::
-
-    
 
 .. parsed-literal::
 
@@ -888,25 +701,13 @@ Spiking Neural Network Compression
 .. parsed-literal::
 
     
-
-.. parsed-literal::
-
-    
     Pruned Model has size=0.05 MiB(non-zeros) = 43.13% of Original model size
 
 
 .. parsed-literal::
 
-    
-
-.. parsed-literal::
-
     Epoch:1 Train Loss: 0.00000 Validation Accuracy: 95.97356
 
-
-.. parsed-literal::
-
-    
 
 .. parsed-literal::
 
@@ -927,4 +728,3 @@ Spiking Neural Network Compression
       warnings.warn('No handlers found: "{}". Skipped.'.format(
     /usr/local/lib/python3.10/dist-packages/torchprofile/profile.py:22: UserWarning: No handlers found: "prim::pythonop". Skipped.
       warnings.warn('No handlers found: "{}". Skipped.'.format(
-
