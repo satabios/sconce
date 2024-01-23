@@ -57,11 +57,7 @@ class VGG(nn.Module):
         return x
 
 
-# load the pretrained model
 
-model = VGG().cuda()
-checkpoint = torch.load("/home/sathya/Downloads/vgg.cifar.pretrained.pth")
-model.load_state_dict(checkpoint["state_dict"])
 
 
 image_size = 32
@@ -97,7 +93,10 @@ for split in ["train", "test"]:
 
 from sconce import sconce
 
-# print("\n=======================================================================")
+# from torchvision.models import resnet18
+# resnet = resnet18(pretrained=False)#.eval()
+# resnet.load_state_dict(torch.load("/home/sathya/Desktop/test-bed/resnet-cifar10.pth"))
+# # print("\n=======================================================================")
 # print("=======================================================================\n")
 
 # sconces = sconce()
@@ -141,27 +140,16 @@ from sconce import sconce
 # print("\n=======================================================================")
 # print("=======================================================================\n")
 #
-sconces = sconce()
-sconces.model = copy.deepcopy(model)
-sconces.criterion = nn.CrossEntropyLoss()  # Loss
-sconces.optimizer = optim.Adam(sconces.model.parameters(), lr=1e-4)
-sconces.scheduler = optim.lr_scheduler.CosineAnnealingLR(sconces.optimizer, T_max=200)
-sconces.dataloader = dataloader
-sconces.epochs = 1  # Number of time we iterate over the data
-sconces.num_finetune_epochs = 2
-sconces.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-sconces.experiment_name = "vgg-cwp"
-sconces.prune_mode = "CWP"  # Supports Automated Pruning Ratio Detection
-# Compress the model
-sconces.compress()
+# load the pretrained model
+#
+# model = VGG().cuda()
+# checkpoint = torch.load("./vgg.cifar.pretrained.pth")
+# model.load_state_dict(checkpoint["state_dict"])
 
 
 #
-# print("\n=======================================================================")
-# # print("=======================================================================\n")
-# #
 # sconces = sconce()
-# sconces.model = copy.deepcopy(model)
+# sconces.model = copy.deepcopy(resnet)
 # sconces.criterion = nn.CrossEntropyLoss()  # Loss
 # sconces.optimizer = optim.Adam(sconces.model.parameters(), lr=1e-4)
 # sconces.scheduler = optim.lr_scheduler.CosineAnnealingLR(sconces.optimizer, T_max=200)
@@ -169,7 +157,30 @@ sconces.compress()
 # sconces.epochs = 1  # Number of time we iterate over the data
 # sconces.num_finetune_epochs = 2
 # sconces.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-# sconces.experiment_name = "vgg-gmp"
-# sconces.prune_mode = "GMP"  # Supports Automated Pruning Ratio Detection
+# sconces.experiment_name = "resnet-cwp"
+# sconces.prune_mode = "CWP"  # Supports Automated Pruning Ratio Detection
 # # Compress the model
 # sconces.compress()
+
+
+#
+# print("\n=======================================================================")
+# # print("=======================================================================\n")
+#
+mobilenet_v2 = torch.hub.load('pytorch/vision:v0.10.0', 'mobilenet_v2', pretrained=True).to('cuda')
+mobilenet_v2.load_state_dict(torch.load("/home/sathya/Desktop/test-bed/mobilenet_v2-cifar10.pth"))
+# mobilenet_v3 = torch.hub.load('pytorch/vision:v0.10.0', 'mobilenet_v3_small', pretrained=True)
+
+sconces = sconce()
+sconces.model = copy.deepcopy(mobilenet_v2)
+sconces.criterion = nn.CrossEntropyLoss()  # Loss
+sconces.optimizer = optim.Adam(sconces.model.parameters(), lr=1e-4)
+sconces.scheduler = optim.lr_scheduler.CosineAnnealingLR(sconces.optimizer, T_max=200)
+sconces.dataloader = dataloader
+sconces.epochs = 5  # Number of time we iterate over the data
+sconces.num_finetune_epochs = 5
+sconces.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+sconces.experiment_name = "vgg-gmp"
+sconces.prune_mode = "GMP"  # Supports Automated Pruning Ratio Detection
+# Compress the model
+sconces.compress()

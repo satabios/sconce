@@ -1,6 +1,6 @@
 .eggs/
 test/data/
-test/
+tests/
 test/*.pth
 tutorials/.ipynb_checkpoints/*
 .idea/
