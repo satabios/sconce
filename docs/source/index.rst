@@ -6,6 +6,7 @@ sconce Documentation
 .. toctree::
    :maxdepth: 1
 
+   readme
    usage
    Workflow
    Model Compression Techniques
