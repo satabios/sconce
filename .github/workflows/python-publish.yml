@@ -6,7 +6,7 @@
 # separate terms of service, privacy policy, and support
 # documentation.
 
-name: pypi Python Package Publish
+name: Python Package Publish
 
 on:
   release:
