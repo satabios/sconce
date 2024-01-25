@@ -7,32 +7,34 @@ Introduction
         :alt: Documentation Status
 
 
-Advancement of deep learning has been largely driven by the availability of large datasets and the computational power to train large models.
-The amount of complexity increases with each day passing and it is becoming increasingly difficult to train these models. Neverthless, infer 
-the models efficiently on hardware.
 
-However, the brain is able to learn from a few examples and is extremely energy efficient(Psst.. that too sparsely). Humans tend solve problems from their lens of perspective,
-and thus we comprehend the universe through mathematical models. One such ideation is the concept of gradient descent or other optimization techniques
-that we use to train our models. However, the brain does not use gradient descent to learn. It is still a mystery how the brain learns and how it is able to
-solve complex problems with such ease.
+The advancement of deep learning has been primarily driven by the availability of large datasets and the computational power to train large models. The complexity increases with each day, and it is becoming increasingly difficult to train/deploy these models.
 
+However, the brain can learn from a few examples and is incredibly energy efficient (Psst.. that too sparsely).
 
-To bridge this gap, this package aids to perform a series of aids:
+Humans tend to solve problems from their lens of perspective, and thus, we comprehend the universe through mathematical models. One such postulation is the concept of gradient descent or other optimization techniques we use to train our models. However, the brain does not use gradient descent to learn. How the brain learns and can solve complex problems is still a mystery.
 
-* Make **Training**, **Testing**, **Inference**, **Model Profiling**, etc.. pipelined. Thus easing your way through research and development.
-* **Compress** the model through **Pruning**, **Optimal Brain Compression**, etc... This allows lesser usage of CPM(Computation, Power, Memory) and thus making it more efficient.
-* **Quantize** the model to make it more efficient for hardware Deployment/Inferences.
-* Leverage **Sparsity** in the model to make it more efficient for hardware Deployment/Inferences. 
-* **Deployments** of the model on hardware.
-* Support `Spiking Neural Networks(snnTorch) <https://github.com/jeshraghian/snntorch>`_ in this compression pipeline [Future integerations are expected].
-* **Auto-Sensitivity Scan**: Each model would require a set of ingredients of its own to make it efficient. sconce enables an auto-search algorithm that picks the best possible solution from a corpus amount of possible techniques in the fastest manner possible with the least amount of human intervention.
+Until we hit the holy grail, we must make wise methods to achieve efficiency.
 
+Hence, this package aims to bridge this gap by compressing a model end-to-end and making it hardware-friendly with Minimal Human Intervention.
 
-
-.. image:: https://github.com/satabios/sconce/blob/main/docs/source/images/sconce-outline.jpeg?raw=true
+.. image:: https://github.com/satabios/sconce/blob/main/docs/source/images/sconce-features.jpg?raw=true
         :align: center
         :width: 1510px
 
+* **AutoML at its Heart:** Humans are lazy, at least I am; hence, we want to get things done with Minimal Human Intervention. Sconce was built on this ideology that anyone with nominal knowledge of DL should be able to use this package. Drop your model into the package and call `sconce.compress`, and let it do the magic for you. 
+* Compress the model through **Pruning**, **Quantization**, etc. 
+* Bring your own dataset and let the **Neural Architecture Search (NAS)** find the best model that fits your deployment constraints. 
+* Leverage **Sparsity** in the model and deploy/infer using **Sparse Engines**. 
+* Accelerate Inferencing and Reduce Memory Footprint. 
+
+**The goal is straightforward: minimize the usage of CPM (Computation, Power, Memory) and thus achieve high throughputs and latency gains.**
+
+In addition, this package supports Spiking Neural Networks(snnTorch) in this compression pipeline.
+
+.. image:: https://github.com/satabios/sconce/blob/main/docs/source/images/sconce-overview.jpg?raw=true
+        :align: center
+        :width: 1510px
 
 
 If you like this project, please consider starring ⭐ this repo as it is the easiest and best way to support it.
@@ -40,6 +42,15 @@ If you like this project, please consider starring ⭐ this repo as it is the ea
 Let us know if you are using sconce in any interesting work, research or blogs, as we would love to hear more about it! 
 If you have issues, comments, or are looking for advice on training spiking neural networks, you can open an issue, a discussion, 
 or chat in our `discord <https://discord.gg/GKwXMrZr>`_ channel.
+
+A Brief workflow is shown below:
+
+.. image:: https://github.com/satabios/sconce/blob/main/docs/source/images/sconce-outline.jpeg?raw=true
+        :align: center
+        :width: 1510px
+
+
+
 
 sconce Structure
 ^^^^^^^^^^^^^^^^^^^^^^^^
