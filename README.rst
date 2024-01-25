@@ -14,7 +14,7 @@ However, the brain can learn from a few examples and is incredibly energy effici
 
 Humans tend to solve problems from their lens of perspective, and thus, we comprehend the universe through mathematical models. One such postulation is the concept of gradient descent or other optimization techniques we use to train our models. However, the brain does not use gradient descent to learn. How the brain learns and can solve complex problems is still a mystery.
 
-Until we hit the holy grail, we must make wise methods to achieve efficiency.
+Until we hit the holy grail, we must make wise methods to achieve efficiency. **The logical solution is to minimize the usage of CPM (Computation, Power, Memory) and thus achieve high throughputs and latency gains.**
 
 Hence, this package aims to bridge this gap by compressing a model end-to-end and making it hardware-friendly with Minimal Human Intervention.
 
@@ -22,15 +22,12 @@ Hence, this package aims to bridge this gap by compressing a model end-to-end an
         :align: center
         :width: 1510px
 
-* **AutoML at its Heart:** Humans are lazy, at least I am; hence, we want to get things done with Minimal Human Intervention. Sconce was built on this ideology that anyone with nominal knowledge of DL should be able to use this package. Drop your model into the package and call `sconce.compress`, and let it do the magic for you. 
+* **AutoML at its Heart:** Humans are lazy, at least I am; hence, we want to get things done with Minimal Human Intervention. Sconce was built on this ideology that anyone with nominal knowledge of DL should be able to use this package. Drop your model into the package, call `sconce.compress`, and let it do the magic for you. 
 * Compress the model through **Pruning**, **Quantization**, etc. 
 * Bring your own dataset and let the **Neural Architecture Search (NAS)** find the best model that fits your deployment constraints. 
 * Leverage **Sparsity** in the model and deploy/infer using **Sparse Engines**. 
 * Accelerate Inferencing and Reduce Memory Footprint. 
-
-**The goal is straightforward: minimize the usage of CPM (Computation, Power, Memory) and thus achieve high throughputs and latency gains.**
-
-In addition, this package supports Spiking Neural Networks(snnTorch) in this compression pipeline.
+* In addition, this package also supports **Spiking Neural Networks(snnTorch)** in this compression pipeline.
 
 .. image:: https://github.com/satabios/sconce/blob/main/docs/source/images/sconce-overview.jpg?raw=true
         :align: center
@@ -217,8 +214,8 @@ Define your Configurations:
    sconces.experiment_name = "vgg-gmp" # Define your experiment name here
    sconces.prune_mode = "GMP" # Prune Mode: Currently supporting "GMP"(Supports Automated Pruning Ratio Detection), "CWP". Future supports for "OBC" and "sparseGPT"
 
-One Roof Solution [Train -> Compress -> Deploy]:
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+One Roof Solution:
+^^^^^^^^^^^^^^^^^^^^^^
 
 .. code:: python
 
