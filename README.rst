@@ -19,9 +19,11 @@ Until we hit the holy grail, we must make wise methods to achieve efficiency. **
 
 Hence, this package aims to bridge this gap by compressing a model end-to-end and making it hardware-friendly with Minimal Human Intervention.
 
+| 
 .. image:: https://github.com/satabios/sconce/blob/main/docs/source/images/sconce-features.jpg?raw=true
         :align: center
         :width: 1510px
+| 
 
 * **AutoML at its Heart:** Humans are lazy, at least I am; hence, we want to get things done with Minimal Human Intervention. Sconce was built on this ideology that anyone with nominal knowledge of DL should be able to use this package. Drop your model into the package, call `sconce.compress`, and let it do the magic for you. 
 * Compress the model through **Pruning**, **Quantization**, etc. 
@@ -30,24 +32,27 @@ Hence, this package aims to bridge this gap by compressing a model end-to-end an
 * Accelerate Inferencing and Reduce Memory Footprint. 
 * In addition, this package also supports **Spiking Neural Networks(snnTorch)** in this compression pipeline.
 
+| 
+
 .. image:: https://github.com/satabios/sconce/blob/main/docs/source/images/sconce-overview.jpg?raw=true
         :align: center
         :width: 1510px
 
+| 
 
 If you like this project, please consider starring ⭐ this repo as it is the easiest and best way to support it.
 
 Let us know if you are using sconce in any interesting work, research or blogs, as we would love to hear more about it! 
 If you have issues, comments, or are looking for advice on training spiking neural networks, you can open an issue, a discussion, 
 or chat in our `discord <https://discord.gg/GKwXMrZr>`_ channel.
+| 
 
 A Brief workflow is shown below:
 
 .. image:: https://github.com/satabios/sconce/blob/main/docs/source/images/sconce-outline.jpeg?raw=true
         :align: center
         :width: 1510px
-
-
+| 
 
 
 sconce Structure
