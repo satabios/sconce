@@ -78,7 +78,8 @@ sconce contains the following components:
   
 **sconce** is designed to be intuitively used with PyTorch, compression for Linear, Convolutional and Attention blocks are supported.
 
-At present, we are working on adding support for more compression techniques and more models.
+At present, I am working on adding support for more compression techniques and more models. kindly be patient for feature request/bug fixes. 
+
 The package envisions to be a one stop solution for all your compression needs and deployed on resource constrained devices.
 Provided that the network models and tensors are loaded onto CUDA, sconce takes advantage of GPU acceleration in the same way as PyTorch. 
 
@@ -95,6 +96,8 @@ The following packages need to be installed to use sconce:
 * snntorch
 
 They are automatically installed if sconce is installed using the pip command. Ensure the correct version of torch is installed for your system to enable CUDA compatibility. 
+
+✌️
 
 Installation
 ^^^^^^^^^^^^^^^^^^^^^^^^
