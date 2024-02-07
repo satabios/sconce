@@ -38,11 +38,12 @@ Hence, this package aims to bridge this gap by compressing a model end-to-end an
         :align: center
         :width: 1510px
 
-| 
+|
 
 If you like this project, please consider starring ⭐ this repo as it is the easiest and best way to support it.
 
-Let us know if you are using sconce in any interesting work, research or blogs, as we would love to hear more about it! 
+Let me know if you are using sconce in any interesting work, research or blogs, as we would love to hear more about it! 
+
 If you have issues, comments, or are looking for advice on training spiking neural networks, you can open an issue, a discussion, 
 or chat in our `discord <https://discord.gg/GKwXMrZr>`_ channel.
 | 
