@@ -396,12 +396,12 @@ def get_input_channel_importance_original(weight):
 
 @torch.no_grad()
 def apply_channel_sorting_original(model, layer_list):
-    model = copy.deepcopy(model)
+    sorted_model = copy.deepcopy(model)
     for i_conv in range(len(layer_list) - 1):
 
-        prev_conv = eval(layer_list[i_conv][0])#.replace('model','sorted_model'))
-        prev_bn = eval(layer_list[i_conv][1])#.replace('model','sorted_model'))
-        next_conv = eval(layer_list[i_conv][2])#.replace('model','sorted_model'))
+        prev_conv = eval(layer_list[i_conv][0].replace('model','sorted_model'))
+        prev_bn = eval(layer_list[i_conv][1].replace('model','sorted_model'))
+        next_conv = eval(layer_list[i_conv][2].replace('model','sorted_model'))
         # note that we always compute the importance according to input channels
         print(prev_conv.weight.shape, next_conv.weight.shape)
         # if((prev_conv.weight.shape[1]!=1) and (next_conv.weight.shape[1]!=1)):
@@ -430,23 +430,27 @@ def apply_channel_sorting_original(model, layer_list):
 # vgg.load_state_dict(checkpoint["state_dict"])
 
 vgg = VGG()
-checkpoint = torch.load("/home/sathya/Desktop/test-bed/vgg.cifar.pretrained.pth",map_location='cpu')
-vgg.load_state_dict(checkpoint["state_dict"])
+weight_file_path = "./vgg.cifar.pretrained.pth"
+checkpoint = torch.load(weight_file_path,map_location='cpu')
+recover_model = lambda: model.load_state_dict(checkpoint)
 
 
-mobilenet_v2 = torch.hub.load('pytorch/vision:v0.10.0', 'mobilenet_v2', pretrained=True)
-mobilenet_v2.load_state_dict(torch.load("/home/sathya/Desktop/test-bed/mobilenet_v2-cifar10.pth"))
+# mobilenet_v2 = torch.hub.load('pytorch/vision:v0.10.0', 'mobilenet_v2', pretrained=True)
+# mobilenet_v2.load_state_dict(torch.load("/home/sathya/Desktop/test-bed/mobilenet_v2-cifar10.pth"))
 
 
-model = copy.deepcopy(mobilenet_v2)
+model = copy.deepcopy(vgg)
 mapped_layers = layer_mapping(model)
 
-model_to_be_sorted = copy.deepcopy(mobilenet_v2)
+recover_model()
+
+
+model_to_be_sorted = copy.deepcopy(model)
 sorted_model = apply_channel_sorting_original(model_to_be_sorted, mapped_layers['conv_bn_list'])
 
 
 
-sconces.model= sorted_model # Model Definition
+sconces.model= sorted_model # Sorted Model
 sconces.optimizer= optim.Adam(sconces.model.parameters(), lr=1e-4)
 sconces.scheduler = optim.lr_scheduler.CosineAnnealingLR(sconces.optimizer, T_max=200)
 
