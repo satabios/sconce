@@ -423,7 +423,7 @@ def apply_channel_sorting_original(model, layer_list):
         next_conv.weight.copy_(
             torch.index_select(next_conv.weight.detach(), 1, sort_idx))
 
-    return model
+    return sorted_model
 
 # vgg = VGG()
 # checkpoint = torch.load("/home/sathya/Desktop/test-bed/vgg.cifar.pretrained.pth",map_location='cpu')
@@ -441,17 +441,70 @@ recover_model = lambda: model.load_state_dict(checkpoint)
 
 model = copy.deepcopy(vgg)
 mapped_layers = layer_mapping(model)
+layer_list = mapped_layers['conv_bn_list']
 
 recover_model()
 
 
 model_to_be_sorted = copy.deepcopy(model)
-sorted_model = apply_channel_sorting_original(model_to_be_sorted, mapped_layers['conv_bn_list'])
+sorted_model = apply_channel_sorting_original(model_to_be_sorted,layer_list)
+
+sparsity_dict = {'backbone.conv0.weight': 0.15000000000000002, 'backbone.conv1.weight': 0.15, 'backbone.conv2.weight': 0.15, 'backbone.conv3.weight': 0.15000000000000002, 'backbone.conv4.weight': 0.20000000000000004, 'backbone.conv5.weight': 0.2000000000000004, 'backbone.conv6.weight': 0.45000000000000007}
 
 
+def get_num_channels_to_keep( channels, prune_ratio):
+		"""A function to calculate the number of layers to PRESERVE after pruning
+        Note that preserve_rate = 1. - prune_ratio
+        """
+		return int(round(channels * (1.0 - prune_ratio)))
 
-sconces.model= sorted_model # Sorted Model
+@torch.no_grad()
+def channel_prune(  model, prune_ratio, layer_list):
+    pruned_model = copy.deepcopy(model)
+    all_convs = []
+    all_bns = []
+    
+    for i_conv in range(len(layer_list) - 1):
+    
+        prev_conv = eval(layer_list[i_conv][0].replace('model','pruned_model'))
+        prev_bn = eval(layer_list[i_conv][1].replace('model','pruned_model'))
+        next_conv = eval(layer_list[i_conv][2].replace('model','pruned_model'))
+        p_ratio = prune_ratio[i_conv]
+
+        original_channels = prev_conv.out_channels  # same as next_conv.in_channels
+
+        n_keep = get_num_channels_to_keep(prev_conv.out_channels, p_ratio)
+
+        # Pruning the previous convolution layer
+        prev_conv.out_channels = n_keep
+        prev_conv.weight = nn.Parameter(prev_conv.weight.detach()[:n_keep, :, :, :])
+        if prev_conv.bias is not None:
+            prev_conv.bias = nn.Parameter(prev_conv.bias.detach()[:n_keep])
+        
+
+        # Updating batch normalization layer parameters
+        prev_bn.num_features = n_keep
+        prev_bn.weight = nn.Parameter(prev_bn.weight.detach()[:n_keep])
+        prev_bn.bias = nn.Parameter(prev_bn.bias.detach()[:n_keep])
+        prev_bn.running_mean = prev_bn.running_mean.detach()[:n_keep]
+        prev_bn.running_var = prev_bn.running_var.detach()[:n_keep]
+        
+
+        # Pruning the next convolution layer's input channels
+        next_conv.in_channels = n_keep
+        next_conv.weight = nn.Parameter(next_conv.weight.detach()[:, :n_keep, :, :])
+        
+       
+    return pruned_model
+
+out_model = channel_prune(model = sorted_model, prune_ratio=list(sparsity_dict.values()), layer_list=layer_list)
+out_model.zero_grad()
+
+sconces.model = out_model
+
+print("out_model",out_model)
+
 sconces.optimizer= optim.Adam(sconces.model.parameters(), lr=1e-4)
 sconces.scheduler = optim.lr_scheduler.CosineAnnealingLR(sconces.optimizer, T_max=200)
-
 sconces.evaluate(verbose=True)
+# sconces.train()
