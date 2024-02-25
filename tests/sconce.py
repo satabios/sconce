@@ -48,6 +48,9 @@ warnings.filterwarnings("ignore")
 
 # Optionally, you can reset the warning filter to default
 warnings.filterwarnings("default")
+import warnings
+warnings.filterwarnings('ignore')
+warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 random.seed(321)
 np.random.seed(432)
@@ -66,43 +69,43 @@ if device == "cuda":
 class sconce:
 	def __init__(self):
 		"""
-        A class for training and evaluating neural networks with various optimization techniques.
+		A class for training and evaluating neural networks with various optimization techniques.
 
-        Attributes:
-        - criterion: loss function used for training the model
-        - batch_size: size of the batch used for training
-        - validate: whether to validate the model during training
-        - save: whether to save the model after training
-        - goal: the goal of the model (e.g. classification)
-        - experiment_name: name of the experiment
-        - epochs: number of epochs for training
-        - learning_rate: learning rate for the optimizer
-        - dense_model_valid_acc: validation accuracy of the dense model
-        - fine_tune_epochs: number of epochs for fine-tuning
-        - fine_tune: whether to fine-tune the model
-        - prune_model: whether to prune the model
-        - prune_mode: mode of pruning (e.g. global, local)
-        - quantization: whether to quantize the model
-        - num_finetune_epochs: number of epochs for fine-tuning after pruning
-        - best_sparse_model_checkpoint: checkpoint for the best sparse model
-        - degradation_value: degradation value for pruning
-        - degradation_value_local: local degradation value for pruning
-        - model: the neural network model
-        - criterion: loss function used for training the model
-        - optimizer: optimizer used for training the model
-        - scheduler: learning rate scheduler
-        - dataloader: data loader for training and validation data
-        - callbacks: callbacks for training the model
-        - sparsity_dict: dictionary of sparsity values for each layer
-        - masks: masks for pruning
-        - Codebook: named tuple for codebook
-        - codebook: codebook for quantization
-        - channel_pruning_ratio: ratio of channels to prune
-        - snn: whether to use spiking neural network
-        - accuracy_function: function for calculating accuracy
-        - bitwidth: bitwidth for quantization
-        - device: device used for training the model
-        """
+		Attributes:
+		- criterion: loss function used for training the model
+		- batch_size: size of the batch used for training
+		- validate: whether to validate the model during training
+		- save: whether to save the model after training
+		- goal: the goal of the model (e.g. classification)
+		- experiment_name: name of the experiment
+		- epochs: number of epochs for training
+		- learning_rate: learning rate for the optimizer
+		- dense_model_valid_acc: validation accuracy of the dense model
+		- fine_tune_epochs: number of epochs for fine-tuning
+		- fine_tune: whether to fine-tune the model
+		- prune_model: whether to prune the model
+		- prune_mode: mode of pruning (e.g. global, local)
+		- quantization: whether to quantize the model
+		- num_finetune_epochs: number of epochs for fine-tuning after pruning
+		- best_sparse_model_checkpoint: checkpoint for the best sparse model
+		- degradation_value: degradation value for pruning
+		- degradation_value_local: local degradation value for pruning
+		- model: the neural network model
+		- criterion: loss function used for training the model
+		- optimizer: optimizer used for training the model
+		- scheduler: learning rate scheduler
+		- dataloader: data loader for training and validation data
+		- callbacks: callbacks for training the model
+		- sparsity_dict: dictionary of sparsity values for each layer
+		- masks: masks for pruning
+		- Codebook: named tuple for codebook
+		- codebook: codebook for quantization
+		- channel_pruning_ratio: ratio of channels to prune
+		- snn: whether to use spiking neural network
+		- accuracy_function: function for calculating accuracy
+		- bitwidth: bitwidth for quantization
+		- device: device used for training the model
+		"""
 		self.criterion = nn.CrossEntropyLoss()
 		self.batch_size = 64
 		self.validate = True
@@ -156,16 +159,16 @@ class sconce:
 	
 	def forward_pass_snn(self, data, mem_out_rec=None):
 		"""
-        Perform a forward pass through the spiking neural network (SNN).
+		Perform a forward pass through the spiking neural network (SNN).
 
-        Args:
-            data: Input data for the SNN.
-            mem_out_rec: Optional tensor to record the membrane potential at each time step.
+		Args:
+			data: Input data for the SNN.
+			mem_out_rec: Optional tensor to record the membrane potential at each time step.
 
-        Returns:
-            If mem_out_rec is not None, returns a tuple containing the spike outputs and membrane potentials
-            as tensors. Otherwise, returns only the spike outputs as a tensor.
-        """
+		Returns:
+			If mem_out_rec is not None, returns a tuple containing the spike outputs and membrane potentials
+			as tensors. Otherwise, returns only the spike outputs as a tensor.
+		"""
 		spk_rec = []
 		mem_rec = []
 		utils.reset(self.model)  # resets hidden states for all LIF neurons in net
@@ -183,10 +186,10 @@ class sconce:
 	
 	def train(self, model=None) -> None:
 		"""
-        Trains the model for a specified number of epochs using the specified dataloader and optimizer.
-        If fine-tuning is enabled, the number of epochs is set to `num_finetune_epochs`.
-        The function also saves the model state after each epoch if the validation accuracy improves.
-        """
+		Trains the model for a specified number of epochs using the specified dataloader and optimizer.
+		If fine-tuning is enabled, the number of epochs is set to `num_finetune_epochs`.
+		The function also saves the model state after each epoch if the validation accuracy improves.
+		"""
 		
 		torch.cuda.empty_cache()
 		self.model.to(self.device)
@@ -250,14 +253,14 @@ class sconce:
 	@torch.no_grad()
 	def venum_evaluate(self, Tqdm=True, verbose=False):
 		"""
-        Evaluates the model on the test dataset and returns the accuracy.
+		Evaluates the model on the test dataset and returns the accuracy.
 
-        Args:
-          verbose (bool): If True, prints the test accuracy.
+		Args:
+		  verbose (bool): If True, prints the test accuracy.
 
-        Returns:
-          float: The test accuracy as a percentage.
-        """
+		Returns:
+		  float: The test accuracy as a percentage.
+		"""
 		
 		self.model.to(self.device)
 		self.model.eval()
@@ -279,14 +282,14 @@ class sconce:
 	@torch.no_grad()
 	def evaluate(self, model=None, device=None, Tqdm=True, verbose=False):
 		"""
-        Evaluates the model on the test dataset and returns the accuracy.
+		Evaluates the model on the test dataset and returns the accuracy.
 
-        Args:
-          verbose (bool): If True, prints the test accuracy.
+		Args:
+		  verbose (bool): If True, prints the test accuracy.
 
-        Returns:
-          float: The test accuracy as a percentage.
-        """
+		Returns:
+		  float: The test accuracy as a percentage.
+		"""
 		if model != None:
 			self.model = model
 		if device != None:
@@ -330,15 +333,15 @@ class sconce:
 	########## Model Profiling ##########
 	def get_model_macs(self, model, inputs) -> int:
 		"""
-        Calculates the number of multiply-accumulate operations (MACs) required to run the given model with the given inputs.
+		Calculates the number of multiply-accumulate operations (MACs) required to run the given model with the given inputs.
 
-        Args:
-          model: The model to profile.
-          inputs: The inputs to the model.
+		Args:
+		  model: The model to profile.
+		  inputs: The inputs to the model.
 
-        Returns:
-          The number of MACs required to run the model with the given inputs.
-        """
+		Returns:
+		  The number of MACs required to run the model with the given inputs.
+		"""
 		return profile_macs(model, inputs)
 	
 	def measure_inference_latency(
@@ -379,30 +382,30 @@ class sconce:
 	
 	def get_sparsity(self, tensor: torch.Tensor) -> float:
 		"""
-        calculate the sparsity of the given tensor
-            sparsity = #zeros / #elements = 1 - #nonzeros / #elements
-        """
+		calculate the sparsity of the given tensor
+			sparsity = #zeros / #elements = 1 - #nonzeros / #elements
+		"""
 		return 1 - float(tensor.count_nonzero()) / tensor.numel()
 	
 	def get_model_sparsity(self, model: nn.Module) -> float:
 		"""
 
-        Calculate the sparsity of the given PyTorch model.
+		Calculate the sparsity of the given PyTorch model.
 
-        Sparsity is defined as the ratio of the number of zero-valued weights to the total number of weights in the model.
-        This function iterates over all parameters in the model and counts the number of non-zero values and the total
-        number of values.
+		Sparsity is defined as the ratio of the number of zero-valued weights to the total number of weights in the model.
+		This function iterates over all parameters in the model and counts the number of non-zero values and the total
+		number of values.
 
-        Args:
-          model (nn.Module): The PyTorch model to calculate sparsity for.
+		Args:
+		  model (nn.Module): The PyTorch model to calculate sparsity for.
 
-        Returns:
-          float: The sparsity of the model, defined as 1 - (# non-zero weights / # total weights).
+		Returns:
+		  float: The sparsity of the model, defined as 1 - (# non-zero weights / # total weights).
 
-        calculate the sparsity of the given model
-            sparsity = #zeros / #elements = 1 - #nonzeros / #elements
+		calculate the sparsity of the given model
+			sparsity = #zeros / #elements = 1 - #nonzeros / #elements
 
-        """
+		"""
 		num_nonzeros, num_elements = 0, 0
 		for param in model.parameters():
 			num_nonzeros += param.count_nonzero()
@@ -411,14 +414,14 @@ class sconce:
 	
 	def get_model_size_weights(self, mdl):
 		"""
-        Calculates the size of the model's weights in megabytes.
+		Calculates the size of the model's weights in megabytes.
 
-        Args:
-            mdl (torch.nn.Module): The model whose weights size needs to be calculated.
+		Args:
+			mdl (torch.nn.Module): The model whose weights size needs to be calculated.
 
-        Returns:
-            float: The size of the model's weights in megabytes.
-        """
+		Returns:
+			float: The size of the model's weights in megabytes.
+		"""
 		torch.save(mdl.state_dict(), "tmp.pt")
 		mdl_size = round(os.path.getsize("tmp.pt") / 1e6, 3)
 		os.remove("tmp.pt")
@@ -426,13 +429,13 @@ class sconce:
 	
 	def get_num_parameters(self, model: nn.Module, count_nonzero_only=False) -> int:
 		"""
-        Calculates the total number of parameters in a given PyTorch model.
+		Calculates the total number of parameters in a given PyTorch model.
 
-        :param model (nn.Module): The PyTorch model.
-        :param count_nonzero_only (bool, optional): If True, only counts the number of non-zero parameters.
-                                                    If False, counts all parameters. Defaults to False.
+		:param model (nn.Module): The PyTorch model.
+		:param count_nonzero_only (bool, optional): If True, only counts the number of non-zero parameters.
+													If False, counts all parameters. Defaults to False.
 
-        """
+		"""
 		
 		num_counted_elements = 0
 		for param in model.parameters():
@@ -446,26 +449,26 @@ class sconce:
 			self, model: nn.Module, data_width=32, count_nonzero_only=False
 	) -> int:
 		"""
-        calculate the model size in bits
-        :param data_width: #bits per element
-        :param count_nonzero_only: only count nonzero weights
-        """
+		calculate the model size in bits
+		:param data_width: #bits per element
+		:param count_nonzero_only: only count nonzero weights
+		"""
 		return self.get_num_parameters(model, count_nonzero_only) * data_width
 	
 	@torch.no_grad()
 	def measure_latency(self, model, dummy_input, n_warmup=20, n_test=100):
 		"""
-        Measures the average latency of a given PyTorch model by running it on a dummy input multiple times.
+		Measures the average latency of a given PyTorch model by running it on a dummy input multiple times.
 
-        Args:
-          model (nn.Module): The PyTorch model to measure the latency of.
-          dummy_input (torch.Tensor): A dummy input to the model.
-          n_warmup (int, optional): The number of warmup iterations to run before measuring the latency. Defaults to 20.
-          n_test (int, optional): The number of iterations to run to measure the latency. Defaults to 100.
+		Args:
+		  model (nn.Module): The PyTorch model to measure the latency of.
+		  dummy_input (torch.Tensor): A dummy input to the model.
+		  n_warmup (int, optional): The number of warmup iterations to run before measuring the latency. Defaults to 20.
+		  n_test (int, optional): The number of iterations to run to measure the latency. Defaults to 100.
 
-        Returns:
-          float: The average latency of the model in milliseconds.
-        """
+		Returns:
+		  float: The average latency of the model in milliseconds.
+		"""
 		model = model.to("cpu")
 		
 		model.eval()
@@ -497,15 +500,15 @@ class sconce:
 	
 	def plot_weight_distribution(self, bins=256, count_nonzero_only=False):
 		"""
-        Plots the weight distribution of the model's named parameters.
+		Plots the weight distribution of the model's named parameters.
 
-        Args:
-          bins (int): Number of bins to use in the histogram. Default is 256.
-          count_nonzero_only (bool): If True, only non-zero weights will be plotted. Default is False.
+		Args:
+		  bins (int): Number of bins to use in the histogram. Default is 256.
+		  count_nonzero_only (bool): If True, only non-zero weights will be plotted. Default is False.
 
-        Returns:
-          None
-        """
+		Returns:
+		  None
+		"""
 		fig, axes = plt.subplots(3, 3, figsize=(10, 6))
 		axes = axes.ravel()
 		plot_index = 0
@@ -542,17 +545,17 @@ class sconce:
 			verbose=True,
 	):
 		"""
-        Scans the sensitivity of the model to weight pruning by gradually increasing the sparsity of each layer's weights
-        and measuring the resulting accuracy. Returns a dictionary mapping layer names to the sparsity values that resulted
-        in the highest accuracy for each layer.
+		Scans the sensitivity of the model to weight pruning by gradually increasing the sparsity of each layer's weights
+		and measuring the resulting accuracy. Returns a dictionary mapping layer names to the sparsity values that resulted
+		in the highest accuracy for each layer.
 
-        :param dense_model_accuracy: the accuracy of the original dense model
-        :param scan_step: the step size for the sparsity scan
-        :param scan_start: the starting sparsity for the scan
-        :param scan_end: the ending sparsity for the scan
-        :param verbose: whether to print progress information during the scan
-        :return: a dictionary mapping layer names to the sparsity values that resulted in the highest accuracy for each layer
-        """
+		:param dense_model_accuracy: the accuracy of the original dense model
+		:param scan_step: the step size for the sparsity scan
+		:param scan_start: the starting sparsity for the scan
+		:param scan_end: the ending sparsity for the scan
+		:param verbose: whether to print progress information during the scan
+		:return: a dictionary mapping layer names to the sparsity values that resulted in the highest accuracy for each layer
+		"""
 		
 		self.sparsity_dict = {}
 		sparsities = np.flip(np.arange(start=scan_start, stop=scan_end, step=scan_step))
@@ -652,6 +655,7 @@ class sconce:
 					acc = self.evaluate(Tqdm=False) - dense_model_accuracy
 					# if ("venum" in self.prune_mode):
 					#     self.prune_mode = "venum_sensitivity"
+					self.model = copy.deepcopy(original_model)
 					if abs(acc) <= self.degradation_value:
 						self.sparsity_dict[name] = sparsity
 						self.model = copy.deepcopy(original_model)
@@ -674,14 +678,14 @@ class sconce:
 	
 	def fine_grained_prune(self, tensor: torch.Tensor, sparsity: float) -> torch.Tensor:
 		"""
-        Magnitude-based pruning for single tensor
+		Magnitude-based pruning for single tensor
 
-        :param tensor: torch.(cuda.)Tensor, weight of conv/fc layer
-        :param sparsity: float, pruning sparsity
-            sparsity = #zeros / #elements = 1 - #nonzeros / #elements
-        :return:
-            torch.(cuda.)Tensor, mask for zeros
-        """
+		:param tensor: torch.(cuda.)Tensor, weight of conv/fc layer
+		:param sparsity: float, pruning sparsity
+			sparsity = #zeros / #elements = 1 - #nonzeros / #elements
+		:return:
+			torch.(cuda.)Tensor, mask for zeros
+		"""
 		sparsity = min(max(0.0, sparsity), 1.0)
 		if sparsity == 1.0:
 			tensor.zero_()
@@ -735,18 +739,18 @@ class sconce:
 	@torch.no_grad()
 	def GMP_apply(self):
 		"""
-        Applies the Group Masking Procedure (GMP) to the model's parameters.
+		Applies the Group Masking Procedure (GMP) to the model's parameters.
 
-        This function iterates over the model's named parameters and applies the corresponding mask
-        if it exists in the `masks` dictionary. The mask is applied by element-wise multiplication
-        with the parameter tensor.
+		This function iterates over the model's named parameters and applies the corresponding mask
+		if it exists in the `masks` dictionary. The mask is applied by element-wise multiplication
+		with the parameter tensor.
 
-        Args:
-          self (object): The `sconce` object.
+		Args:
+		  self (object): The `sconce` object.
 
-        Returns:
-          None
-        """
+		Returns:
+		  None
+		"""
 		for name, param in self.model.named_parameters():
 			if name in self.masks:
 				param *= self.masks[name].to(self.device)
@@ -755,10 +759,10 @@ class sconce:
 	@torch.no_grad()
 	def GMP_Pruning(self, model=None, prune_dict=None):
 		"""
-        Applies Group-wise Magnitude Pruning (GMP) to the model's convolutional and fully-connected weights.
-        The pruning is performed based on the sparsity levels specified in the `sparsity_dict` attribute.
-        The pruned weights are stored in the `masks` attribute.
-        """
+		Applies Group-wise Magnitude Pruning (GMP) to the model's convolutional and fully-connected weights.
+		The pruning is performed based on the sparsity levels specified in the `sparsity_dict` attribute.
+		The pruned weights are stored in the `masks` attribute.
+		"""
 		if prune_dict != None:
 			sparse_dict = prune_dict
 		else:
@@ -848,7 +852,7 @@ class sconce:
 				module.weight.data = self.venum_prune(
 					W=weights, X=inp[0], s=sparstiy, cnn=False
 				)
-				# print("LPost:",torch.count_nonzero(module.weight.data))
+			# print("LPost:",torch.count_nonzero(module.weight.data))
 			
 			gc.collect()
 			torch.cuda.empty_cache()
@@ -892,20 +896,20 @@ class sconce:
 	
 	def compress(self, verbose=True) -> None:
 		"""
-        Compresses the neural network model using either Granular-Magnitude Pruning (GMP) or Channel-Wise Pruning (CWP).
-        If GMP is used, the sensitivity of each layer is first scanned and then the Fine-Grained Pruning is applied.
-        If CWP is used, the Channel-Wise Pruning is applied directly.
-        After pruning, the model is fine-tuned using Stochastic Gradient Descent (SGD) optimizer with Cosine Annealing
-        Learning Rate Scheduler.
-        The original dense model and the pruned fine-tuned model are saved in separate files.
-        Finally, the validation accuracy and the size of the pruned model are printed.
+		Compresses the neural network model using either Granular-Magnitude Pruning (GMP) or Channel-Wise Pruning (CWP).
+		If GMP is used, the sensitivity of each layer is first scanned and then the Fine-Grained Pruning is applied.
+		If CWP is used, the Channel-Wise Pruning is applied directly.
+		After pruning, the model is fine-tuned using Stochastic Gradient Descent (SGD) optimizer with Cosine Annealing
+		Learning Rate Scheduler.
+		The original dense model and the pruned fine-tuned model are saved in separate files.
+		Finally, the validation accuracy and the size of the pruned model are printed.
 
-        Args:
-          verbose (bool): If True, prints the validation accuracy and the size of the pruned model. Default is True.
+		Args:
+		  verbose (bool): If True, prints the validation accuracy and the size of the pruned model. Default is True.
 
-        Returns:
-          None
-        """
+		Returns:
+		  None
+		"""
 		sensitivity_start_time, sensitivity_start_end = 0, 0
 		original_experiment_name = self.experiment_name
 		if self.snn:
@@ -1031,7 +1035,7 @@ class sconce:
 		)
 		
 		if self.fine_tune:
-			print("\n \n==================== Fine-Tuning ====================")
+			print("\n \n==================== Fine-Tuning ========================================")
 			self.optimizer = torch.optim.SGD(
 				self.model.parameters(), lr=0.0001, momentum=0.9, weight_decay=1e-4
 			)
@@ -1293,15 +1297,15 @@ class sconce:
 	
 	def compare_models(self, model_list, model_tags=None):
 		"""
-        Compares the performance of two PyTorch models: an original dense model and a pruned and fine-tuned model.
-        Prints a table of metrics including latency, MACs, and model size for both models and their reduction ratios.
+		Compares the performance of two PyTorch models: an original dense model and a pruned and fine-tuned model.
+		Prints a table of metrics including latency, MACs, and model size for both models and their reduction ratios.
 
-        Args:
-        - original_dense_model: a PyTorch model object representing the original dense model
-        - pruned_fine_tuned_model: a PyTorch model object representing the pruned and fine-tuned model
+		Args:
+		- original_dense_model: a PyTorch model object representing the original dense model
+		- pruned_fine_tuned_model: a PyTorch model object representing the pruned and fine-tuned model
 
-        Returns: None
-        """
+		Returns: None
+		"""
 		
 		table_data = {
 			"latency": ["Latency (ms/sample)"],
@@ -1391,102 +1395,102 @@ class sconce:
 			"\n \n============================== Comparison Table =============================="
 		)
 		print(table)
-		
-		# # accuracies = accuracies
-		# if( accuracies == None):
-		#     accuracies =[]
-		#     accuracies.append(self.evaluate(model = original_dense_model))
-		#     accuracies.append(self.evaluate(model = pruned_fine_tuned_model))
-		
-		# input_shape = list(next(iter(self.dataloader["test"]))[0].size())
-		# input_shape[0] = 1
-		# dummy_input = torch.randn(input_shape).to("cpu")
-		# original_dense_model.to("cpu")
-		# pruned_fine_tuned_model.to("cpu")
-		
-		# # Parse through snn model and send to cpu
-		# if self.snn:
-		#     for model in [original_dense_model, pruned_fine_tuned_model]:
-		#         if isinstance(model, nn.Sequential):
-		#             for layer_id in range(len(original_dense_model)):
-		#                 layer = original_dense_model[layer_id]
-		#                 if isinstance((layer), snntorch._neurons.leaky.Leaky):
-		#                     layer.mem = layer.mem.to("cpu")
-		#         else:
-		#             for module in model.modules():
-		#                 if isinstance((layer), snntorch._neurons.leaky.Leaky):
-		#                     layer.mem = layer.mem.to("cpu")
-		
-		# original_dense_model.to("cpu")
-		# original_latency = self.measure_latency(
-		#     model=original_dense_model, dummy_input=dummy_input
-		# )
-		# pruned_latency = self.measure_latency(
-		#     model=pruned_fine_tuned_model, dummy_input=dummy_input
-		# )
-		# table_struct = "Quantized" if (quantization==True) else "Pruned"
-		# print("\n ................. Comparison Table  .................")
-		# table_template = "{:<15} {:<15} {:<15} {:<15}"
-		# print(table_template.format("", "Original", table_struct, "Reduction Ratio"))
-		# print(
-		#     table_template.format(
-		#         "Latency (ms)",
-		#         round(original_latency * 1000, 1),
-		#         round(pruned_latency * 1000, 1),
-		#         round(original_latency / pruned_latency, 1),
-		#     )
-		# )
-		
-		# # 2. measure the computation (MACs)
-		# if(not quantization):
-		#     original_macs = self.get_model_macs(original_dense_model, dummy_input)
-		#     pruned_macs = self.get_model_macs(pruned_fine_tuned_model, dummy_input)
-		#     table_template = "{:<15} {:<15} {:<15} {:<15}"
-		#     print(
-		#         table_template.format(
-		#             "MACs (M)",
-		#             round(original_macs / 1e6),
-		#             round(pruned_macs / 1e6),
-		#             round(original_macs / pruned_macs, 1),
-		#         )
-		#     )
-		
-		#     # 3. measure the model size (params)
-		#     original_param = self.get_num_parameters(
-		#         original_dense_model, count_nonzero_only=True
-		#     ).item()
-		#     pruned_param = self.get_num_parameters(
-		#         pruned_fine_tuned_model, count_nonzero_only=True
-		#     ).item()
-		#     print(
-		#         table_template.format(
-		#             "Param (M)",
-		#             round(original_param / 1e6, 2),
-		#             round(pruned_param / 1e6, 2),
-		#             round(original_param / pruned_param, 1),
-		#         )
-		#     )
-		
-		# # 4. Accuracies
-		
-		# print(
-		#     table_template.format(
-		#         "Accuracies (%)",
-		#         round(accuracies[0], 3),
-		#         round(accuracies[-1], 3),
-		#         str(round(accuracies[-1] - accuracies[0], 3)),
-		#     )
-		# )
-		
-		# # put model back to cuda
-		# # pruned_model = pruned_fine_tuned_model.to("cuda")
-		# # model = original_dense_model.to("cuda")
+	
+	# # accuracies = accuracies
+	# if( accuracies == None):
+	#     accuracies =[]
+	#     accuracies.append(self.evaluate(model = original_dense_model))
+	#     accuracies.append(self.evaluate(model = pruned_fine_tuned_model))
+	
+	# input_shape = list(next(iter(self.dataloader["test"]))[0].size())
+	# input_shape[0] = 1
+	# dummy_input = torch.randn(input_shape).to("cpu")
+	# original_dense_model.to("cpu")
+	# pruned_fine_tuned_model.to("cpu")
+	
+	# # Parse through snn model and send to cpu
+	# if self.snn:
+	#     for model in [original_dense_model, pruned_fine_tuned_model]:
+	#         if isinstance(model, nn.Sequential):
+	#             for layer_id in range(len(original_dense_model)):
+	#                 layer = original_dense_model[layer_id]
+	#                 if isinstance((layer), snntorch._neurons.leaky.Leaky):
+	#                     layer.mem = layer.mem.to("cpu")
+	#         else:
+	#             for module in model.modules():
+	#                 if isinstance((layer), snntorch._neurons.leaky.Leaky):
+	#                     layer.mem = layer.mem.to("cpu")
+	
+	# original_dense_model.to("cpu")
+	# original_latency = self.measure_latency(
+	#     model=original_dense_model, dummy_input=dummy_input
+	# )
+	# pruned_latency = self.measure_latency(
+	#     model=pruned_fine_tuned_model, dummy_input=dummy_input
+	# )
+	# table_struct = "Quantized" if (quantization==True) else "Pruned"
+	# print("\n ................. Comparison Table  .................")
+	# table_template = "{:<15} {:<15} {:<15} {:<15}"
+	# print(table_template.format("", "Original", table_struct, "Reduction Ratio"))
+	# print(
+	#     table_template.format(
+	#         "Latency (ms)",
+	#         round(original_latency * 1000, 1),
+	#         round(pruned_latency * 1000, 1),
+	#         round(original_latency / pruned_latency, 1),
+	#     )
+	# )
+	
+	# # 2. measure the computation (MACs)
+	# if(not quantization):
+	#     original_macs = self.get_model_macs(original_dense_model, dummy_input)
+	#     pruned_macs = self.get_model_macs(pruned_fine_tuned_model, dummy_input)
+	#     table_template = "{:<15} {:<15} {:<15} {:<15}"
+	#     print(
+	#         table_template.format(
+	#             "MACs (M)",
+	#             round(original_macs / 1e6),
+	#             round(pruned_macs / 1e6),
+	#             round(original_macs / pruned_macs, 1),
+	#         )
+	#     )
+	
+	#     # 3. measure the model size (params)
+	#     original_param = self.get_num_parameters(
+	#         original_dense_model, count_nonzero_only=True
+	#     ).item()
+	#     pruned_param = self.get_num_parameters(
+	#         pruned_fine_tuned_model, count_nonzero_only=True
+	#     ).item()
+	#     print(
+	#         table_template.format(
+	#             "Param (M)",
+	#             round(original_param / 1e6, 2),
+	#             round(pruned_param / 1e6, 2),
+	#             round(original_param / pruned_param, 1),
+	#         )
+	#     )
+	
+	# # 4. Accuracies
+	
+	# print(
+	#     table_template.format(
+	#         "Accuracies (%)",
+	#         round(accuracies[0], 3),
+	#         round(accuracies[-1], 3),
+	#         str(round(accuracies[-1] - accuracies[0], 3)),
+	#     )
+	# )
+	
+	# # put model back to cuda
+	# # pruned_model = pruned_fine_tuned_model.to("cuda")
+	# # model = original_dense_model.to("cuda")
 	
 	def CWP_Pruning(self):
 		"""
-        Applies channel pruning to the model using the specified channel pruning ratio.
-        Returns the pruned model.
-        """
+		Applies channel pruning to the model using the specified channel pruning ratio.
+		Returns the pruned model.
+		"""
 		sorted_model = self.apply_channel_sorting()
 		# self.model = self.channel_prune(sorted_model, self.channel_pruning_ratio)
 		self.sparsity_dict = [value for key, value in self.sparsity_dict.items()]
@@ -1494,9 +1498,9 @@ class sconce:
 	
 	def venum_CWP_Pruning(self, original_dense_model, sparsity_dict):
 		"""
-        Applies channel pruning to the model using the specified channel pruning ratio.
-        Returns the pruned model.
-        """
+		Applies channel pruning to the model using the specified channel pruning ratio.
+		Returns the pruned model.
+		"""
 		
 		sparsity_dict = [value for key, value in sparsity_dict.items()]
 		# #place original model below
@@ -1505,35 +1509,35 @@ class sconce:
 	
 	def get_input_channel_importance(self, weight):
 		"""
-        Computes the importance of each input channel in a weight tensor.
+		Computes the importance of each input channel in a weight tensor.
 
-        Args:
-          weight (torch.Tensor): The weight tensor to compute channel importance for.
+		Args:
+		  weight (torch.Tensor): The weight tensor to compute channel importance for.
 
-        Returns:
-          torch.Tensor: A tensor containing the importance of each input channel.
-        """
+		Returns:
+		  torch.Tensor: A tensor containing the importance of each input channel.
+		"""
 		
 		in_channels = weight.shape[1]
 		importances = []
 		# compute the importance for each input channel
 		for i_c in range(weight.shape[1]):
 			channel_weight = weight.detach()[:, i_c]
-			##################### YOUR CODE STARTS HERE #####################
+			
 			importance = torch.norm(channel_weight)
-			##################### YOUR CODE ENDS HERE #####################
+			
 			importances.append(importance.view(1))
 		return torch.cat(importances)
 	
 	@torch.no_grad()
 	def apply_channel_sorting(self):
 		"""
-        Applies channel sorting to the model's convolutional and batch normalization layers.
-        Returns a copy of the model with sorted channels.
+		Applies channel sorting to the model's convolutional and batch normalization layers.
+		Returns a copy of the model with sorted channels.
 
-        Returns:
-        model (torch.nn.Module): A copy of the model with sorted channels.
-        """
+		Returns:
+		model (torch.nn.Module): A copy of the model with sorted channels.
+		"""
 		
 		model = copy.deepcopy(self.model)  # do not modify the original model
 		# fetch all the conv and bn layers from the backbone
@@ -1587,7 +1591,7 @@ class sconce:
 				)
 			
 			# apply to the next conv input (hint: one line of code)
-			##################### YOUR CODE STARTS HERE #####################
+			
 			next_conv.weight.copy_(
 				torch.index_select(next_conv.weight.detach(), 1, sort_idx)
 			)
@@ -1596,29 +1600,27 @@ class sconce:
 	
 	def get_num_channels_to_keep(self, channels: int, prune_ratio: float) -> int:
 		"""A function to calculate the number of layers to PRESERVE after pruning
-        Note that preserve_rate = 1. - prune_ratio
-        """
-		##################### YOUR CODE STARTS HERE #####################
+		Note that preserve_rate = 1. - prune_ratio
+		"""
+		
 		return int(round(channels * (1.0 - prune_ratio)))
-		##################### YOUR CODE ENDS HERE #####################
 	
 	def get_num_channels_to_keep(self, channels: int, prune_ratio: float) -> int:
 		"""A function to calculate the number of layers to PRESERVE after pruning
-        Note that preserve_rate = 1. - prune_ratio
-        """
-		##################### YOUR CODE STARTS HERE #####################
+		Note that preserve_rate = 1. - prune_ratio
+		"""
+		
 		return int(round(channels * (1.0 - prune_ratio)))
-		##################### YOUR CODE ENDS HERE #####################
 	
 	@torch.no_grad()
 	def channel_prune_layerwise(
 			self, model: nn.Module, prune_ratio: Union[List, float], i_layer
 	) -> nn.Module:
 		"""Apply channel pruning to each of the conv layer in the backbone
-        Note that for prune_ratio, we can either provide a floating-point number,
-        indicating that we use a uniform pruning rate for all layers, or a list of
-        numbers to indicate per-layer pruning rate.
-        """
+		Note that for prune_ratio, we can either provide a floating-point number,
+		indicating that we use a uniform pruning rate for all layers, or a list of
+		numbers to indicate per-layer pruning rate.
+		"""
 		# sanity check of provided prune_ratio
 		assert isinstance(prune_ratio, (float, list))
 		
@@ -1672,9 +1674,8 @@ class sconce:
 			prev_bn.running_var.set_(prev_bn.running_var.detach()[:n_keep])
 		
 		# prune the input of the next conv (hint: just one line of code)
-		##################### YOUR CODE STARTS HERE #####################
+		
 		next_conv.weight.set_(next_conv.weight.detach()[:, :n_keep])
-		##################### YOUR CODE ENDS HERE #####################
 		
 		return new_model
 	
@@ -1683,10 +1684,10 @@ class sconce:
 			self, model: nn.Module, prune_ratio: Union[List, float]
 	) -> nn.Module:
 		"""Apply channel pruning to each of the conv layer in the backbone
-        Note that for prune_ratio, we can either provide a floating-point number,
-        indicating that we use a uniform pruning rate for all layers, or a list of
-        numbers to indicate per-layer pruning rate.
-        """
+		Note that for prune_ratio, we can either provide a floating-point number,
+		indicating that we use a uniform pruning rate for all layers, or a list of
+		numbers to indicate per-layer pruning rate.
+		"""
 		# sanity check of provided prune_ratio
 		assert isinstance(prune_ratio, (float, list))
 		
@@ -1733,14 +1734,20 @@ class sconce:
 				
 				# prune the output of the previous conv and bn
 				prev_conv.weight.set_(prev_conv.weight.detach()[:n_keep])
+				if prev_conv.bias is not None:
+					prev_conv.bias = nn.Parameter(prev_conv.bias.detach()[:n_keep])
+				prev_conv.out_channels = n_keep
+				
 				prev_bn.weight.set_(prev_bn.weight.detach()[:n_keep])
 				prev_bn.bias.set_(prev_bn.bias.detach()[:n_keep])
 				prev_bn.running_mean.set_(prev_bn.running_mean.detach()[:n_keep])
 				prev_bn.running_var.set_(prev_bn.running_var.detach()[:n_keep])
+				prev_bn.num_features = n_keep
 				
 				# prune the input of the next conv (hint: just one line of code)
 				
 				next_conv.weight.set_(next_conv.weight.detach()[:, :n_keep])
+				next_conv.in_channels = n_keep
 			else:
 				pick_list = self.venum_sorted_list[i_ratio]
 				salient_indices = pick_list[int(original_channels * p_ratio):]
@@ -1755,7 +1762,7 @@ class sconce:
 				prev_bn.running_var.set_(prev_bn.running_var.detach()[salient_indices])
 				
 				# prune the input of the next conv (hint: just one line of code)
-				##################### YOUR CODE STARTS HERE #####################
+				
 				next_conv.weight.set_(next_conv.weight.detach()[:, salient_indices])
 		
 		return new_model
