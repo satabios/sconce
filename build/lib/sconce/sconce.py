@@ -1519,9 +1519,9 @@ class sconce:
 		# compute the importance for each input channel
 		for i_c in range(weight.shape[1]):
 			channel_weight = weight.detach()[:, i_c]
-			##################### YOUR CODE STARTS HERE #####################
+			
 			importance = torch.norm(channel_weight)
-			##################### YOUR CODE ENDS HERE #####################
+			
 			importances.append(importance.view(1))
 		return torch.cat(importances)
 	
@@ -1587,7 +1587,7 @@ class sconce:
 				)
 			
 			# apply to the next conv input (hint: one line of code)
-			##################### YOUR CODE STARTS HERE #####################
+			
 			next_conv.weight.copy_(
 				torch.index_select(next_conv.weight.detach(), 1, sort_idx)
 			)
@@ -1598,19 +1598,19 @@ class sconce:
 		"""A function to calculate the number of layers to PRESERVE after pruning
 		Note that preserve_rate = 1. - prune_ratio
 		"""
-		##################### YOUR CODE STARTS HERE #####################
+		
 		return int(round(channels * (1.0 - prune_ratio)))
 	
-	##################### YOUR CODE ENDS HERE #####################
+	
 	
 	def get_num_channels_to_keep(self, channels: int, prune_ratio: float) -> int:
 		"""A function to calculate the number of layers to PRESERVE after pruning
 		Note that preserve_rate = 1. - prune_ratio
 		"""
-		##################### YOUR CODE STARTS HERE #####################
+		
 		return int(round(channels * (1.0 - prune_ratio)))
 	
-	##################### YOUR CODE ENDS HERE #####################
+	
 	
 	@torch.no_grad()
 	def channel_prune_layerwise(
@@ -1674,9 +1674,9 @@ class sconce:
 			prev_bn.running_var.set_(prev_bn.running_var.detach()[:n_keep])
 		
 		# prune the input of the next conv (hint: just one line of code)
-		##################### YOUR CODE STARTS HERE #####################
+		
 		next_conv.weight.set_(next_conv.weight.detach()[:, :n_keep])
-		##################### YOUR CODE ENDS HERE #####################
+		
 		
 		return new_model
 	
@@ -1757,7 +1757,7 @@ class sconce:
 				prev_bn.running_var.set_(prev_bn.running_var.detach()[salient_indices])
 				
 				# prune the input of the next conv (hint: just one line of code)
-				##################### YOUR CODE STARTS HERE #####################
+				
 				next_conv.weight.set_(next_conv.weight.detach()[:, salient_indices])
 		
 		return new_model
