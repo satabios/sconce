@@ -548,11 +548,11 @@ class sconce:
 		and measuring the resulting accuracy. Returns a dictionary mapping layer names to the sparsity values that resulted
 		in the highest accuracy for each layer.
 
-		:param dense_model_accuracy: the accuracy of the original dense model
-		:param scan_step: the step size for the sparsity scan
-		:param scan_start: the starting sparsity for the scan
-		:param scan_end: the ending sparsity for the scan
-		:param verbose: whether to print progress information during the scan
+		:parameter dense_model_accuracy: the accuracy of the original dense model
+		:parameter scan_step: the step size for the sparsity scan
+		:parameter scan_start: the starting sparsity for the scan
+		:parameter scan_end: the ending sparsity for the scan
+		:parameter verbose: whether to print progress information during the scan
 		:return: a dictionary mapping layer names to the sparsity values that resulted in the highest accuracy for each layer
 		"""
 		
