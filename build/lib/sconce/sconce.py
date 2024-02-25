@@ -48,6 +48,10 @@ warnings.filterwarnings("ignore")
 
 # Optionally, you can reset the warning filter to default
 warnings.filterwarnings("default")
+import warnings
+
+warnings.filterwarnings('ignore')
+warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 random.seed(321)
 np.random.seed(432)
@@ -652,6 +656,7 @@ class sconce:
 					acc = self.evaluate(Tqdm=False) - dense_model_accuracy
 					# if ("venum" in self.prune_mode):
 					#     self.prune_mode = "venum_sensitivity"
+					self.model = copy.deepcopy(original_model)
 					if abs(acc) <= self.degradation_value:
 						self.sparsity_dict[name] = sparsity
 						self.model = copy.deepcopy(original_model)
@@ -1031,7 +1036,7 @@ class sconce:
 		)
 		
 		if self.fine_tune:
-			print("\n \n==================== Fine-Tuning ====================")
+			print("\n \n==================== Fine-Tuning ========================================")
 			self.optimizer = torch.optim.SGD(
 				self.model.parameters(), lr=0.0001, momentum=0.9, weight_decay=1e-4
 			)
@@ -1601,16 +1606,12 @@ class sconce:
 		
 		return int(round(channels * (1.0 - prune_ratio)))
 	
-	
-	
 	def get_num_channels_to_keep(self, channels: int, prune_ratio: float) -> int:
 		"""A function to calculate the number of layers to PRESERVE after pruning
 		Note that preserve_rate = 1. - prune_ratio
 		"""
 		
 		return int(round(channels * (1.0 - prune_ratio)))
-	
-	
 	
 	@torch.no_grad()
 	def channel_prune_layerwise(
@@ -1677,7 +1678,6 @@ class sconce:
 		
 		next_conv.weight.set_(next_conv.weight.detach()[:, :n_keep])
 		
-		
 		return new_model
 	
 	@torch.no_grad()
@@ -1735,14 +1735,20 @@ class sconce:
 				
 				# prune the output of the previous conv and bn
 				prev_conv.weight.set_(prev_conv.weight.detach()[:n_keep])
+				if prev_conv.bias is not None:
+					prev_conv.bias = nn.Parameter(prev_conv.bias.detach()[:n_keep])
+				prev_conv.out_channels = n_keep
+				
 				prev_bn.weight.set_(prev_bn.weight.detach()[:n_keep])
 				prev_bn.bias.set_(prev_bn.bias.detach()[:n_keep])
 				prev_bn.running_mean.set_(prev_bn.running_mean.detach()[:n_keep])
 				prev_bn.running_var.set_(prev_bn.running_var.detach()[:n_keep])
+				prev_bn.num_features = n_keep
 				
 				# prune the input of the next conv (hint: just one line of code)
 				
 				next_conv.weight.set_(next_conv.weight.detach()[:, :n_keep])
+				next_conv.in_channels = n_keep
 			else:
 				pick_list = self.venum_sorted_list[i_ratio]
 				salient_indices = pick_list[int(original_channels * p_ratio):]
