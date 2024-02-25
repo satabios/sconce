@@ -20,10 +20,12 @@ Until we hit the holy grail, we must make wise methods to achieve efficiency. **
 
 Hence, this package aims to bridge this gap by compressing a model end-to-end and making it hardware-friendly with Minimal Human Intervention.
 
-| 
+|
+
 .. image:: https://github.com/satabios/sconce/blob/main/docs/source/images/sconce-features.jpg?raw=true
         :align: center
         :width: 1510px
+
 | 
 
 * **AutoML at its Heart:** Humans are lazy, at least I am; hence, we want to get things done with Minimal Human Intervention. Sconce was built on this ideology that anyone with nominal knowledge of DL should be able to use this package. Drop your model into the package, call `sconce.compress`, and let it do the magic for you. 
@@ -54,6 +56,7 @@ A Brief workflow is shown below:
 .. image:: https://github.com/satabios/sconce/blob/main/docs/source/images/sconce-outline.jpeg?raw=true
         :align: center
         :width: 1510px
+
 | 
 
 
@@ -116,7 +119,6 @@ To install sconce from source instead::
   $ git clone https://github.com/satabios/sconce
   $ cd sconce
   $ python setup.py install
-    
 
 API & Examples 
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -235,7 +237,7 @@ One Roof Solution:
 .. code:: python
 
     Channel-Wise Pruning (CWP)
-             
+
    ============================== Comparison Table ==============================
    +---------------------+----------------+--------------+-----------------+
    |                     | Original Model | Pruned Model | Quantized Model |
@@ -249,7 +251,7 @@ One Roof Solution:
 
 
     Granular-Magnitude Pruning(GMP)
-     
+
     ============================== Comparison Table ==============================
     +---------------------+----------------+--------------+-----------------+
     |                     | Original Model | Pruned Model | Quantized Model |
