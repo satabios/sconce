@@ -44,8 +44,6 @@ import warnings
 # Suppress all warnings
 warnings.filterwarnings("ignore")
 
-# Your code using torch goes here
-
 # Optionally, you can reset the warning filter to default
 warnings.filterwarnings("default")
 import warnings
