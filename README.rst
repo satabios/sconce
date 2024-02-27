@@ -88,7 +88,7 @@ At present, I am working on adding support for more compression techniques and m
 The package envisions to be a one stop solution for all your compression needs and deployed on resource constrained devices.
 Provided that the network models and tensors are loaded onto CUDA, sconce takes advantage of GPU acceleration in the same way as PyTorch. 
 
-sconce is a work in progress, and we welcome contributions from the community.
+sconce is a work in progress, and we welcome contributions from the community. The current status of the package and future plans can be found here: `sconce Roadmap <https://github.com/satabios/sconce/blob/main/sconce%20v1.1.pdf>`_.
 
 Requirements 
 ^^^^^^^^^^^^^^^^^^^^^^^^
