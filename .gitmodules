@@ -1,0 +1,6 @@
+[submodule "tutorials/CUDA/cuda-mode"]
+	path = tutorials/CUDA/cuda-mode
+	url = https://github.com/cuda-mode/lectures
+[submodule "tutorials/CUDA/parallel-computing-tutorial"]
+	path = tutorials/CUDA/parallel-computing-tutorial
+	url = https://github.com/mit-han-lab/parallel-computing-tutorial
