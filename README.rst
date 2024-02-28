@@ -32,7 +32,18 @@ Hence, this package aims to bridge this gap by compressing a model end-to-end an
 * Compress the model through **Pruning**, **Quantization**, etc. 
 * Bring your own dataset and let the **Neural Architecture Search (NAS)** find the best model that fits your deployment constraints. 
 * Leverage **Sparsity** in the model and deploy/infer using **Sparse Engines**. 
-* Accelerate Inferencing and Reduce Memory Footprint. 
+* Accelerate Inferencing and Reduce Memory Footprint,  Inference Optimizations:
+        * CUDA Based:
+                * Loop Unrolling
+                * Loop Tiling
+                * Loop Reordering
+
+        * Inference Based:
+                * Im2Col Convolution
+                * In-Place Depth-Wise Convolution
+                * Winograd
+                * Memory Layout
+
 * In addition, this package also supports **Spiking Neural Networks(snnTorch)** in this compression pipeline.
 
 | 
