@@ -4,3 +4,6 @@
 [submodule "tutorials/CUDA/parallel-computing-tutorial"]
 	path = tutorials/CUDA/parallel-computing-tutorial
 	url = https://github.com/mit-han-lab/parallel-computing-tutorial
+[submodule "tutorials/Inference-Optimizations/parallel-computing-tutorial"]
+	path = tutorials/Inference-Optimizations/parallel-computing-tutorial
+	url = https://github.com/mit-han-lab/parallel-computing-tutorial
