@@ -236,7 +236,7 @@ Define your Configurations:
    sconces.epochs = 5 #Number of time we iterate over the data
    sconces.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
    sconces.experiment_name = "vgg-gmp" # Define your experiment name here
-   sconces.prune_mode = "GMP" # Prune Mode: Currently supporting "GMP"(Supports Automated Pruning Ratio Detection), "CWP". Future supports for "OBC" and "sparseGPT"
+   sconces.prune_mode = "CWP" #
 
 One Roof Solution:
 ^^^^^^^^^^^^^^^^^^^^^^
@@ -259,6 +259,12 @@ One Roof Solution:
         |       MAC (M)       |      606       |     455      |        *        |
         +---------------------+----------------+--------------+-----------------+
 
+.. code:: python
+
+   sconces.prune_mode = "GMP"
+   sconces.compress()
+
+.. code:: python
 
         		    Granular Magnitude Based Pruning
         +---------------------+----------------+--------------+-----------------+
