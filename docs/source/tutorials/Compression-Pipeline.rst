@@ -236,94 +236,44 @@ mode[sconces.prune_mode] above)
 
     
     Pruned Model has size=9.77 MiB(non-zeros) = 27.76% of Original model size
+   
+    Pruned Model has Accuracy=84.41 MiB(non-zeros) = -8.50% of Original model Accuracy
 
 .. parsed-literal::
-
-    
-    Pruned Model has Accuracy=84.41 MiB(non-zeros) = -8.50% of Original model Accuracy
-    
      
     ==================== Fine-Tuning ====================
 
 
-.. parsed-literal::
-
     Epoch:1 Train Loss: 0.00000 Validation Accuracy: 91.88377
-
-
-.. parsed-literal::
 
     Epoch:2 Train Loss: 0.00000 Validation Accuracy: 91.81363
 
-.. parsed-literal::
-
     Epoch:3 Train Loss: 0.00000 Validation Accuracy: 91.90381
-
-
-.. parsed-literal::
 
     Epoch:4 Train Loss: 0.00000 Validation Accuracy: 91.87375
 
 
-.. parsed-literal::
-
     Epoch:5 Train Loss: 0.00000 Validation Accuracy: 91.94389
 
 
-.. parsed-literal::
-
-    /usr/local/lib/python3.10/dist-packages/torch/ao/quantization/observer.py:214: UserWarning: Please use quant_min and quant_max to specify the range for observers.                     reduce_range will be deprecated in a future release of PyTorch.
-      warnings.warn(
-
-
-.. parsed-literal::
-
     Fine-Tuned Sparse model has size=9.77 MiB = 27.76% of Original model size
     Fine-Tuned Pruned Model Validation Accuracy: 91.9438877755511
-    
-     
+
+.. parsed-literal::
     ==================== Quantization-Aware Training(QAT) ====================
 
-
-.. parsed-literal::
-
-    train:   0%|          | 0/98 [00:00<?, ?it/s]/usr/local/lib/python3.10/dist-packages/torch/ao/quantization/fake_quantize.py:343: UserWarning: _aminmax is deprecated as of PyTorch 1.11 and will be removed in a future release. Use aminmax instead. This warning will only appear once per process. (Triggered internally at ../aten/src/ATen/native/ReduceAllOps.cpp:72.)
-      return torch.fused_moving_avg_obs_fake_quant(
-    /usr/local/lib/python3.10/dist-packages/torch/ao/quantization/fake_quantize.py:343: UserWarning: _aminmax is deprecated as of PyTorch 1.11 and will be removed in a future release. Use aminmax instead. This warning will only appear once per process. (Triggered internally at ../aten/src/ATen/native/TensorCompare.cpp:677.)
-      return torch.fused_moving_avg_obs_fake_quant(
-
-
-.. parsed-literal::
+    train:   0%|          | 0/98 [00:00<?, ?it/s]
 
     Epoch:1 Train Loss: 0.00000 Validation Accuracy: 92.02405
 
-
-.. parsed-literal::
-
     Epoch:2 Train Loss: 0.00000 Validation Accuracy: 92.05411
-
-
-.. parsed-literal::
 
     Epoch:3 Train Loss: 0.00000 Validation Accuracy: 92.04409
 
-
-.. parsed-literal::
-
     Epoch:4 Train Loss: 0.00000 Validation Accuracy: 92.02405
-
-
-.. parsed-literal::
 
     Epoch:5 Train Loss: 0.00000 Validation Accuracy: 92.05411
 
-
-.. parsed-literal::
-
-    /usr/local/lib/python3.10/dist-packages/torch/ao/nn/quantized/modules/__init__.py:97: TracerWarning: Converting a tensor to a Python float might cause the trace to be incorrect. We can't record the data flow of Python values, so this value will be treated as a constant in the future. This means that the trace might not generalize to other inputs!
-      return torch.quantize_per_tensor(X, float(self.scale),
-    /usr/local/lib/python3.10/dist-packages/torch/ao/nn/quantized/modules/__init__.py:98: TracerWarning: Converting a tensor to a Python integer might cause the trace to be incorrect. We can't record the data flow of Python values, so this value will be treated as a constant in the future. This means that the trace might not generalize to other inputs!
-      int(self.zero_point), self.dtype)
 
 
 .. parsed-literal::
@@ -392,46 +342,22 @@ mode[sconces.prune_mode] above)
 
     
     Pruned Model has size=27.21 MiB(non-zeros) = 77.29% of Original model size
+    Pruned Model has Accuracy=69.00 MiB(non-zeros) = -24.14% of Original model Accuracy
 
 
 .. parsed-literal::
-
-    
-    Pruned Model has Accuracy=69.00 MiB(non-zeros) = -24.14% of Original model Accuracy
-    
      
     ==================== Fine-Tuning ====================
 
-
-.. parsed-literal::
-
     Epoch:1 Train Loss: 0.00000 Validation Accuracy: 91.24248
-
-
-.. parsed-literal::
 
     Epoch:2 Train Loss: 0.00000 Validation Accuracy: 91.30261
 
-
-.. parsed-literal::
-
     Epoch:3 Train Loss: 0.00000 Validation Accuracy: 91.46293
-
-
-.. parsed-literal::
 
     Epoch:4 Train Loss: 0.00000 Validation Accuracy: 91.46293
 
-
-.. parsed-literal::
-
     Epoch:5 Train Loss: 0.00000 Validation Accuracy: 91.51303
-
-
-.. parsed-literal::
-
-    /usr/local/lib/python3.10/dist-packages/torch/ao/quantization/observer.py:214: UserWarning: Please use quant_min and quant_max to specify the range for observers.                     reduce_range will be deprecated in a future release of PyTorch.
-      warnings.warn(
 
 
 .. parsed-literal::
@@ -440,41 +366,21 @@ mode[sconces.prune_mode] above)
     Fine-Tuned Pruned Model Validation Accuracy: 91.51302605210421
     
      
-    ==================== Quantization-Aware Training(QAT) ====================
+ 
 
 
 .. parsed-literal::
+    ==================== Quantization-Aware Training(QAT) ====================
 
     Epoch:1 Train Loss: 0.00000 Validation Accuracy: 91.63327
 
-
-.. parsed-literal::
-
     Epoch:2 Train Loss: 0.00000 Validation Accuracy: 91.57315
-
-
-.. parsed-literal::
 
     Epoch:3 Train Loss: 0.00000 Validation Accuracy: 91.53307
 
-
-.. parsed-literal::
-
     Epoch:4 Train Loss: 0.00000 Validation Accuracy: 91.55311
 
-
-.. parsed-literal::
-
     Epoch:5 Train Loss: 0.00000 Validation Accuracy: 91.48297
-
-
-.. parsed-literal::
-
-    /usr/local/lib/python3.10/dist-packages/torch/ao/nn/quantized/modules/__init__.py:97: TracerWarning: Converting a tensor to a Python float might cause the trace to be incorrect. We can't record the data flow of Python values, so this value will be treated as a constant in the future. This means that the trace might not generalize to other inputs!
-      return torch.quantize_per_tensor(X, float(self.scale),
-    /usr/local/lib/python3.10/dist-packages/torch/ao/nn/quantized/modules/__init__.py:98: TracerWarning: Converting a tensor to a Python integer might cause the trace to be incorrect. We can't record the data flow of Python values, so this value will be treated as a constant in the future. This means that the trace might not generalize to other inputs!
-      int(self.zero_point), self.dtype)
-
 
 .. parsed-literal::
 
