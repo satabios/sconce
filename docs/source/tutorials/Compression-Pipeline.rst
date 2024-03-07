@@ -179,9 +179,6 @@ sconce Configurations
 
 .. parsed-literal::
 
-    /usr/local/lib/python3.10/dist-packages/ipykernel/ipkernel.py:283: DeprecationWarning: `should_run_async` will not call `transform_cell` automatically in the future. Please pass the result to `transformed_cell` argument and any exception that happen during thetransform in `preprocessing_exc_tuple` in IPython 7.17 and above.
-      and should_run_async(code)
-
 
 Train and Validated the Model on the given dataset
 
@@ -489,14 +486,6 @@ Spiking Neural Network Compression
     import itertools
     
 
-
-
-.. parsed-literal::
-
-    <ipython-input-3-b898cb6c07c2>:4: DeprecationWarning: The module snntorch.backprop will be deprecated in  a future release. Writing out your own training loop will lead to substantially faster performance.
-      from snntorch import backprop
-
-
 .. code:: ipython3
 
     
@@ -628,9 +617,3 @@ Spiking Neural Network Compression
     Fine-Tuned Pruned Model Validation Accuracy: 95.9735576923077
 
 
-.. parsed-literal::
-
-    /usr/local/lib/python3.10/dist-packages/torchprofile/profile.py:22: UserWarning: No handlers found: "prim::pythonop". Skipped.
-      warnings.warn('No handlers found: "{}". Skipped.'.format(
-    /usr/local/lib/python3.10/dist-packages/torchprofile/profile.py:22: UserWarning: No handlers found: "prim::pythonop". Skipped.
-      warnings.warn('No handlers found: "{}". Skipped.'.format(
