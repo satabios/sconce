@@ -182,6 +182,7 @@ Define your Configurations:
    sconces.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
    sconces.experiment_name = "vgg-gmp" # Define your experiment name here
    sconces.prune_mode = "CWP" #
+   # Note Sensitivity Analysis is applied before pruning: The tutorial explains this in detail: https://sconce.readthedocs.io/en/latest/tutorials/Pruning.html#lets-first-evaluate-the-accuracy-and-model-size-of-dense-model Look out for the header “Sensitivity Scan”.
 
 One Roof Solution:
 ^^^^^^^^^^^^^^^^^^^^^^
