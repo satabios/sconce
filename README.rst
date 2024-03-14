@@ -8,7 +8,8 @@ Introduction
 .. image:: https://github.com/satabios/sconce/actions/workflows/python-publish.yml/badge.svg
         :target: https://github.com/satabios/sconce/actions/workflows/python-publish.yml
         :alt: Python Package
-
+.. image:: https://img.shields.io/github/stars/satabios
+        :alt: GitHub User's stars
 
 The advancement of deep learning has been primarily driven by the availability of large datasets and the computational power to train large models. The complexity increases with each day, and it is becoming increasingly difficult to train/deploy these models.
 
