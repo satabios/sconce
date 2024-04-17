@@ -7,3 +7,9 @@
 [submodule "tutorials/Inference-Optimizations/parallel-computing-tutorial"]
 	path = tutorials/Inference-Optimizations/parallel-computing-tutorial
 	url = https://github.com/mit-han-lab/parallel-computing-tutorial
+[submodule "tutorials/CUDA/gpu_programming_intro"]
+	path = tutorials/CUDA/gpu_programming_intro
+	url = https://github.com/satabios/gpu_programming_intro/
+[submodule "tutorials/CUDA/Learn-CUDA-Programming"]
+	path = tutorials/CUDA/Learn-CUDA-Programming
+	url = https://github.com/satabios/Learn-CUDA-Programming
