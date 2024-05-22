@@ -159,7 +159,6 @@ class sconce:
 		self.preformance_eval = PerformanceEval(
 			dataloader=self.dataloader,
 			snn=self.snn,
-			model=self.model,
 			snn_num_steps=self.snn_num_steps
 		)
 
@@ -248,7 +247,7 @@ class sconce:
 			
 			running_loss = 0.0
 			
-			validation_acc = self.preformance_eval.evaluate()
+			validation_acc = self.preformance_eval.evaluate(self.model)
 			if validation_acc > val_acc:
 				print(
 					f"Epoch:{epoch + 1} Train Loss: {running_loss / 2000:.5f} Validation Accuracy: {validation_acc:.5f}"
@@ -504,7 +503,7 @@ class sconce:
 				if hit_flag == True:
 					# if self.prune_mode == "venum_sensitivity":
 					#     self.prune_mode = original_prune_mode
-					acc = self.preformance_eval.evaluate(Tqdm=False) - dense_model_accuracy
+					acc = self.preformance_eval.evaluate(self.model, Tqdm=False) - dense_model_accuracy
 					# if ("venum" in self.prune_mode):
 					#     self.prune_mode = "venum_sensitivity"
 					self.model = copy.deepcopy(original_model)
@@ -780,7 +779,7 @@ class sconce:
 			model=self.model, count_nonzero_only=True
 		)
 		print(f"\nOriginal Dense Model Size Model={dense_model_size / MiB:.2f} MiB")
-		dense_validation_acc = self.preformance_eval.evaluate(verbose=False)
+		dense_validation_acc = self.preformance_eval.evaluate(self.model, verbose=False)
 		print("Original Model Validation Accuracy:", dense_validation_acc, "%")
 		self.dense_model_valid_acc = dense_validation_acc
 		
@@ -876,12 +875,12 @@ class sconce:
 		pruned_model_size = self.get_model_size(
 			model=pruned_model, count_nonzero_only=True
 		)
-		pruned_validation_acc = self.preformance_eval.evaluate(verbose=False)
+		pruned_validation_acc = self.preformance_eval.evaluate(self.model, verbose=False)
 		
 		print(
 			f"\nPruned Model has size={pruned_model_size / MiB:.2f} MiB(non-zeros) = {pruned_model_size / dense_model_size * 100:.2f}% of Original model size"
 		)
-		pruned_model_acc = self.preformance_eval.evaluate()
+		pruned_model_acc = self.preformance_eval.evaluate(self.model)
 		print(
 			f"\nPruned Model has Accuracy={pruned_model_acc :.2f} % = {pruned_model_acc - dense_validation_acc :.2f}% of Original model Accuracy"
 		)
@@ -909,7 +908,7 @@ class sconce:
 		fine_tuned_pruned_model_size = self.get_model_size(
 			model=pruned_model, count_nonzero_only=True
 		)
-		fine_tuned_validation_acc = self.preformance_eval.evaluate(verbose=False)
+		fine_tuned_validation_acc = self.preformance_eval.evaluate(self.model, verbose=False)
 		
 		if verbose:
 			print(

@@ -12,10 +12,9 @@ from prettytable import PrettyTable
 from tqdm import tqdm
 
 class PerformanceEval:
-    def __init__(self, dataloader, snn, model, snn_num_steps) -> None:
+    def __init__(self, dataloader, snn, snn_num_steps) -> None:
         self.dataloader = dataloader
         self.snn = snn
-        self.model = model
         self.snn_num_steps = snn_num_steps
 
     def load_torchscript_model(self, model_filepath, device):
@@ -90,7 +89,7 @@ class PerformanceEval:
         return (t2 - t1) / n_test  # average latency in ms
 
     @torch.no_grad()
-    def evaluate(self, model=None, device=None, Tqdm=True, verbose=False):
+    def evaluate(self, model, device=None, Tqdm=True, verbose=False):
         """
         Evaluates the model on the test dataset and returns the accuracy.
 
@@ -100,15 +99,13 @@ class PerformanceEval:
         Returns:
             float: The test accuracy as a percentage.
         """
-        if model != None:
-            self.model = model
         if device != None:
             final_device = device
         else:
             final_device = self.device
         
-        self.model.to(final_device)
-        self.model.eval()
+        model.to(final_device)
+        model.eval()
         with torch.no_grad():
             correct = 0
             total = 0
@@ -130,7 +127,7 @@ class PerformanceEval:
                     total += outputs.size(1)
                 
                 else:
-                    outputs = self.model(images)
+                    outputs = model(images)
                     _, predicted = torch.max(outputs.data, 1)
                     total += labels.size(0) - 1
                     correct += (predicted == labels).sum().item()
