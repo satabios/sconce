@@ -2,6 +2,8 @@
 test/data/
 tests/
 test/*.pth
+*.pth
+*.pt
 tutorials/.ipynb_checkpoints/*
 .idea/
 sconce/__pycache__/
