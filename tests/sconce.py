@@ -39,16 +39,19 @@ import ipdb
 import snntorch
 from snntorch import functional as SF
 
+from performance_eval import PerformanceEval
+from qat import QAT
+from utils import *
+
 import warnings
 
 # Suppress all warnings
 warnings.filterwarnings("ignore")
 
-# Your code using torch goes here
-
 # Optionally, you can reset the warning filter to default
 warnings.filterwarnings("default")
 import warnings
+
 warnings.filterwarnings('ignore')
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
@@ -64,9 +67,7 @@ GiB = 1024 * MiB
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 if device == "cuda":
 	torch.cuda.synchronize()
-
-
-class sconce:
+class Sconce:
 	def __init__(self):
 		"""
 		A class for training and evaluating neural networks with various optimization techniques.
@@ -154,9 +155,22 @@ class sconce:
 		self.layer_idx = 0
 		
 		self.bitwidth = 4
-		
+
 		self.device = None
-	
+		self.preformance_eval = PerformanceEval(
+			dataloader=self.dataloader,
+			snn=self.snn,
+			snn_num_steps=self.snn_num_steps,
+			device=self.device
+		)
+		self.qat = QAT(
+			qat_config=self.qat_config
+		)
+
+	def set_device(self, device):
+		self.device = device
+		self.preformance_eval.device = device
+
 	def forward_pass_snn(self, data, mem_out_rec=None):
 		"""
 		Perform a forward pass through the spiking neural network (SNN).
@@ -183,7 +197,7 @@ class sconce:
 			return torch.stack(spk_rec), torch.stack(mem_rec)
 		else:
 			return torch.stack(spk_rec)
-	
+
 	def train(self, model=None) -> None:
 		"""
 		Trains the model for a specified number of epochs using the specified dataloader and optimizer.
@@ -240,7 +254,7 @@ class sconce:
 			
 			running_loss = 0.0
 			
-			validation_acc = self.evaluate()
+			validation_acc = self.preformance_eval.evaluate(self.model)
 			if validation_acc > val_acc:
 				print(
 					f"Epoch:{epoch + 1} Train Loss: {running_loss / 2000:.5f} Validation Accuracy: {validation_acc:.5f}"
@@ -279,57 +293,6 @@ class sconce:
 			
 			return
 	
-	@torch.no_grad()
-	def evaluate(self, model=None, device=None, Tqdm=True, verbose=False):
-		"""
-		Evaluates the model on the test dataset and returns the accuracy.
-
-		Args:
-		  verbose (bool): If True, prints the test accuracy.
-
-		Returns:
-		  float: The test accuracy as a percentage.
-		"""
-		if model != None:
-			self.model = model
-		if device != None:
-			final_device = device
-		else:
-			final_device = self.device
-		
-		self.model.to(final_device)
-		self.model.eval()
-		with torch.no_grad():
-			correct = 0
-			total = 0
-			local_acc = []
-			if Tqdm:
-				loader = tqdm(self.dataloader["test"], desc="test", leave=False)
-			else:
-				loader = self.dataloader["test"]
-			for i, data in enumerate(loader):
-				images, labels = data
-				images, labels = images.to(final_device), labels.to(final_device)
-				# if ( "venum" in self.prune_mode ):
-				#     out = self.model(images)
-				#     total = len(images)
-				#     return
-				if self.snn:
-					outputs = self.forward_pass_snn(images, mem_out_rec=None)
-					correct += SF.accuracy_rate(outputs, labels) * outputs.size(1)
-					total += outputs.size(1)
-				
-				else:
-					outputs = self.model(images)
-					_, predicted = torch.max(outputs.data, 1)
-					total += labels.size(0) - 1
-					correct += (predicted == labels).sum().item()
-			
-			acc = 100 * correct / total
-			if verbose:
-				print("Test Accuracy: {} %".format(acc))
-			return acc
-	
 	########## Model Profiling ##########
 	def get_model_macs(self, model, inputs) -> int:
 		"""
@@ -344,41 +307,12 @@ class sconce:
 		"""
 		return profile_macs(model, inputs)
 	
-	def measure_inference_latency(
-			self, model, device, input_data, num_samples=100, num_warmups=10
-	):
-		model.to(device)
-		model.eval()
-		
-		x = input_data.to(device)
-		
-		with torch.no_grad():
-			for _ in range(num_warmups):
-				_ = model(x)
-		torch.cuda.synchronize()
-		
-		with torch.no_grad():
-			start_time = time.time()
-			for _ in range(num_samples):
-				_ = model(x)
-				torch.cuda.synchronize()
-			end_time = time.time()
-		elapsed_time = end_time - start_time
-		elapsed_time_ave = elapsed_time / num_samples
-		
-		return elapsed_time_ave
-	
 	def save_torchscript_model(self, model, model_dir, model_filename):
 		if not os.path.exists(model_dir):
 			os.makedirs(model_dir)
 		model_filepath = os.path.join(model_dir, model_filename)
 		
 		torch.jit.save(torch.jit.script(model), model_filepath)
-	
-	def load_torchscript_model(self, model_filepath, device):
-		model = torch.jit.load(model_filepath, map_location=device)
-		
-		return model
 	
 	def get_sparsity(self, tensor: torch.Tensor) -> float:
 		"""
@@ -412,39 +346,6 @@ class sconce:
 			num_elements += param.numel()
 		return 1 - float(num_nonzeros) / num_elements
 	
-	def get_model_size_weights(self, mdl):
-		"""
-		Calculates the size of the model's weights in megabytes.
-
-		Args:
-			mdl (torch.nn.Module): The model whose weights size needs to be calculated.
-
-		Returns:
-			float: The size of the model's weights in megabytes.
-		"""
-		torch.save(mdl.state_dict(), "tmp.pt")
-		mdl_size = round(os.path.getsize("tmp.pt") / 1e6, 3)
-		os.remove("tmp.pt")
-		return mdl_size
-	
-	def get_num_parameters(self, model: nn.Module, count_nonzero_only=False) -> int:
-		"""
-		Calculates the total number of parameters in a given PyTorch model.
-
-		:param model (nn.Module): The PyTorch model.
-		:param count_nonzero_only (bool, optional): If True, only counts the number of non-zero parameters.
-													If False, counts all parameters. Defaults to False.
-
-		"""
-		
-		num_counted_elements = 0
-		for param in model.parameters():
-			if count_nonzero_only:
-				num_counted_elements += param.count_nonzero()
-			else:
-				num_counted_elements += param.numel()
-		return num_counted_elements
-	
 	def get_model_size(
 			self, model: nn.Module, data_width=32, count_nonzero_only=False
 	) -> int:
@@ -453,50 +354,7 @@ class sconce:
 		:param data_width: #bits per element
 		:param count_nonzero_only: only count nonzero weights
 		"""
-		return self.get_num_parameters(model, count_nonzero_only) * data_width
-	
-	@torch.no_grad()
-	def measure_latency(self, model, dummy_input, n_warmup=20, n_test=100):
-		"""
-		Measures the average latency of a given PyTorch model by running it on a dummy input multiple times.
-
-		Args:
-		  model (nn.Module): The PyTorch model to measure the latency of.
-		  dummy_input (torch.Tensor): A dummy input to the model.
-		  n_warmup (int, optional): The number of warmup iterations to run before measuring the latency. Defaults to 20.
-		  n_test (int, optional): The number of iterations to run to measure the latency. Defaults to 100.
-
-		Returns:
-		  float: The average latency of the model in milliseconds.
-		"""
-		model = model.to("cpu")
-		
-		model.eval()
-		
-		dummy_input = dummy_input.to("cpu")
-		
-		if self.snn:
-			if isinstance(model, nn.Sequential):
-				for layer_id in range(len(model)):
-					layer = model[layer_id]
-					if isinstance((layer), snntorch._neurons.leaky.Leaky):
-						layer.mem = layer.mem.to("cpu")
-			else:
-				for module in model.modules():
-					if isinstance((module), snntorch._neurons.leaky.Leaky):
-						module.mem = module.mem.to("cpu")
-		
-		# warmup
-		for _ in range(n_warmup):
-			_ = model(dummy_input)
-		torch.cuda.synchronize()
-		# real test
-		t1 = time.time()
-		for _ in range(n_test):
-			_ = model(dummy_input)
-			torch.cuda.synchronize()
-		t2 = time.time()
-		return (t2 - t1) / n_test  # average latency in ms
+		return get_num_parameters(model, count_nonzero_only) * data_width
 	
 	def plot_weight_distribution(self, bins=256, count_nonzero_only=False):
 		"""
@@ -549,11 +407,11 @@ class sconce:
 		and measuring the resulting accuracy. Returns a dictionary mapping layer names to the sparsity values that resulted
 		in the highest accuracy for each layer.
 
-		:param dense_model_accuracy: the accuracy of the original dense model
-		:param scan_step: the step size for the sparsity scan
-		:param scan_start: the starting sparsity for the scan
-		:param scan_end: the ending sparsity for the scan
-		:param verbose: whether to print progress information during the scan
+		:parameter dense_model_accuracy: the accuracy of the original dense model
+		:parameter scan_step: the step size for the sparsity scan
+		:parameter scan_start: the starting sparsity for the scan
+		:parameter scan_end: the ending sparsity for the scan
+		:parameter verbose: whether to print progress information during the scan
 		:return: a dictionary mapping layer names to the sparsity values that resulted in the highest accuracy for each layer
 		"""
 		
@@ -652,7 +510,7 @@ class sconce:
 				if hit_flag == True:
 					# if self.prune_mode == "venum_sensitivity":
 					#     self.prune_mode = original_prune_mode
-					acc = self.evaluate(Tqdm=False) - dense_model_accuracy
+					acc = self.preformance_eval.evaluate(self.model, Tqdm=False) - dense_model_accuracy
 					# if ("venum" in self.prune_mode):
 					#     self.prune_mode = "venum_sensitivity"
 					self.model = copy.deepcopy(original_model)
@@ -928,7 +786,7 @@ class sconce:
 			model=self.model, count_nonzero_only=True
 		)
 		print(f"\nOriginal Dense Model Size Model={dense_model_size / MiB:.2f} MiB")
-		dense_validation_acc = self.evaluate(verbose=False)
+		dense_validation_acc = self.preformance_eval.evaluate(self.model, verbose=False)
 		print("Original Model Validation Accuracy:", dense_validation_acc, "%")
 		self.dense_model_valid_acc = dense_validation_acc
 		
@@ -1024,12 +882,12 @@ class sconce:
 		pruned_model_size = self.get_model_size(
 			model=pruned_model, count_nonzero_only=True
 		)
-		pruned_validation_acc = self.evaluate(verbose=False)
+		pruned_validation_acc = self.preformance_eval.evaluate(self.model, verbose=False)
 		
 		print(
 			f"\nPruned Model has size={pruned_model_size / MiB:.2f} MiB(non-zeros) = {pruned_model_size / dense_model_size * 100:.2f}% of Original model size"
 		)
-		pruned_model_acc = self.evaluate()
+		pruned_model_acc = self.preformance_eval.evaluate(self.model)
 		print(
 			f"\nPruned Model has Accuracy={pruned_model_acc :.2f} % = {pruned_model_acc - dense_validation_acc :.2f}% of Original model Accuracy"
 		)
@@ -1057,7 +915,7 @@ class sconce:
 		fine_tuned_pruned_model_size = self.get_model_size(
 			model=pruned_model, count_nonzero_only=True
 		)
-		fine_tuned_validation_acc = self.evaluate(verbose=False)
+		fine_tuned_validation_acc = self.preformance_eval.evaluate(self.model, verbose=False)
 		
 		if verbose:
 			print(
@@ -1068,11 +926,11 @@ class sconce:
 				fine_tuned_validation_acc,
 			)
 		
-		quantized_model, model_fp32_trained = self.qat()
+		quantized_model, model_fp32_trained = self.qat.qat(self.model, self.dataloader)
 		
 		model_list = [original_dense_model, pruned_model, quantized_model]
 		
-		self.compare_models(model_list=model_list)
+		self.preformance_eval.compare_models(model_list=model_list)
 	
 	def evaluate_model(self, model, test_loader, device, criterion=None):
 		model.eval()
@@ -1107,294 +965,7 @@ class sconce:
 		print("%.2f MB" % (os.path.getsize("tmp.pt") / 1e6))
 		os.remove("tmp.pt")
 	
-	def qat(self):
-		print(
-			"\n \n==================== Quantization-Aware Training(QAT) ===================="
-		)
-		########### 2.1 ##################3
-		import torch
-		from torch.ao.quantization import (
-			get_default_qconfig_mapping,
-			get_default_qat_qconfig_mapping,
-			QConfigMapping,
-		)
-		import torch.ao.quantization.quantize_fx as quantize_fx
-		import copy
-		
-		model_to_quantize = copy.deepcopy(self.model)
-		qconfig_mapping = get_default_qat_qconfig_mapping(self.qat_config)
-		model_to_quantize.train()
-		# prepare
-		example_inputs = next(iter(self.dataloader['test']))[0][:1, :]
-		model_prepared = quantize_fx.prepare_qat_fx(model_to_quantize, qconfig_mapping, example_inputs)
-		
-		self.model = model_prepared
-		self.train()
-		self.model.eval()
-		model_quantized = quantize_fx.convert_fx(self.model.to('cpu'))
-		
-		model_fp32_trained = copy.deepcopy(model_quantized)
-		model_int8 = quantize_fx.fuse_fx(model_fp32_trained)
-		#
-		# def get_all_layers(model, parent_name=""):
-		#     layers = []
-		#     for name, module in model.named_children():
-		#         full_name = f"{parent_name}.{name}" if parent_name else name
-		#         layers.append((full_name, module))
-		#         if isinstance(module, nn.Module):
-		#             layers.extend(get_all_layers(module, parent_name=full_name))
-		#     return layers
-		#
-		# fusing_layers = [
-		#     torch.nn.modules.conv.Conv2d,
-		#     torch.nn.modules.batchnorm.BatchNorm2d,
-		#     torch.nn.modules.activation.ReLU,
-		#     torch.nn.modules.linear.Linear,
-		#     torch.nn.modules.batchnorm.BatchNorm1d,
-		# ]
-		#
-		# def detect_sequences(lst):
-		#     detected_sequences = []
-		#
-		#     i = 0
-		#     while i < len(lst):
-		#         if i + 2 < len(lst) and [type(l) for l in lst[i : i + 3]] == [
-		#             fusing_layers[0],
-		#             fusing_layers[1],
-		#             fusing_layers[2],
-		#         ]:
-		#             detected_sequences.append(
-		#                 np.take(name_list, [i for i in range(i, i + 3)]).tolist()
-		#             )
-		#             i += 3
-		#         elif i + 1 < len(lst) and [type(l) for l in lst[i : i + 2]] == [
-		#             fusing_layers[0],
-		#             fusing_layers[1],
-		#         ]:
-		#             detected_sequences.append(
-		#                 np.take(name_list, [i for i in range(i, i + 2)]).tolist()
-		#             )
-		#             i += 2
-		#         # if i + 1 < len(lst) and [ type(l) for l in lst[i:i+2]] == [fusing_layers[0], fusing_layers[2]]:
-		#         #     detected_sequences.append(np.take(name_list,[i for i in range(i,i+2)]).tolist())
-		#         #     i += 2
-		#         # elif i + 1 < len(lst) and [ type(l) for l in lst[i:i+2]] == [fusing_layers[1], fusing_layers[2]]:
-		#         #     detected_sequences.append(np.take(name_list,[i for i in range(i,i+2)]).tolist())
-		#         #     i += 2
-		#         elif i + 1 < len(lst) and [type(l) for l in lst[i : i + 2]] == [
-		#             fusing_layers[3],
-		#             fusing_layers[2],
-		#         ]:
-		#             detected_sequences.append(
-		#                 np.take(name_list, [i for i in range(i, i + 2)]).tolist()
-		#             )
-		#             i += 2
-		#         elif i + 1 < len(lst) and [type(l) for l in lst[i : i + 2]] == [
-		#             fusing_layers[3],
-		#             fusing_layers[4],
-		#         ]:
-		#             detected_sequences.append(
-		#                 np.take(name_list, [i for i in range(i, i + 2)]).tolist()
-		#             )
-		#             i += 2
-		#         else:
-		#             i += 1
-		#
-		#     return detected_sequences
-		#
-		# original_model = copy.deepcopy(self.model)
-		#
-		# model_fp32 = copy.deepcopy(self.model)
-		# model_fp32 = nn.Sequential(
-		#     torch.quantization.QuantStub(), model_fp32, torch.quantization.DeQuantStub()
-		# )
-		#
-		# model_fp32.eval()
-		#
-		# all_layers = get_all_layers(model_fp32)
-		# name_list = []
-		# layer_list = []
-		# for name, module in all_layers:
-		#     name_list.append(name)
-		#     layer_list.append(module)
-		#
-		# fusion_layers = detect_sequences(layer_list)
-		#
-		# model_fp32.qconfig = torch.ao.quantization.get_default_qat_qconfig(
-		#     self.qat_config
-		# )
-		#
-		# # fuse the activations to preceding layers, where applicable
-		# # this needs to be done manually depending on the model architecture
-		# model_fp32_fused = torch.ao.quantization.fuse_modules(model_fp32, fusion_layers)
-		#
-		# # Prepare the model for QAT. This inserts observers and fake_quants in
-		# # the model needs to be set to train for QAT logic to work
-		# # the model that will observe weight and activation tensors during calibration.
-		# model_fp32_prepared = torch.ao.quantization.prepare_qat(
-		#     model_fp32_fused.train()
-		# )
-		# self.model = model_fp32_prepared
-		# self.train()
-		#
-		# # Convert the observed model to a quantized model. This does several things:
-		# # quantizes the weights, computes and stores the scale and bias value to be
-		# # used with each activation tensor, fuses modules where appropriate,
-		# # and replaces key operators with quantized implementations.
-		# model_fp32_trained = copy.deepcopy(self.model)
-		# model_fp32_trained.to("cpu")
-		# model_fp32_trained.eval()
-		#
-		# model_int8 = torch.ao.quantization.convert(model_fp32_trained, inplace=True)
-		# model_int8.eval()
-		# # # torch.save(model_int8, 'quantized_model.pt')
-		# # # torch.save(
-		# # #     model_int8.state_dict(),
-		# # #     self.experiment_name + "_quantized" + ".pth",
-		# # # # )
-		# # input_shape = list(next(iter(self.dataloader["test"]))[0].size())
-		# # input_shape[0] = 1
-		# # current_device = "cpu"
-		# # dummy_input = torch.randn(input_shape).to(current_device)
-		# # #
-		# # # self.params.append([self.evaluate(model=model_int8),
-		# # #                     self.measure_latency(model=model_int8, dummy_input=dummy_input),
-		# # #                     self.get_num_parameters(model=model_int8),
-		# # #                     self.get_model_size(model=model_int8, count_nonzero_only=True)])
-		# #
-		# # save_file_name = self.experiment_name + "_int8.pt"
-		# # self.save_torchscript_model(model=model_int8, model_dir="./", model_filename=save_file_name)
-		# #
-		# # quantized_jit_model = self.load_torchscript_model(model_filepath=self.experiment_name + "_int8.pt", device='cpu')
-		# #
-		# # _, fp32_eval_accuracy = self.evaluate_model(model=original_model, test_loader=self.dataloader['test'], device='cpu', criterion=None)
-		# # _, int8_eval_accuracy = self.evaluate_model(model=model_int8, test_loader=self.dataloader['test'], device='cpu',
-		# #                                        criterion=None)
-		# # _, int8_jit_eval_accuracy = self.evaluate_model(model=quantized_jit_model, test_loader=self.dataloader['test'],
-		# #                                             device='cpu', criterion=None)
-		# # print("FP32 evaluation accuracy: {:.3f}".format(fp32_eval_accuracy))
-		# # print("INT8 evaluation accuracy: {:.3f}".format(int8_eval_accuracy))
-		# # print("INT8 JIT evaluation accuracy: {:.3f}".format(int8_eval_accuracy))
-		# #
-		# #
-		# # fp32_cpu_inference_latency = self.measure_inference_latency(model=original_model, device='cpu',
-		# #                                                        input_data=dummy_input, num_samples=100)
-		# # int8_cpu_inference_latency = self.measure_inference_latency(model=model_int8, device='cpu',
-		# #                                                        input_data=dummy_input, num_samples=100)
-		# # int8_jit_cpu_inference_latency = self.measure_inference_latency(model=quantized_jit_model, device='cpu',
-		# #                                                            input_data=dummy_input, num_samples=100)
-		# # fp32_gpu_inference_latency = self.measure_inference_latency(model=original_model, device='cuda',
-		# #                                                        input_data=dummy_input, num_samples=100)
-		# #
-		# # print("FP32 CPU Inference Latency: {:.2f} ms / sample".format(fp32_cpu_inference_latency * 1000))
-		# # print("FP32 CUDA Inference Latency: {:.2f} ms / sample".format(fp32_gpu_inference_latency * 1000))
-		# # print("INT8 CPU Inference Latency: {:.2f} ms / sample".format(int8_cpu_inference_latency * 1000))
-		# # print("INT8 JIT CPU Inference Latency: {:.2f} ms / sample".format(int8_jit_cpu_inference_latency * 1000))
-		
-		return model_int8, model_fp32_trained
-	
 	# def compare_models(self, original_dense_model, pruned_fine_tuned_model, quantization=False,accuracies=None):
-	
-	def compare_models(self, model_list, model_tags=None):
-		"""
-		Compares the performance of two PyTorch models: an original dense model and a pruned and fine-tuned model.
-		Prints a table of metrics including latency, MACs, and model size for both models and their reduction ratios.
-
-		Args:
-		- original_dense_model: a PyTorch model object representing the original dense model
-		- pruned_fine_tuned_model: a PyTorch model object representing the pruned and fine-tuned model
-
-		Returns: None
-		"""
-		
-		table_data = {
-			"latency": ["Latency (ms/sample)"],
-			"accuracy": ["Accuracy (%)"],
-			"params": ["Params (M)"],
-			"size": ["Size (MiB)"],
-			"mac": ["MAC (M)"],
-			# "energy": ["Energy (Joules)"],
-		}
-		table = PrettyTable()
-		table.field_names = ["", "Original Model", "Pruned Model", "Quantized Model"]
-		
-		accuracies, latency, params, model_size, macs = [], [], [], [], []
-		skip = 3
-		
-		input_shape = list(next(iter(self.dataloader["test"]))[0].size())
-		input_shape[0] = 1
-		dummy_input = torch.randn(input_shape).to("cpu")
-		file_name_list = ["original_model", "pruned_model", "quantized_model"]
-		if not os.path.exists("weights/"):
-			os.makedirs("weights/")
-		for model, model_file_name in zip(model_list, file_name_list):
-			# print(str(model))
-			# # Parse through snn model and send to cpu
-			if self.snn:
-				if isinstance(model, nn.Sequential):
-					for layer_id in range(len(model)):
-						layer = model[layer_id]
-						if isinstance((layer), snntorch._neurons.leaky.Leaky):
-							layer.mem = layer.mem.to("cpu")
-				else:
-					for module in model.modules():
-						if isinstance((layer), snntorch._neurons.leaky.Leaky):
-							layer.mem = layer.mem.to("cpu")
-			
-			table_data["accuracy"].append(
-				round(self.evaluate(model=model, device="cpu"), 3)
-			)
-			table_data["latency"].append(
-				round(
-					self.measure_latency(model=model.to("cpu"), dummy_input=dummy_input)
-					* 1000,
-					1,
-				)
-			)
-			table_data["size"].append(self.get_model_size_weights(model))
-			
-			try:
-				model_params = self.get_num_parameters(model, count_nonzero_only=True)
-				if torch.is_tensor(model_params):
-					model_params = model_params.item()
-				model_params = round(model_params / 1e6, 2)
-				if model_params == 0:
-					table_data["params"].append("*")
-				else:
-					table_data["params"].append(model_params)
-			except RuntimeError as e:
-				table_data["params"].append("*")
-			if skip == 1:
-				table_data["mac"].append("*")
-				pass
-			else:
-				try:
-					mac = self.get_model_macs(model, dummy_input)
-					table_data["mac"].append(round(mac / 1e6))
-				except AttributeError as e:
-					table_data["mac"].append("-")
-			
-			########################################
-			
-			folder_file_name = "weights/" + model_file_name + "/"
-			if not os.path.exists(folder_file_name):
-				os.makedirs(folder_file_name)
-			folder_file_name += model_file_name
-			torch.save(model, folder_file_name + ".pt")
-			torch.save(model.state_dict(), folder_file_name + "_weights.pt")
-			traced_model = torch.jit.trace(model, dummy_input)
-			torch.jit.save(torch.jit.script(traced_model), folder_file_name + ".pt")
-			
-			########################################
-			# Save model with pt,.pth and jit
-			skip -= 1
-		
-		for key, value in table_data.items():
-			table.add_row(value)
-		print(
-			"\n \n============================== Comparison Table =============================="
-		)
-		print(table)
 	
 	# # accuracies = accuracies
 	# if( accuracies == None):

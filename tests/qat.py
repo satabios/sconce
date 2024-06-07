@@ -1,12 +1,12 @@
 class QAT:
     def __init__(self, qat_config) -> None:
         self.qat_config = qat_config
-
+    
     def qat(self, model, dataloader):
         print(
             "\n \n==================== Quantization-Aware Training(QAT) ===================="
         )
-        ########### 2.1 ##################
+        ########### 2.1 ###################
         import torch
         from torch.ao.quantization import (
             get_default_qconfig_mapping,
@@ -23,10 +23,10 @@ class QAT:
         example_inputs = next(iter(dataloader['test']))[0][:1, :]
         model_prepared = quantize_fx.prepare_qat_fx(model_to_quantize, qconfig_mapping, example_inputs)
         
-        self.model = model_prepared
-        self.train()
-        self.model.eval()
-        model_quantized = quantize_fx.convert_fx(model.to('cpu'))
+        model = model_prepared
+        model = self.train()
+        model.eval()
+        model_quantized = quantize_fx.convert_fx(self.model.to('cpu'))
         
         model_fp32_trained = copy.deepcopy(model_quantized)
         model_int8 = quantize_fx.fuse_fx(model_fp32_trained)

@@ -1,9 +1,8 @@
 .eggs/
 test/data/
-tests/
-test/*.pth
-*.pth
-*.pt
+# tests/
+tests/*.pth
+tests/weights
 tutorials/.ipynb_checkpoints/*
 .idea/
 sconce/__pycache__/

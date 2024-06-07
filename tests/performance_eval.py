@@ -11,11 +11,14 @@ import time
 from prettytable import PrettyTable
 from tqdm import tqdm
 
+from utils import *
+
 class PerformanceEval:
-    def __init__(self, dataloader, snn, snn_num_steps) -> None:
+    def __init__(self, dataloader, snn, snn_num_steps, device) -> None:
         self.dataloader = dataloader
         self.snn = snn
         self.snn_num_steps = snn_num_steps
+        self.device = device
 
     def load_torchscript_model(self, model_filepath, device):
         model = torch.jit.load(model_filepath, map_location=device)
@@ -110,6 +113,7 @@ class PerformanceEval:
             correct = 0
             total = 0
             local_acc = []
+            print(next(iter(self.dataloader["test"]).shape))
             if Tqdm:
                 loader = tqdm(self.dataloader["test"], desc="test", leave=False)
             else:
@@ -136,39 +140,6 @@ class PerformanceEval:
             if verbose:
                 print("Test Accuracy: {} %".format(acc))
             return acc
-          
-    def get_model_size_weights(self, mdl):
-        """
-        Calculates the size of the model's weights in megabytes.
-
-        Args:
-            mdl (torch.nn.Module): The model whose weights size needs to be calculated.
-
-        Returns:
-            float: The size of the model's weights in megabytes.
-        """
-        torch.save(mdl.state_dict(), "tmp.pt")
-        mdl_size = round(os.path.getsize("tmp.pt") / 1e6, 3)
-        os.remove("tmp.pt")
-        return mdl_size
-
-    def get_num_parameters(self, model: nn.Module, count_nonzero_only=False) -> int:
-        """
-        Calculates the total number of parameters in a given PyTorch model.
-
-        :param model (nn.Module): The PyTorch model.
-        :param count_nonzero_only (bool, optional): If True, only counts the number of non-zero parameters.
-                                                    If False, counts all parameters. Defaults to False.
-
-        """
-        
-        num_counted_elements = 0
-        for param in model.parameters():
-            if count_nonzero_only:
-                num_counted_elements += param.count_nonzero()
-            else:
-                num_counted_elements += param.numel()
-        return num_counted_elements
     
     def compare_models(self, model_list, model_tags=None):
         """
@@ -226,10 +197,10 @@ class PerformanceEval:
                     1,
                 )
             )
-            table_data["size"].append(self.get_model_size_weights(model))
+            table_data["size"].append(get_model_size_weights(model))
             
             try:
-                model_params = self.get_num_parameters(model, count_nonzero_only=True)
+                model_params = get_num_parameters(model, count_nonzero_only=True)
                 if torch.is_tensor(model_params):
                     model_params = model_params.item()
                 model_params = round(model_params / 1e6, 2)
