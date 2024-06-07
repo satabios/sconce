@@ -2,7 +2,7 @@ class QAT:
     def __init__(self, qat_config) -> None:
         self.qat_config = qat_config
     
-    def qat(self, model, dataloader):
+    def qat(self, model, dataloader, train_fn, device):
         print(
             "\n \n==================== Quantization-Aware Training(QAT) ===================="
         )
@@ -24,9 +24,9 @@ class QAT:
         model_prepared = quantize_fx.prepare_qat_fx(model_to_quantize, qconfig_mapping, example_inputs)
         
         model = model_prepared
-        model = self.train()
+        model = train_fn(model, dataloader, device)
         model.eval()
-        model_quantized = quantize_fx.convert_fx(self.model.to('cpu'))
+        model_quantized = quantize_fx.convert_fx(model.to('cpu'))
         
         model_fp32_trained = copy.deepcopy(model_quantized)
         model_int8 = quantize_fx.fuse_fx(model_fp32_trained)

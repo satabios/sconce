@@ -158,18 +158,12 @@ class Sconce:
 
 		self.device = None
 		self.preformance_eval = PerformanceEval(
-			dataloader=self.dataloader,
 			snn=self.snn,
 			snn_num_steps=self.snn_num_steps,
-			device=self.device
 		)
 		self.qat = QAT(
 			qat_config=self.qat_config
 		)
-
-	def set_device(self, device):
-		self.device = device
-		self.preformance_eval.device = device
 
 	def forward_pass_snn(self, data, mem_out_rec=None):
 		"""
@@ -198,7 +192,7 @@ class Sconce:
 		else:
 			return torch.stack(spk_rec)
 
-	def train(self, model=None) -> None:
+	def train(self, model, dataloader, device) -> None:
 		"""
 		Trains the model for a specified number of epochs using the specified dataloader and optimizer.
 		If fine-tuning is enabled, the number of epochs is set to `num_finetune_epochs`.
@@ -206,18 +200,18 @@ class Sconce:
 		"""
 		
 		torch.cuda.empty_cache()
-		self.model.to(self.device)
+		model.to(device)
 		
 		val_acc = 0
 		running_loss = 0.0
 		
 		epochs = self.epochs if self.fine_tune == False else self.num_finetune_epochs
 		for epoch in range(epochs):
-			self.model.train()
+			model.train()
 			validation_acc = 0
 			
 			for i, data in enumerate(
-					tqdm(self.dataloader["train"], desc="train", leave=False)
+					tqdm(dataloader["train"], desc="train", leave=False)
 			):
 				# Move the data from CPU to GPU
 				if self.goal != "autoencoder":
@@ -235,7 +229,7 @@ class Sconce:
 					SF.accuracy_rate(outputs, targets) / 100
 				
 				else:
-					outputs = self.model(inputs)
+					outputs = model(inputs)
 				loss = self.criterion(outputs, targets)
 				
 				# Backward propagation
@@ -254,7 +248,7 @@ class Sconce:
 			
 			running_loss = 0.0
 			
-			validation_acc = self.preformance_eval.evaluate(self.model)
+			validation_acc = self.preformance_eval.evaluate(model, dataloader, device)
 			if validation_acc > val_acc:
 				print(
 					f"Epoch:{epoch + 1} Train Loss: {running_loss / 2000:.5f} Validation Accuracy: {validation_acc:.5f}"
@@ -263,6 +257,7 @@ class Sconce:
 					copy.deepcopy(self.model.state_dict()),
 					self.experiment_name + ".pth",
 				)
+		return model
 	
 	@torch.no_grad()
 	def venum_evaluate(self, Tqdm=True, verbose=False):
@@ -510,7 +505,7 @@ class Sconce:
 				if hit_flag == True:
 					# if self.prune_mode == "venum_sensitivity":
 					#     self.prune_mode = original_prune_mode
-					acc = self.preformance_eval.evaluate(self.model, Tqdm=False) - dense_model_accuracy
+					acc = self.preformance_eval.evaluate(self.model, self.dataloader, device=self.device, Tqdm=False) - dense_model_accuracy
 					# if ("venum" in self.prune_mode):
 					#     self.prune_mode = "venum_sensitivity"
 					self.model = copy.deepcopy(original_model)
@@ -786,7 +781,7 @@ class Sconce:
 			model=self.model, count_nonzero_only=True
 		)
 		print(f"\nOriginal Dense Model Size Model={dense_model_size / MiB:.2f} MiB")
-		dense_validation_acc = self.preformance_eval.evaluate(self.model, verbose=False)
+		dense_validation_acc = self.preformance_eval.evaluate(self.model, self.dataloader, self.device, verbose=False)
 		print("Original Model Validation Accuracy:", dense_validation_acc, "%")
 		self.dense_model_valid_acc = dense_validation_acc
 		
@@ -882,12 +877,12 @@ class Sconce:
 		pruned_model_size = self.get_model_size(
 			model=pruned_model, count_nonzero_only=True
 		)
-		pruned_validation_acc = self.preformance_eval.evaluate(self.model, verbose=False)
+		pruned_validation_acc = self.preformance_eval.evaluate(self.model, self.dataloader, self.device, verbose=False)
 		
 		print(
 			f"\nPruned Model has size={pruned_model_size / MiB:.2f} MiB(non-zeros) = {pruned_model_size / dense_model_size * 100:.2f}% of Original model size"
 		)
-		pruned_model_acc = self.preformance_eval.evaluate(self.model)
+		pruned_model_acc = self.preformance_eval.evaluate(self.model, self.dataloader, self.device)
 		print(
 			f"\nPruned Model has Accuracy={pruned_model_acc :.2f} % = {pruned_model_acc - dense_validation_acc :.2f}% of Original model Accuracy"
 		)
@@ -901,7 +896,7 @@ class Sconce:
 				self.optimizer, self.num_finetune_epochs
 			)
 			
-			self.train()
+			self.model = self.train(self.model, self.dataloader, self.device)
 			save_file_name = self.experiment_name + "_pruned_fine_tuned" + ".pt"
 			self.save_torchscript_model(
 				model=self.model, model_dir="./", model_filename=save_file_name
@@ -915,7 +910,7 @@ class Sconce:
 		fine_tuned_pruned_model_size = self.get_model_size(
 			model=pruned_model, count_nonzero_only=True
 		)
-		fine_tuned_validation_acc = self.preformance_eval.evaluate(self.model, verbose=False)
+		fine_tuned_validation_acc = self.preformance_eval.evaluate(self.model, self.dataloader, self.device, verbose=False)
 		
 		if verbose:
 			print(
@@ -926,11 +921,11 @@ class Sconce:
 				fine_tuned_validation_acc,
 			)
 		
-		quantized_model, model_fp32_trained = self.qat.qat(self.model, self.dataloader)
+		quantized_model, model_fp32_trained = self.qat.qat(self.model, self.dataloader, self.train, self.device)
 		
 		model_list = [original_dense_model, pruned_model, quantized_model]
 		
-		self.preformance_eval.compare_models(model_list=model_list)
+		self.preformance_eval.compare_models(model_list=model_list, dataloader=self.dataloader)
 	
 	def evaluate_model(self, model, test_loader, device, criterion=None):
 		model.eval()

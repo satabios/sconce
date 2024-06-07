@@ -14,11 +14,9 @@ from tqdm import tqdm
 from utils import *
 
 class PerformanceEval:
-    def __init__(self, dataloader, snn, snn_num_steps, device) -> None:
-        self.dataloader = dataloader
+    def __init__(self, snn, snn_num_steps) -> None:
         self.snn = snn
         self.snn_num_steps = snn_num_steps
-        self.device = device
 
     def load_torchscript_model(self, model_filepath, device):
         model = torch.jit.load(model_filepath, map_location=device)
@@ -92,7 +90,7 @@ class PerformanceEval:
         return (t2 - t1) / n_test  # average latency in ms
 
     @torch.no_grad()
-    def evaluate(self, model, device=None, Tqdm=True, verbose=False):
+    def evaluate(self, model, dataloader, device=None, Tqdm=True, verbose=False):
         """
         Evaluates the model on the test dataset and returns the accuracy.
 
@@ -113,11 +111,11 @@ class PerformanceEval:
             correct = 0
             total = 0
             local_acc = []
-            print(next(iter(self.dataloader["test"]).shape))
+
             if Tqdm:
-                loader = tqdm(self.dataloader["test"], desc="test", leave=False)
+                loader = tqdm(dataloader["test"], desc="test", leave=False)
             else:
-                loader = self.dataloader["test"]
+                loader = dataloader["test"]
             for i, data in enumerate(loader):
                 images, labels = data
                 images, labels = images.to(final_device), labels.to(final_device)
@@ -141,7 +139,7 @@ class PerformanceEval:
                 print("Test Accuracy: {} %".format(acc))
             return acc
     
-    def compare_models(self, model_list, model_tags=None):
+    def compare_models(self, model_list, dataloader, model_tags=None):
         """
         Compares the performance of two PyTorch models: an original dense model and a pruned and fine-tuned model.
         Prints a table of metrics including latency, MACs, and model size for both models and their reduction ratios.
@@ -167,7 +165,7 @@ class PerformanceEval:
         accuracies, latency, params, model_size, macs = [], [], [], [], []
         skip = 3
         
-        input_shape = list(next(iter(self.dataloader["test"]))[0].size())
+        input_shape = list(next(iter(dataloader["test"]))[0].size())
         input_shape[0] = 1
         dummy_input = torch.randn(input_shape).to("cpu")
         file_name_list = ["original_model", "pruned_model", "quantized_model"]
@@ -188,7 +186,7 @@ class PerformanceEval:
                             layer.mem = layer.mem.to("cpu")
             
             table_data["accuracy"].append(
-                round(self.evaluate(model=model, device="cpu"), 3)
+                round(self.evaluate(model=model, dataloader=dataloader, device="cpu"), 3)
             )
             table_data["latency"].append(
                 round(

@@ -90,8 +90,7 @@ for split in ["train", "test"]:
         pin_memory=True,
     )
 
-
-from sconce import sconce
+from sconce import Sconce
 
 # from torchvision.models import resnet18
 # resnet = resnet18(pretrained=False)#.eval()
@@ -146,9 +145,8 @@ model = VGG().cuda()
 checkpoint = torch.load("./vgg.cifar.pretrained.pth")
 model.load_state_dict(checkpoint)
 
-#
-#
-sconces = sconce()
+
+sconces = Sconce()
 sconces.model = copy.deepcopy(model)
 sconces.criterion = nn.CrossEntropyLoss()  # Loss
 sconces.optimizer = optim.Adam(sconces.model.parameters(), lr=1e-4)
@@ -171,7 +169,7 @@ sconces.compress()
 # mobilenet_v2.load_state_dict(torch.load("/home/sathya/Desktop/test-bed/mobilenet_v2-cifar10.pth"))
 # # mobilenet_v3 = torch.hub.load('pytorch/vision:v0.10.0', 'mobilenet_v3_small', pretrained=True)
 #
-sconces = sconce()
+sconces = Sconce()
 sconces.model = copy.deepcopy(model)
 sconces.criterion = nn.CrossEntropyLoss()  # Loss
 sconces.optimizer = optim.Adam(sconces.model.parameters(), lr=1e-4)

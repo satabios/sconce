@@ -2,6 +2,7 @@
 test/data/
 # tests/
 tests/*.pth
+tests/*.pt
 tests/weights
 tutorials/.ipynb_checkpoints/*
 .idea/
