@@ -2,6 +2,8 @@
 Introduction
 ================
 
+
+
 .. image:: https://readthedocs.org/projects/sconce/badge/?version=latest
         :target: https://sconce.readthedocs.io/en/latest/?badge=latest
 .. image:: https://github.com/satabios/sconce/actions/workflows/python-publish.yml/badge.svg
@@ -12,14 +14,24 @@ Introduction
    :alt: Discord
 
 
+Bored to read it thoroughly? Give a quick look at the mind map behind why this package was developed: `Mind Map <https://excalidraw.com/#json=0hhYxkli0cP3ihUNfEIjm,vc3pJg3WeGQdCCDaaLRLZg>`_. 
+Then get grinding with a Quick Start Notebook:
+
+
+.. image:: https://colab.research.google.com/assets/colab-badge.svg
+        :alt: Open In Colab
+        :target: https://colab.research.google.com/github/satabios/sconce/blob/main/tutorials/Compression-Pipeline.ipynb#
+
+If you are still reading, bruh!!!! Thank you...
+
+
 
 The advancement of deep learning has been primarily driven by the availability of large datasets and the computational power to train large models. The complexity increases with each day, and it is becoming increasingly difficult to train/deploy these models.
-
 However, the brain can learn from a few examples and is incredibly energy efficient (Psst.. that too sparsely).
 
 Humans tend to solve problems from their lens of perspective, and thus, we comprehend the universe through mathematical models. One such postulation is the concept of gradient descent or other optimization techniques we use to train our models. However, the brain does not use gradient descent to learn. How the brain learns and can solve complex problems is still a mystery.
 
-Until we hit the holy grail, we must make wise methods to achieve efficiency. **The logical solution is to minimize the usage of CPM (Computation, Power, Memory) and thus achieve high throughputs and latency gains.**
+Until we hit the holy grail, we must make wise methods to achieve efficiency. **The logical solution is to minimize the usage of COPM (Performance, Computation, Power, Memory) and thus achieve high throughputs and latency gains.**
 
 Hence, this package aims to bridge this gap by compressing a model end-to-end and making it hardware-friendly with Minimal Human Intervention.
 
