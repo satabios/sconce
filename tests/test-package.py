@@ -168,19 +168,19 @@ sconces.compress()
 # # print("=======================================================================\n")
 #
 # mobilenet_v2 = torch.hub.load('pytorch/vision:v0.10.0', 'mobilenet_v2', pretrained=True).to('cuda')
-# mobilenet_v2.load_state_dict(torch.load("/home/sathya/Desktop/test-bed/mobilenet_v2-cifar10.pth"))
-# # mobilenet_v3 = torch.hub.load('pytorch/vision:v0.10.0', 'mobilenet_v3_small', pretrained=True)
-#
-sconces = sconce()
-sconces.model = copy.deepcopy(model)
-sconces.criterion = nn.CrossEntropyLoss()  # Loss
-sconces.optimizer = optim.Adam(sconces.model.parameters(), lr=1e-4)
-sconces.scheduler = optim.lr_scheduler.CosineAnnealingLR(sconces.optimizer, T_max=200)
-sconces.dataloader = dataloader
-sconces.epochs = 5  # Number of time we iterate over the data
-sconces.num_finetune_epochs = 5
-sconces.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-sconces.experiment_name = "vgg-gmp"
-sconces.prune_mode = "GMP"  # Supports Automated Pruning Ratio Detection
-# Compress the model
-sconces.compress()
+# # mobilenet_v2.load_state_dict(torch.load("/home/sathya/Desktop/test-bed/mobilenet_v2-cifar10.pth"))
+# # # mobilenet_v3 = torch.hub.load('pytorch/vision:v0.10.0', 'mobilenet_v3_small', pretrained=True)
+# #
+# sconces = sconce()
+# sconces.model = copy.deepcopy(model)
+# sconces.criterion = nn.CrossEntropyLoss()  # Loss
+# sconces.optimizer = optim.Adam(sconces.model.parameters(), lr=1e-4)
+# sconces.scheduler = optim.lr_scheduler.CosineAnnealingLR(sconces.optimizer, T_max=200)
+# sconces.dataloader = dataloader
+# sconces.epochs = 5  # Number of time we iterate over the data
+# sconces.num_finetune_epochs = 5
+# sconces.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+# sconces.experiment_name = "vgg-gmp"
+# sconces.prune_mode = "GMP"  # Supports Automated Pruning Ratio Detection
+# # Compress the model
+# sconces.compress()
