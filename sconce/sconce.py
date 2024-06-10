@@ -1406,15 +1406,15 @@ class sconce:
         # Define the column headers
         prof_table.field_names = ["Metrics", "Original Model", "Optimized Model", "Speed-Up/Compression Achieved"]
 
-        prof_table.add_row(["Latency", str(table_data['latency'][1]), str(table_data['latency'][-1]),
+        prof_table.add_row(["Latency (ms/sample)", str(table_data['latency'][1]), str(table_data['latency'][-1]),
                             f"{table_data['latency'][1] / table_data['latency'][-1]:.2f} x"])
-        prof_table.add_row(["Parameters", str(table_data['params'][1]), str(table_data['params'][2]),
+        prof_table.add_row(["Parameters (M)", str(table_data['params'][1]), str(table_data['params'][2]),
                             f"{((table_data['params'][1] - table_data['params'][2]) / table_data['params'][1]) * 100:.2f} %"])
-        prof_table.add_row(["Memory", str(table_data['size'][1]), str(table_data['size'][-1]),
+        prof_table.add_row(["Memory (MiB)", str(table_data['size'][1]), str(table_data['size'][-1]),
                             f"{((table_data['size'][1] - table_data['size'][-1]) / table_data['size'][1]) * 100:.2f} %"])
-        prof_table.add_row(["MACs(≈ 2FLOPs)", str(table_data['mac'][1]), str(table_data['mac'][2]),
+        prof_table.add_row(["MACs(≈ 2FLOPs) (M)", str(table_data['mac'][1]), str(table_data['mac'][2]),
                             f"{((table_data['mac'][1] - table_data['mac'][2]) / table_data['mac'][1]) * 100:.2f} %"])
-        prof_table.add_row(["Accuracy", str(table_data['accuracy'][1]), str(table_data['accuracy'][-1]),
+        prof_table.add_row(["Accuracy (%)", str(table_data['accuracy'][1]), str(table_data['accuracy'][-1]),
                             f"{((table_data['accuracy'][-1] - table_data['accuracy'][1]) / table_data['accuracy'][1]) * 100:.2f} %"])
 
         # Print the table
