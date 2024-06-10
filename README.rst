@@ -14,7 +14,7 @@ Introduction
    :alt: Discord
 
 
-Bored to read it thoroughly? Give a quick look at the mind map behind why this package was developed: `Mind Map <https://excalidraw.com/#json=whpWmjFSqX07lpfrzoh3e,rpI7vzPLALmbSRsXKRqvoA>`_. 
+Bored to read it thoroughly? Give a quick look at the mind map behind why this package was developed: `Mind Map <https://excalidraw.com/#json=Xt1nXZdQ5EWm-lOkGCqGm,yEsMLBW7yvHBAIfMVt8_Cg>`_. 
 Then get grinding with a Quick Start Notebook:
 
 
