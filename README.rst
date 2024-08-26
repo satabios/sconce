@@ -20,7 +20,7 @@ Then get grinding with a Quick Start Notebook:
 
 .. image:: https://colab.research.google.com/assets/colab-badge.svg
         :alt: Open In Colab
-        :target: https://colab.research.google.com/github/satabios/sconce/blob/main/tutorials/Compression-Pipeline.ipynb#
+        :target: https://colab.research.google.com/github/satabios/sconce/blob/main/tutorials/Compression-Pipeline.ipynb
 
 If you are still reading, bruh!!!! Thank you...
 
