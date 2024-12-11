@@ -13,3 +13,12 @@
 [submodule "tutorials/CUDA/Learn-CUDA-Programming"]
 	path = tutorials/CUDA/Learn-CUDA-Programming
 	url = https://github.com/satabios/Learn-CUDA-Programming
+[submodule "quantization"]
+	path = quantization
+	url = https://github.com/satabios/quantization
+[submodule "tutorials/quantization"]
+	path = tutorials/quantization
+	url = https://github.com/satabios/quantization
+[submodule "tutorials/Quantization/quantization"]
+	path = tutorials/Quantization/quantization
+	url = https://github.com/satabios/quantization
