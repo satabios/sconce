@@ -119,3 +119,6 @@ snnenv-rog/
 
 # Additional Files
 dataset/
+
+#ipynb
+.ipynb_checkpoints/
