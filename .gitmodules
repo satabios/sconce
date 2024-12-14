@@ -25,3 +25,6 @@
 [submodule "tutorials/llm/llm-exploration"]
 	path = tutorials/llm/llm-exploration
 	url = https://github.com/satabios/llm-exploration.git
+[submodule "tutorials/CUDA/cuda-exploration"]
+	path = tutorials/CUDA/cuda-exploration
+	url = https://github.com/satabios/cuda-exploration
