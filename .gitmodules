@@ -22,3 +22,6 @@
 [submodule "tutorials/Quantization/quantization"]
 	path = tutorials/Quantization/quantization
 	url = https://github.com/satabios/quantization
+[submodule "tutorials/llm/llm-exploration"]
+	path = tutorials/llm/llm-exploration
+	url = https://github.com/satabios/llm-exploration.git
