@@ -79,7 +79,7 @@ or chat in our `discord <https://discord.gg/GKwXMrZr>`_ channel.
 
 A Brief workflow is shown below:
 
-.. image:: https://github.com/satabios/sconce/blob/main/docs/source/images/sconce-outline.jpeg?raw=true
+.. image:: https://github.com/satabios/sconce/blob/main/docs/source/images/pipeline.png?raw=true
         :align: center
         :width: 1510px
 
