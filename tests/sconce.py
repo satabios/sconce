@@ -9,7 +9,10 @@ from snntorch import utils
 from collections import namedtuple
 from snntorch import functional as SF
 
-# Suppress all warnings
+from pruner import prune
+from quanter import  quantization
+from perf import performance
+
 import warnings
 warnings.filterwarnings("ignore")
 warnings.filterwarnings("default")
@@ -28,9 +31,6 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 if device == "cuda":
 	torch.cuda.synchronize()
 
-from pruner import prune
-from quanter import  quantization
-from perf import performance
 
 
 class sconce(quantization, performance, prune):
@@ -341,23 +341,26 @@ class sconce(quantization, performance, prune):
 		elif self.prune_mode == "CWP":
 			print("\n Channel-Wise Pruning")
 			sensitivity_start_time = time.time()
-			self.sensitivity_scan(
-				dense_model_accuracy=dense_validation_acc, verbose=False
-			)
+			# self.sensitivity_scan(
+			# 	dense_model_accuracy=dense_validation_acc, verbose=False
+			# )
 			sensitivity_start_end = time.time()
 			print(
 				"Sensitivity Scan Time(mins):",
-				(sensitivity_start_end - sensitivity_start_time) / 60,
+				(sensitivity_start_end - sensitivity_start_time) / 60, "\n"
 			)
 			
-			# self.sparsity_dict = {'backbone.conv0.weight': 0.15000000000000002, 'backbone.conv1.weight': 0.15, 'backbone.conv2.weight': 0.15, 'backbone.conv3.weight': 0.15000000000000002, 'backbone.conv4.weight': 0.20000000000000004, 'backbone.conv5.weight': 0.20000000000000004, 'backbone.conv6.weight': 0.45000000000000007}
-			print(f"Sparsity for each Layer: {self.sparsity_dict} \n\n\n")
+			self.sparsity_dict = {'backbone.conv0.weight': 0.15000000000000002, 'backbone.conv1.weight': 0.15, 'backbone.conv2.weight': 0.15, 'backbone.conv3.weight': 0.15000000000000002, 'backbone.conv4.weight': 0.20000000000000004, 'backbone.conv5.weight': 0.20000000000000004, 'backbone.conv6.weight': 0.45000000000000007}
+			print("Sparsity for each Layer: ")
+			for k, v in self.sparsity_dict.items():
+				print(f"Layer Name: {k}: Sparsity:{v*100:.2f}%")
+
 			self.CWP_Pruning()  # Channelwise Pruning
 			self.fine_tune = True
 		
 
 		print(
-			"Pruning Time Consumed (mins):", (time.time() - sensitivity_start_end) / 60
+			"\nPruning Time Consumed (mins):", (time.time() - sensitivity_start_end) / 60
 		)
 		print(
 			"Total Pruning Time Consumed (mins):",

@@ -1,6 +1,6 @@
 import copy
 from collections import defaultdict, OrderedDict
-
+import os
 import numpy as np
 import torch
 from torch import nn
@@ -142,8 +142,24 @@ from sconce import sconce
 #
 # load the pretrained model
 #
+import subprocess
+import os
+
+def download_url(url, output_path):
+
+    try:
+        subprocess.run(["wget", "-O", output_path, url], check=True)
+        return output_path
+    except subprocess.CalledProcessError as e:
+        print(f"Failed to download {url}: {e}")
+        return None
+
+
+
+download_url("https://huggingface.co/satabios/pre-trained_cifar10/resolve/main/vgg.cifar.pretrained.pth?download=true", "vgg.cifar.pretrained.pth")
+
 model = VGG().cuda()
-checkpoint = torch.load("./vgg.cifar.pretrained.pth")
+checkpoint = torch.load("./vgg.cifar.pretrained.pth", weights_only=True)
 model.load_state_dict(checkpoint)
 
 #

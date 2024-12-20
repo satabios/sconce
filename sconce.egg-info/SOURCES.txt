@@ -5,6 +5,10 @@ requirements.txt
 setup.cfg
 setup.py
 sconce/__init__.py
+sconce/model_analyzer.py
+sconce/perf.py
+sconce/pruner.py
+sconce/quanter.py
 sconce/sconce.py
 sconce.egg-info/PKG-INFO
 sconce.egg-info/SOURCES.txt
