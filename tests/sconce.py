@@ -156,19 +156,22 @@ class sconce(quantization, performance, prune):
 		Trains the model for a specified number of epochs using the specified dataloader and optimizer.
 		If fine-tuning is enabled, the number of epochs is set to `num_finetune_epochs`.
 		The function also saves the model state after each epoch if the validation accuracy improves.
+		If `model` is provided, applies supervised Knowledge Distillation (KD) using the provided teacher model.
 		"""
-		
 		torch.cuda.empty_cache()
 		self.model.to(self.device)
-		
+		if model is not None:
+			model.to(self.device)
+			model.eval()  # Ensure the teacher model stays in evaluation mode during training
+
 		val_acc = 0
 		running_loss = 0.0
-		
-		epochs = self.epochs if self.fine_tune == False else self.num_finetune_epochs
+
+		epochs = self.epochs if not self.fine_tune else self.num_finetune_epochs
 		for epoch in range(epochs):
 			self.model.train()
 			validation_acc = 0
-			
+
 			for i, data in enumerate(
 					tqdm(self.dataloader["train"], desc="train", leave=False)
 			):
@@ -178,35 +181,55 @@ class sconce(quantization, performance, prune):
 					inputs, targets = inputs.to(self.device), targets.to(self.device)
 				elif self.goal == "autoencoder":
 					inputs, targets = data.to(self.device), data.to(self.device)
-				
+
 				# Reset the gradients (from the last iteration)
 				self.optimizer.zero_grad()
-				
-				# Forward inference
-				if self.snn == True:
+
+				# Forward pass
+				if self.snn:
 					outputs = self.forward_pass_snn(inputs)
 					SF.accuracy_rate(outputs, targets) / 100
-				
 				else:
 					outputs = self.model(inputs)
+
+				# Compute the regular loss
 				loss = self.criterion(outputs, targets)
-				
+
+				# Add Knowledge Distillation loss if `model` (teacher) is provided
+				if model is not None:
+					with torch.no_grad():
+						teacher_outputs = model(inputs)
+					# Compute KD loss (e.g., KL divergence or Mean Squared Error)
+					temperature = 3.0  # Example: Temperature for softening logits
+					kd_loss = (
+						torch.nn.functional.kl_div(
+							torch.nn.functional.log_softmax(outputs / temperature, dim=1),
+							torch.nn.functional.softmax(teacher_outputs / temperature, dim=1),
+							reduction="batchmean",
+						)
+						* (temperature ** 2)
+					)
+					# Combine losses
+					alpha = 0.5  # Weighting factor between regular loss and KD loss
+					loss = alpha * loss + (1 - alpha) * kd_loss
+
 				# Backward propagation
 				loss.backward()
-				
+
 				# Update optimizer and LR scheduler
 				self.optimizer.step()
 				if self.scheduler is not None:
 					self.scheduler.step()
-				
+
 				if self.callbacks is not None:
 					for callback in self.callbacks:
 						callback()
-				
+
 				running_loss += loss.item()
-			
+
 			running_loss = 0.0
-			
+
+			# Evaluate validation accuracy
 			validation_acc = self.evaluate()
 			if validation_acc > val_acc:
 				print(
@@ -341,16 +364,16 @@ class sconce(quantization, performance, prune):
 		elif self.prune_mode == "CWP":
 			print("\n Channel-Wise Pruning")
 			sensitivity_start_time = time.time()
-			# self.sensitivity_scan(
-			# 	dense_model_accuracy=dense_validation_acc, verbose=False
-			# )
+			self.sensitivity_scan(
+				dense_model_accuracy=dense_validation_acc, verbose=False
+			)
 			sensitivity_start_end = time.time()
 			print(
 				"Sensitivity Scan Time(mins):",
 				(sensitivity_start_end - sensitivity_start_time) / 60, "\n"
 			)
 			
-			self.sparsity_dict = {'backbone.conv0.weight': 0.15000000000000002, 'backbone.conv1.weight': 0.15, 'backbone.conv2.weight': 0.15, 'backbone.conv3.weight': 0.15000000000000002, 'backbone.conv4.weight': 0.20000000000000004, 'backbone.conv5.weight': 0.20000000000000004, 'backbone.conv6.weight': 0.45000000000000007}
+			# self.sparsity_dict = {'backbone.conv0.weight': 0.15000000000000002, 'backbone.conv1.weight': 0.15, 'backbone.conv2.weight': 0.15, 'backbone.conv3.weight': 0.15000000000000002, 'backbone.conv4.weight': 0.20000000000000004, 'backbone.conv5.weight': 0.20000000000000004, 'backbone.conv6.weight': 0.45000000000000007}
 			print("Sparsity for each Layer: ")
 			for k, v in self.sparsity_dict.items():
 				print(f"Layer Name: {k}: Sparsity:{v*100:.2f}%")
@@ -393,7 +416,7 @@ class sconce(quantization, performance, prune):
 				self.optimizer, self.num_finetune_epochs
 			)
 			
-			self.train()
+			self.train(model=copy.deepcopy(original_dense_model))
 			save_file_name = self.experiment_name + "_pruned_fine_tuned" + ".pt"
 			self.save_torchscript_model(
 				model=self.model, model_dir="./", model_filename=save_file_name
