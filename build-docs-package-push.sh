@@ -60,7 +60,7 @@ cd ../
 
 #Build Package
 python3 setup.py clean --all sdist bdist_wheel
-# twine upload dist/* --verbose
+twine upload dist/* --verbose
 
 #Push to GitHub
 
