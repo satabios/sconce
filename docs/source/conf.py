@@ -16,7 +16,7 @@ project = 'sconce'
 copyright = '2023, Sathyaprakash'
 author = 'Sathyaprakash'
 
-release = '0.92'
+release = '1.0.1'
 version = '0.92.0'
 
 # -- General configuration
