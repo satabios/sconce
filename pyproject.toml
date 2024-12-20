@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "sconce"
-version = "v1.1.2"
+version = "v1.0.1"
 description = "sconce: Compression and Deployment made Easy"
 authors = [{ name = "Sathyaprakash Narayanan", email = "snaray17@ucsc.edu" }]
 urls = { code = "https://github.com/satabios/sconce" }
