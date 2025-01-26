@@ -7,7 +7,8 @@ from collections import OrderedDict, defaultdict
 from typing import Union, List
 
 class prune:
-    @torch.no_grad()
+
+
     def sensitivity_scan(
             self,
             dense_model_accuracy,
