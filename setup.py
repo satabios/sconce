@@ -12,7 +12,7 @@ with open("README.rst", encoding="utf-8") as readme_file:
     readme = readme_file.read()
 
 # fmt: off
-version = "v1.0.2"
+version = "v1.0.3"
 # fmt: on
 
 requirements = [
