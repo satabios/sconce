@@ -374,9 +374,7 @@ class sconce(quantization, performance, prune):
 			)
 			
 			# self.sparsity_dict = {'backbone.conv0.weight': 0.15000000000000002, 'backbone.conv1.weight': 0.15, 'backbone.conv2.weight': 0.15, 'backbone.conv3.weight': 0.15000000000000002, 'backbone.conv4.weight': 0.20000000000000004, 'backbone.conv5.weight': 0.20000000000000004, 'backbone.conv6.weight': 0.45000000000000007}
-			print("Sparsity for each Layer: ")
-			for k, v in self.sparsity_dict.items():
-				print(f"Layer Name: {k}: Sparsity:{v*100:.2f}%")
+			print("Sparsity for each Layer: ", self.sparsity_dict.items())
 
 			self.CWP_Pruning()  # Channelwise Pruning
 			self.fine_tune = True

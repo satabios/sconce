@@ -155,8 +155,8 @@ def download_url(url, output_path):
         return None
 
 
-
-download_url("https://huggingface.co/satabios/pre-trained_cifar10/resolve/main/vgg.cifar.pretrained.pth?download=true", "vgg.cifar.pretrained.pth")
+if not os.path.exists("./vgg.cifar10.pretrained.pth"):
+    download_url("https://huggingface.co/satabios/pre-trained_cifar10/resolve/main/vgg.cifar.pretrained.pth?download=true", "vgg.cifar.pretrained.pth")
 
 model = VGG().cuda()
 checkpoint = torch.load("./vgg.cifar.pretrained.pth", weights_only=True)

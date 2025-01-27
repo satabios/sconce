@@ -13,8 +13,15 @@ Introduction
 .. image:: https://img.shields.io/discord/1170978468863954984
    :alt: Discord
 
+TLDR:
+^^^^^^^^^^^^^^^^^^^^^^^^
 
-Bored to read it thoroughly? Give a quick look at the mind map behind why this package was developed: `Mind Map <https://excalidraw.com/#json=Zgid-HfrHOLeMDBb8Wlg8,bgQmrllbtMvKW_HDt72EbQ>`_. 
+.. image:: https://github.com/satabios/sconce/blob/main/docs/source/images/sconce-tldr.png?raw=true
+        :align: center
+        :width: 1510px
+
+
+Intrigued? Get a quick look at the mind map behind why this package was developed: `Mind Map <https://excalidraw.com/#json=Zgid-HfrHOLeMDBb8Wlg8,bgQmrllbtMvKW_HDt72EbQ>`_. 
 Then get grinding with a Quick Start Notebook:
 
 
@@ -117,8 +124,7 @@ Here are a few ways you can get started with sconce:
 .. _The API Reference: https://sconce.readthedocs.io/
 .. _Tutorials: https://sconce.readthedocs.io/en/latest/tutorials/index.html
 
-Quickstart:
-^^^^^^^^^^^^^^^^^^^^^^^^
+
 
 
 Define Network:

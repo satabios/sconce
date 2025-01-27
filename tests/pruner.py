@@ -5,9 +5,23 @@ import copy
 import torch.nn as nn
 from collections import OrderedDict, defaultdict
 from typing import Union, List
+import torch_pruning as tp
 
 class prune:
-    @torch.no_grad()
+
+    def get_input_channel_importance_channel(self,weight, dim=1):
+        in_channels = weight.shape[dim]
+        importances = []
+        for i_c in range(in_channels):
+            if dim == 1:
+                channel_weight = weight.detach()[:, i_c]
+            else:
+                channel_weight = weight.detach()[i_c]
+            importance = torch.norm(channel_weight)
+            importances.append(importance.view(1))
+        return torch.cat(importances)
+
+    # @torch.no_grad()
     def sensitivity_scan(
             self,
             dense_model_accuracy,
@@ -29,124 +43,225 @@ class prune:
         :return: a dictionary mapping layer names to the sparsity values that resulted in the highest accuracy for each layer
         """
 
+
         self.sparsity_dict = {}
         sparsities = np.flip(np.arange(start=scan_start, stop=scan_end, step=scan_step))
         accuracies = []
+
+        # Create a deep copy of the model first
+        original_model = copy.deepcopy(self.model)
+
+        # Generate named_all_weights from original_model instead of self.model
         named_all_weights = [
             (name, param)
-            for (name, param) in self.model.named_parameters()
+            for (name, param) in original_model.named_parameters()
             if param.dim() > 1
         ]
-        named_conv_weights = [
-            (name, param)
-            for (name, param) in self.model.named_parameters()
-            if param.dim() > 2
-        ]
         param_names = [i[0] for i in named_all_weights]
-        original_model = copy.deepcopy(self.model)
-        # original_dense_model_accuracy = self.evaluate()
-        conv_layers = [
-            module for module in self.model.modules() if (isinstance(module, nn.Conv2d))
-        ]
-        linear_layers = [
-            module for module in self.model.modules() if (isinstance(module, nn.Linear))
-        ]
+        original_prune_mode = self.prune_mode
 
+        # Initialize variables for CWP pruning
         if self.prune_mode == "CWP":
-            sortd = self.apply_channel_sorting()
-            sorted_model = copy.deepcopy(sortd)
-
-        if "venum" in self.prune_mode:
-            if self.prune_mode == "venum-cwp":
-                named_all_weights = named_conv_weights
-
-            list_of_sparsities = [0] * (len(named_all_weights) - 1)
-            sparsity_dict = {count: ele for count, ele in enumerate(list_of_sparsities)}
-            self.venum_apply(sparsity_dict)
+            model_device = next(original_model.parameters()).device
+            # Use original_model to define named_all_weights for CWP
+            named_all_weights = [
+                (name, module)
+                for name, module in original_model.named_modules()
+                if isinstance(module, nn.Conv2d)
+            ]
+            example_inputs = next(iter(self.dataloader['test']))[0][:1, :].to(model_device)
 
         layer_iter = tqdm(named_all_weights, desc="layer", leave=False)
-        original_prune_mode = self.prune_mode
-        for i_layer, (name, param) in enumerate(layer_iter):
-            param_clone = param.detach().clone()
+
+        for i_layer, (name, param_or_module) in enumerate(layer_iter):
             accuracy = []
-            desc = None
-            if verbose:
-                desc = f"scanning {i_layer}/{len(named_all_weights)} weight - {name}"
-                picker = tqdm(sparsities, desc)
-            else:
-                picker = sparsities
+            desc = f"scanning {i_layer}/{len(named_all_weights)} - {name}" if verbose else None
+            picker = tqdm(sparsities, desc=desc) if verbose else sparsities
             hit_flag = False
 
             for sparsity in picker:
-                if (
-                        "venum" in self.prune_mode
-                        and len(param.shape) > 2
-                        and i_layer < (len(conv_layers) - 1)
-                ):
-                    # self.temp_sparsity_list[i_layer] = sparsity
-                    self.layer_idx = i_layer
-                    self.prune_mode = original_prune_mode
+                # Reset model to original state at each sparsity step
+                self.model = copy.deepcopy(original_model)
 
-                    list_of_sparsities = [0] * (len(layer_iter) - 1)
-                    list_of_sparsities[i_layer] = sparsity
-                    sparsity_dict = {
-                        count: ele for count, ele in enumerate(list_of_sparsities)
-                    }
-                    if self.prune_mode == "venum-cwp":
-                        self.venum_CWP_Pruning(original_model, sparsity_dict)
-                    else:
-                        self.venum_apply(sparsity_dict)
+                # Retrieve the current parameter/module from the fresh model copy
+                if self.prune_mode == "CWP":
+                    current_module = dict(self.model.named_modules())[name]
+                    # channels = current_module.out_channels
+                    # n_keep = int(round(channels * (1-sparsity)))  # Keep (1 - sparsity) channels
+                    # if n_keep <= 0:
+                    #     continue
+                    # # Calculate channel importance using the current module's weights
+                    # importance = self.get_input_channel_importance_channel(current_module.weight, dim=0)
+                    # prune_indices = torch.argsort(importance)[n_keep:]
 
+                    # Build dependency graph and prune
+                    pruner = tp.pruner.MetaPruner(
+                        self.model,
+                        example_inputs,
+                        importance=tp.importance.GroupNormImportance(p=2), #tp.importance.MagnitudeImportance(p=2, group_reduction='mean')
+                        pruning_ratio=0,
+                        pruning_ratio_dict={current_module:sparsity},
+                        # round_to=8,
+                    )
+                    pruner.step()
                     hit_flag = True
+
                 elif self.prune_mode == "GMP":
+                    # For GMP, sparsity is applied directly to the parameter
+                    current_param = dict(self.model.named_parameters())[name]
                     sparse_list = np.zeros(len(named_all_weights))
                     sparse_list[i_layer] = sparsity
                     local_sparsity_dict = dict(zip(param_names, sparse_list))
-                    self.GMP_Pruning(
-                        prune_dict=local_sparsity_dict
-                    )  # FineGrained Pruning
+                    self.GMP_Pruning(prune_dict=local_sparsity_dict)
                     self.callbacks = [lambda: self.GMP_apply()]
                     hit_flag = True
 
-                elif (
-                        self.prune_mode == "CWP"
-                        and len(param.shape) > 2
-                        and i_layer < (len(conv_layers) - 1)
-                ):
-                    # self.model = sorted_model
-                    self.model = self.channel_prune_layerwise(
-                        sorted_model, sparsity, i_layer
-                    )
-                    hit_flag = True
-                ## TODO:
-                ## Add conv CWP and linear CWP
-
-                if hit_flag == True:
-                    # if self.prune_mode == "venum_sensitivity":
-                    #     self.prune_mode = original_prune_mode
+                if hit_flag:
+                    # Evaluate the pruned model
                     acc = self.evaluate(Tqdm=False) - dense_model_accuracy
-                    # if ("venum" in self.prune_mode):
-                    #     self.prune_mode = "venum_sensitivity"
-                    self.model = copy.deepcopy(original_model)
-                    if abs(acc) <= self.degradation_value:
+                    if abs(acc) <= (self.degradation_value)/4:
                         self.sparsity_dict[name] = sparsity
-                        self.model = copy.deepcopy(original_model)
                         break
-                    elif sparsity == scan_start:
-                        accuracy = np.asarray(accuracy)
-
-                        if np.max(accuracy) > -0.75:  # Allowed Degradation
-                            acc_x = np.where(accuracy == np.max(accuracy))[0][0]
-                            best_possible_sparsity = sparsities[acc_x]
-
+                    elif sparsity == sparsities[-1]:  # Last sparsity step
+                        if accuracy:  # Handle edge case where no sparsity met the condition
+                            best_sparsity = sparsities[np.argmax(accuracy)]
+                            self.sparsity_dict[name] = best_sparsity if np.max(accuracy) > -0.60 else 0.0
                         else:
-                            best_possible_sparsity = 0
-                        self.sparsity_dict[name] = best_possible_sparsity
-                        self.model = copy.deepcopy(original_model)
+                            self.sparsity_dict[name] = 0.0
                     else:
                         accuracy.append(acc)
-                        hit_flag = False
-                    self.model = copy.deepcopy(original_model)
+
+            # Reset model to original after testing all sparsities for the current layer
+            self.model = copy.deepcopy(original_model)
+
+        # Restore original model and prune mode
+        self.model = original_model
+        self.prune_mode = original_prune_mode
+        return self.sparsity_dict
+    # def sensitivity_scan(
+    #         self,
+    #         dense_model_accuracy,
+    #         scan_step=0.05,
+    #         scan_start=0.1,
+    #         scan_end=1.0,
+    #         verbose=True,
+    # ):
+    #     """
+    #     Scans the sensitivity of the model to weight pruning by gradually increasing the sparsity of each layer's weights
+    #     and measuring the resulting accuracy. Returns a dictionary mapping layer names to the sparsity values that resulted
+    #     in the highest accuracy for each layer.
+    #
+    #     :param dense_model_accuracy: the accuracy of the original dense model
+    #     :param scan_step: the step size for the sparsity scan
+    #     :param scan_start: the starting sparsity for the scan
+    #     :param scan_end: the ending sparsity for the scan
+    #     :param verbose: whether to print progress information during the scan
+    #     :return: a dictionary mapping layer names to the sparsity values that resulted in the highest accuracy for each layer
+    #     """
+    #
+    #     def get_input_channel_importance(weight, dim=1):
+    #         in_channels = weight.shape[dim]
+    #         importances = []
+    #         for i_c in range(in_channels):
+    #             if (dim == 1):
+    #                 channel_weight = weight.detach()[:, i_c]
+    #             else:
+    #                 channel_weight = weight.detach()[i_c]
+    #             importance = torch.norm(channel_weight)
+    #             importances.append(importance.view(1))
+    #         return torch.cat(importances)
+    #
+    #     self.sparsity_dict = {}
+    #     sparsities = np.flip(np.arange(start=scan_start, stop=scan_end, step=scan_step))
+    #     accuracies = []
+    #     named_all_weights = [
+    #         (name, param)
+    #         for (name, param) in self.model.named_parameters()
+    #         if param.dim() > 1
+    #     ]
+    #     named_conv_weights = [
+    #         (name, param)
+    #         for (name, param) in self.model.named_parameters()
+    #         if param.dim() > 2
+    #     ]
+    #     param_names = [i[0] for i in named_all_weights]
+    #     original_model = copy.deepcopy(self.model)
+    #     # original_dense_model_accuracy = self.evaluate()
+    #     conv_layers = [
+    #         module for module in self.model.modules() if (isinstance(module, nn.Conv2d))
+    #     ]
+    #     linear_layers = [
+    #         module for module in self.model.modules() if (isinstance(module, nn.Linear))
+    #     ]
+    #
+    #     if self.prune_mode == "CWP":
+    #         model_device = next(self.model.parameters()).device
+    #         named_all_weights = tuple( (name, module) for name, module in self.model.named_modules() if isinstance(module, nn.Conv2d))
+    #         example_inputs = next(iter(self.dataloader['test']))[0][:1, :].to(model_device)
+    #
+    #
+    #     layer_iter = tqdm(named_all_weights, desc="layer", leave=False)
+    #     original_prune_mode = self.prune_mode
+    #     for i_layer, (name, param) in enumerate(layer_iter):
+    #         # param_clone = param.detach().clone()
+    #         accuracy = []
+    #         desc = None
+    #         if verbose:
+    #             desc = f"scanning {i_layer}/{len(named_all_weights)} weight - {name}"
+    #             picker = tqdm(sparsities, desc)
+    #         else:
+    #             picker = sparsities
+    #         hit_flag = False
+    #
+    #         for sparsity in picker:
+    #             if self.prune_mode == "GMP":
+    #                 sparse_list = np.zeros(len(named_all_weights))
+    #                 sparse_list[i_layer] = sparsity
+    #                 local_sparsity_dict = dict(zip(param_names, sparse_list))
+    #                 self.GMP_Pruning(
+    #                     prune_dict=local_sparsity_dict
+    #                 )  # FineGrained Pruning
+    #                 self.callbacks = [lambda: self.GMP_apply()]
+    #                 hit_flag = True
+    #
+    #             elif (
+    #                     self.prune_mode == "CWP"
+    #             ):
+    #                 channels = param.out_channels  # Same as Input Channels of Next Layers
+    #                 n_keep = int(round(channels * (sparsity)))
+    #                 indices = torch.argsort(get_input_channel_importance(param.weight, dim=0))
+    #                 DG = tp.DependencyGraph().build_dependency(self.model, example_inputs=example_inputs)
+    #                 group = DG.get_pruning_group(param, tp.prune_conv_out_channels, idxs=indices[:n_keep])
+    #                 group.prune()
+    #
+    #                 hit_flag = True
+    #             ## TODO:
+    #             ## Add conv CWP and linear CWP
+    #
+    #             if hit_flag == True:
+    #
+    #                 acc = self.evaluate(Tqdm=False) - dense_model_accuracy
+    #
+    #                 self.model = copy.deepcopy(original_model)
+    #                 if abs(acc) <= self.degradation_value:
+    #                     self.sparsity_dict[name] = sparsity
+    #                     self.model = copy.deepcopy(original_model)
+    #                     break
+    #                 elif sparsity == scan_start:
+    #                     accuracy = np.asarray(accuracy)
+    #
+    #                     if np.max(accuracy) > -0.60:  # Allowed Degradation
+    #                         acc_x = np.where(accuracy == np.max(accuracy))[0][0]
+    #                         best_possible_sparsity = sparsities[acc_x]
+    #
+    #                     else:
+    #                         best_possible_sparsity = 0
+    #                     self.sparsity_dict[name] = best_possible_sparsity
+    #                     self.model = copy.deepcopy(original_model)
+    #                 else:
+    #                     accuracy.append(acc)
+    #                     hit_flag = False
+    #                 self.model = copy.deepcopy(original_model)
 
     def fine_grained_prune(self, tensor: torch.Tensor, sparsity: float) -> torch.Tensor:
         """
@@ -517,7 +632,17 @@ class prune:
         Applies channel pruning to the model using the specified channel pruning ratio.
         Returns the pruned model.
         """
-        sorted_model = self.apply_channel_sorting()
-        # self.model = self.channel_prune(sorted_model, self.channel_pruning_ratio)
-        self.sparsity_dict = [value for key, value in self.sparsity_dict.items()]
-        self.model = self.channel_prune(sorted_model, self.sparsity_dict)
+        model_device = next(self.model.parameters()).device
+        example_inputs = next(iter(self.dataloader['test']))[0][:1,].to(model_device)
+        conv_modules = [ (name, module) for name, module in self.model.named_modules() if isinstance(module, nn.Conv2d)]
+        ratio_dict = {module: sparsity for (name, module), (name, sparsity) in zip(conv_modules,self.sparsity_dict.items())}
+
+        pruner = tp.pruner.MetaPruner(
+            self.model,
+            example_inputs,
+            importance=tp.importance.GroupNormImportance(p=2) ,
+            pruning_ratio=0,
+            pruning_ratio_dict = ratio_dict,
+            round_to=8,
+        )
+        pruner.step()
