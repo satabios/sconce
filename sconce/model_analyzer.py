@@ -421,16 +421,16 @@ def string_fixer(name_list):
 # model = torch.hub.load('pytorch/vision:v0.10.0', 'densenet121', pretrained=False)
 # model = torch.hub.load('pytorch/vision:v0.10.0', 'mobilenet_v2', pretrained=True)
 
-model = VGG()
-mapped_layers = layer_mapping(model)
-name_list = mapped_layers['name_type_shape'][:, 0]
+# model = VGG()
+# mapped_layers = layer_mapping(model)
+# name_list = mapped_layers['name_type_shape'][:, 0]
 
-possible_indices_ranges = cwp_possible_layers(name_list)
-possible_indices_ranges = [lst for lst in possible_indices_ranges if len(lst) > 1]
-possible_indices_ranges = possible_indices_ranges[:-1]
+# possible_indices_ranges = cwp_possible_layers(name_list)
+# possible_indices_ranges = [lst for lst in possible_indices_ranges if len(lst) > 1]
+# possible_indices_ranges = possible_indices_ranges[:-1]
 
-pruned_model, original_model = prune_cwp(model)
+# pruned_model, original_model = prune_cwp(model)
 
-summary(pruned_model, (3, 32, 32))
+# summary(pruned_model, (3, 32, 32))
 
-# summary_string_fixed(pruned_model, (3, 64, 64),model_name ='pruned_model')
+# # summary_string_fixed(pruned_model, (3, 64, 64),model_name ='pruned_model')

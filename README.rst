@@ -293,14 +293,19 @@ Run the following to install:
 
 .. code-block:: bash
 
-  $ python
-  $ pip install sconce
+  $ conda create -n sconce python=3.11 -y
+  $ conda activate sconce
+  $ pip install --upgrade pip
+  $ pip install -Uq git+https://github.com/satabios/sconce
 
-To install sconce from source instead::
+.. code-block:: bash
 
-  $ git clone https://github.com/satabios/sconce
-  $ cd sconce
-  $ python setup.py install
+  # For Colab/Kaggle/Jupyter-like....
+  $ % apt-get install python3.11-distutils
+  $ % update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 1
+  $ pip install --upgrade pip
+  $ pip install -Uq git+https://github.com/satabios/sconce
+
 
 API & Examples 
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -330,3 +335,19 @@ License & Copyright
 
 sconce source code is published under the terms of the MIT License. 
 sconce's documentation is licensed under a Creative Commons Attribution-Share Alike 3.0 Unported License (`CC BY-SA 3.0 <https://creativecommons.org/licenses/by-sa/3.0/>`_).
+
+
+
+Reference
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+If you find sconce useful or relevant to your research, please kindly cite:
+
+```bibtex
+@Misc{alma,
+  title =        {sconce: E2E AutoML Model Compression Package},
+  author =       {Sathyaprakash Narayanan},
+  howpublished = {\url{https://github.com/satabios/sconce}},
+  year =         {2024}
+}
+```
