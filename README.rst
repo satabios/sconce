@@ -345,9 +345,9 @@ If you find sconce useful or relevant to your research, please kindly cite:
 
 .. code-block:: bibtex
 
-   @Misc{alma,
+   @Misc{sconce,
        title         = {sconce: E2E AutoML Model Compression Package},
        author        = {Sathyaprakash Narayanan},
-       howpublished  = `https://github.com/satabios/sconce <https://github.com/satabios/sconce>`_,
+       howpublished  = {\url{https://satabios.github.io/sconce}},
        year          = {2024}
    }
