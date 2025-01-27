@@ -27,10 +27,10 @@ Key Features
 * **Neural Architecture Search (NAS)**: Facilitates the discovery of deployment-optimized models tailored to your needs.
 
 Usage is straightforward: import your model, call sconce.compress(), and the package automatically handles optimization. It's designed to be accessible to users with basic deep learning knowledge while providing advanced optimization capabilities.
+
 .. image:: https://github.com/satabios/sconce/blob/main/docs/source/images/sconce-tldr.png?raw=true
         :align: center
         :width: 1510px
-
 
 Intrigued? Get a quick look at the mind map behind why this package was developed: `Mind Map <https://excalidraw.com/#json=Zgid-HfrHOLeMDBb8Wlg8,bgQmrllbtMvKW_HDt72EbQ>`_. 
 Then get grinding with a Quick Start Notebook:
