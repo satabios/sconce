@@ -38,7 +38,7 @@ if os.path.isfile(requirement_path):
 setup(
     author="Sathyaprakash Narayanan",
     author_email="snaray17@ucsc.edu",
-    python_requires=">=3.7",
+    python_requires=">=3.7, <3.12",
     classifiers=[
         "Intended Audience :: Developers",
         "Intended Audience :: Education",
