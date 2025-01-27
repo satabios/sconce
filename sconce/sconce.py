@@ -17,6 +17,7 @@ import warnings
 warnings.filterwarnings("ignore")
 warnings.filterwarnings("default")
 warnings.filterwarnings("ignore", category=DeprecationWarning)
+warnings.filterwarnings("ignore", category=ImportWarning)
 
 random.seed(321)
 np.random.seed(432)
