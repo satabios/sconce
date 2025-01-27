@@ -348,6 +348,6 @@ If you find sconce useful or relevant to your research, please kindly cite:
    @Misc{alma,
        title         = {sconce: E2E AutoML Model Compression Package},
        author        = {Sathyaprakash Narayanan},
-       howpublished  = {\url{https://github.com/satabios/sconce}},
+       howpublished  = `https://github.com/satabios/sconce <https://github.com/satabios/sconce>`_,
        year          = {2024}
    }
