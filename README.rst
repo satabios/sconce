@@ -1,6 +1,7 @@
-================
-Introduction
-================
+
+=============================================
+sconce: E2E AutoML Model Compression Package
+=============================================
 
 .. image:: https://readthedocs.org/projects/sconce/badge/?version=latest
         :target: https://sconce.readthedocs.io/en/latest/?badge=latest
@@ -17,14 +18,14 @@ It selects the **Pareto Optimal** configuration for compression by evaluating th
 This approach provides the best balance between model accuracy and efficiency, all while operating within your system's computational constraints.  
 By targeting reductions in **Performance**, **Computation**, **Power**, and **Memory** **(COPM)** requirements, **sconce** makes deep learning models more resource-efficient.
 
-Key Features
-------------
+.. Key Features
+.. ------------
 
-* **End-to-end Model Compression**: Includes techniques such as **Pruning** and **Quantization**.
-* **Support for Spiking Neural Networks**: Works seamlessly with frameworks like `snnTorch`.
-* **Sparse Engine Deployment**: Provides support for deploying sparse neural networks.
-* **Acceleration Optimizations**: Implements CUDA-based optimizations like loop unrolling, tiling, and reordering, alongside inference improvements like Im2Col convolution and Winograd transformations.
-* **Neural Architecture Search (NAS)**: Facilitates the discovery of deployment-optimized models tailored to your needs.
+.. * **End-to-end Model Compression**: Includes techniques such as **Pruning** and **Quantization**.
+.. * **Support for Spiking Neural Networks**: Works seamlessly with frameworks like `snnTorch`.
+.. * **Sparse Engine Deployment**: Provides support for deploying sparse neural networks.
+.. * **Acceleration Optimizations**: Implements CUDA-based optimizations like loop unrolling, tiling, and reordering, alongside inference improvements like Im2Col convolution and Winograd transformations.
+.. * **Neural Architecture Search (NAS)**: Facilitates the discovery of deployment-optimized models tailored to your needs.
 
 Usage is straightforward: import your model, call sconce.compress(), and the package automatically handles optimization. It's designed to be accessible to users with basic deep learning knowledge while providing advanced optimization capabilities.
 
@@ -42,7 +43,10 @@ Then get grinding with a Quick Start Notebook:
 
 If you are still reading, bruh!!!! Thank you...
 
-
+================
+Introduction
+^^^^^^^^^^^^^^^^^^^^^^^^
+================
 
 The advancement of deep learning has been primarily driven by the availability of large datasets and the computational power to train large models. The complexity increases with each day, and it is becoming increasingly difficult to train/deploy these models.
 However, the brain can learn from a few examples and is incredibly energy efficient (Psst.. that too sparsely).
