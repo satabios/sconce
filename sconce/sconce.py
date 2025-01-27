@@ -9,9 +9,9 @@ from snntorch import utils
 from collections import namedtuple
 from snntorch import functional as SF
 
-from pruner import prune
-from quanter import quantization
-from perf import performance
+from .pruner import prune
+from .quanter import quantization
+from .perf import performance
 
 import warnings
 warnings.filterwarnings("ignore")
