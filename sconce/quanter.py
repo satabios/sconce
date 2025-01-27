@@ -7,6 +7,8 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 
 class quantization:
+    def __init__(self):
+        pass
 
     def qat(self):
 

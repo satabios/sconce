@@ -7,6 +7,8 @@ from collections import OrderedDict, defaultdict
 from typing import Union, List
 
 class prune:
+    def __init__(self):
+        pass
 
 
     def sensitivity_scan(

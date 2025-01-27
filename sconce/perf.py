@@ -21,6 +21,8 @@ warnings.filterwarnings("default")
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 class performance:
+    def __init__(self):
+        pass
 
 
     ########## Model Profiling ##########
