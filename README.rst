@@ -18,15 +18,6 @@ It selects the **Pareto Optimal** configuration for compression by evaluating th
 This approach provides the best balance between model accuracy and efficiency, all while operating within your system's computational constraints.  
 By targeting reductions in **Performance**, **Computation**, **Power**, and **Memory** **(COPM)** requirements, **sconce** makes deep learning models more resource-efficient.
 
-.. Key Features
-.. ------------
-
-.. * **End-to-end Model Compression**: Includes techniques such as **Pruning** and **Quantization**.
-.. * **Support for Spiking Neural Networks**: Works seamlessly with frameworks like `snnTorch`.
-.. * **Sparse Engine Deployment**: Provides support for deploying sparse neural networks.
-.. * **Acceleration Optimizations**: Implements CUDA-based optimizations like loop unrolling, tiling, and reordering, alongside inference improvements like Im2Col convolution and Winograd transformations.
-.. * **Neural Architecture Search (NAS)**: Facilitates the discovery of deployment-optimized models tailored to your needs.
-
 Usage is straightforward: import your model, call sconce.compress(), and the package automatically handles optimization. It's designed to be accessible to users with basic deep learning knowledge while providing advanced optimization capabilities.
 
 .. image:: https://github.com/satabios/sconce/blob/main/docs/source/images/sconce-tldr.png?raw=true
