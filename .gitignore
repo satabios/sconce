@@ -5,7 +5,7 @@ test/*.pth
 tutorials/.ipynb_checkpoints/*
 .idea/
 sconce/__pycache__/
-
+data/
 examples/data/
 
 # Byte-compiled / optimized / DLL files
