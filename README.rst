@@ -13,7 +13,7 @@ Introduction
 .. image:: https://img.shields.io/discord/1170978468863954984
    :alt: Discord
 
-TLDR:
+TLDR
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. image:: https://github.com/satabios/sconce/blob/main/docs/source/images/sconce-tldr.png?raw=true
