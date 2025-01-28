@@ -121,4 +121,6 @@ snnenv-rog/
 dataset/
 
 #ipynb
-.ipynb_checkpoints/
+.ipynb_checkpoints/.eggs/
+*.so
+*.egg
