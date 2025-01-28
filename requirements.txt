@@ -70,3 +70,4 @@ onnx
 onnxruntime
 torch-pruning
 prettytable
+pycairo
