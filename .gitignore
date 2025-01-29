@@ -126,3 +126,4 @@ dataset/
 .ipynb_checkpoints/.eggs/
 *.so
 *.egg
+**/.DS_Store
