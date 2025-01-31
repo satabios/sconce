@@ -98,7 +98,7 @@ class prune:
                     pruner = tp.pruner.MetaPruner(
                         self.model,
                         example_inputs,
-                        importance=tp.importance.GroupNormImportance(p=2), #tp.importance.MagnitudeImportance(p=2, group_reduction='mean')
+                        importance=tp.importance.MagnitudeImportance(p=2, group_reduction='mean'),
                         pruning_ratio=0,
                         pruning_ratio_dict={current_module:sparsity},
                         # round_to=8,
@@ -119,7 +119,7 @@ class prune:
                 if hit_flag:
                     # Evaluate the pruned model
                     acc = self.evaluate(Tqdm=False) - dense_model_accuracy
-                    if abs(acc) <= (self.degradation_value)/len(named_all_weights):
+                    if abs(acc) <= (self.degradation_value)/3:
                         self.sparsity_dict[name] = sparsity
                         break
                     elif sparsity == sparsities[-1]:  # Last sparsity step
@@ -640,7 +640,7 @@ class prune:
         pruner = tp.pruner.MetaPruner(
             self.model,
             example_inputs,
-            importance=tp.importance.GroupNormImportance(p=2) ,
+            importance=tp.importance.MagnitudeImportance(p=2, group_reduction='mean'),
             pruning_ratio=0,
             pruning_ratio_dict = ratio_dict,
             round_to=8,
