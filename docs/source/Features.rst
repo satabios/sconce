@@ -1,7 +1,6 @@
 Features
 =========
 
-:mod:`sconce.sconce` is a parent module that contains all the features of the library.
 .. automodule:: sconce
     :members:
     :undoc-members:
