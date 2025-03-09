@@ -78,6 +78,7 @@ class prune:
                         channel_groups[m] = m.num_heads
             else:
                 channel_groups = None
+            print("Channel Groups:", channel_groups)
             
 
         layer_iter = tqdm(named_all_weights, desc="layer", leave=False)
