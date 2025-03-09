@@ -72,7 +72,7 @@ class prune:
             example_inputs = next(iter(self.dataloader['test']))[0][:1, :].to(model_device)
 
             if self.attention_heads: # Group pruning for attention heads [ Group Heads in MultiheadAttention]
-                for m in original_model.modules():
+                for m in self.model.modules():
                     if isinstance(m, nn.MultiheadAttention):
                         channel_groups[m] = m.num_heads
             else:
