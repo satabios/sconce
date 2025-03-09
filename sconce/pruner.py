@@ -47,7 +47,7 @@ class prune:
         self.sparsity_dict = {}
         sparsities = np.flip(np.arange(start=scan_start, stop=scan_end, step=scan_step))
         accuracies = []
-
+        channel_groups = {}
         # Create a deep copy of the model first
         original_model = copy.deepcopy(self.model)
 
@@ -72,7 +72,6 @@ class prune:
             example_inputs = next(iter(self.dataloader['test']))[0][:1, :].to(model_device)
 
             if self.attention_heads: # Group pruning for attention heads [ Group Heads in MultiheadAttention]
-                channel_groups = {}
                 for m in original_model.modules():
                     if isinstance(m, nn.MultiheadAttention):
                         channel_groups[m] = m.num_heads
@@ -105,27 +104,16 @@ class prune:
                     # prune_indices = torch.argsort(importance)[n_keep:]
 
                     # Build dependency graph and prune 
-                    if self.attention_heads:
-                        pruner = tp.pruner.GroupNormPruner(
-                                self.model,
-                                example_inputs,
-                                importance=tp.importance.MagnitudeImportance(p=2, group_reduction='mean'),
-                                global_pruning=False, # Please refer to Page 9 of https://www.cs.princeton.edu/courses/archive/spring21/cos598D/lectures/pruning.pdf
-                                pruning_ratio_dict={current_module:sparsity},
-                                iterative_steps = 1,  # number of steps to achieve the target ch_sparsity.
-                                channel_groups = channel_groups,  # round channels
-                                unwrapped_parameters=[ (self.features[1][1].layer_scale, 0), (self.model.features[5][4].layer_scale, 0) ],
-                            )
-                    else:
-                        pruner = tp.pruner.MetaPruner(
-                            self.model,
-                            example_inputs,
-                            importance=tp.importance.MagnitudeImportance(p=2, group_reduction='mean'),
-                            pruning_ratio=0,
-                            pruning_ratio_dict={current_module:sparsity},
-                            # round_to=8, # round channels
-                            channel_groups = channel_groups, # Group pruning for attention heads
-                        )
+                    
+                    pruner = tp.pruner.MetaPruner(
+                        self.model,
+                        example_inputs,
+                        importance=tp.importance.MagnitudeImportance(p=2, group_reduction='mean'),
+                        pruning_ratio=0,
+                        pruning_ratio_dict={current_module:sparsity},
+                        # round_to=8, # round channels
+                        channel_groups = channel_groups, # Group pruning for attention heads
+                    )
                     pruner.step()
                     hit_flag = True
 
