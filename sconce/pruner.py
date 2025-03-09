@@ -52,10 +52,15 @@ class prune:
         original_model = copy.deepcopy(self.model)
 
         # Generate named_all_weights from original_model instead of self.model
+        # named_all_weights = [
+        #     (name, param)
+        #     for (name, param) in original_model.named_parameters()
+        #     if param.dim() > 1
+        # ]
         named_all_weights = [
-            (name, param)
-            for (name, param) in original_model.named_parameters()
-            if param.dim() > 1
+            (name, module)
+            for name, module in original_model.named_modules()
+            if isinstance(module, nn.Conv2d) and 'conv_proj' not in name  # Exclude conv_proj
         ]
         param_names = [i[0] for i in named_all_weights]
         original_prune_mode = self.prune_mode
