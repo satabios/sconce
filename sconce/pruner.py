@@ -110,16 +110,28 @@ class prune:
 
                     # Build dependency graph and prune 
                     
+                    unwrapped_params = []
+                    if hasattr(original_model, 'encoder'):
+                        encoder = original_model.encoder
+                        # Add pos_embedding if it exists
+                        if hasattr(encoder, 'pos_embedding'):
+                            unwrapped_params.append(encoder.pos_embedding)
+                        # Add class_token if it exists
+                        if hasattr(encoder, 'class_token'):
+                            unwrapped_params.append(encoder.class_token)
+                    
+                    # Create pruner with unwrapped_parameters
                     pruner = tp.pruner.MetaPruner(
                         self.model,
                         example_inputs,
                         importance=tp.importance.MagnitudeImportance(p=2, group_reduction='mean'),
                         pruning_ratio=0,
-                        pruning_ratio_dict={current_module:sparsity},
-                        # round_to=8, # round channels
-                        channel_groups = channel_groups, # Group pruning for attention heads
+                        pruning_ratio_dict={current_module: sparsity},
+                        unwrapped_parameters=unwrapped_params,  # Exclude critical parameters
+                        channel_groups=channel_groups,
                     )
                     pruner.step()
+
                     hit_flag = True
 
                 elif self.prune_mode == "GMP":
