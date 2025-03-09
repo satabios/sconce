@@ -70,6 +70,14 @@ class prune:
                 if isinstance(module, nn.Conv2d)
             ]
             example_inputs = next(iter(self.dataloader['test']))[0][:1, :].to(model_device)
+
+            if self.attention_heads: # Group pruning for attention heads [ Group Heads in MultiheadAttention]
+                channel_groups = {}
+                for m in original_model.modules():
+                    if isinstance(m, nn.MultiheadAttention):
+                        channel_groups[m] = m.num_heads
+            else:
+                channel_groups = None
             
 
         layer_iter = tqdm(named_all_weights, desc="layer", leave=False)
@@ -95,14 +103,8 @@ class prune:
                     # importance = self.get_input_channel_importance_channel(current_module.weight, dim=0)
                     # prune_indices = torch.argsort(importance)[n_keep:]
 
-                    # Build dependency graph and prune
-                    if self.attention_heads:
-                        channel_groups = {}
-                        for m in original_model.modules():
-                            if isinstance(m, nn.MultiheadAttention):
-                                channel_groups[m] = m.num_heads
-                    else:
-                        channel_groups = None
+                    # Build dependency graph and prune 
+                    
                     pruner = tp.pruner.MetaPruner(
                         self.model,
                         example_inputs,
@@ -128,7 +130,7 @@ class prune:
                 if hit_flag:
                     # Evaluate the pruned model
                     acc = self.evaluate(Tqdm=False) - dense_model_accuracy
-                    if abs(acc) <= (self.degradation_value)/3:
+                    if abs(acc) <= (self.degradation_value)/4:
                         self.sparsity_dict[name] = sparsity
                         break
                     elif sparsity == sparsities[-1]:  # Last sparsity step
