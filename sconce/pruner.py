@@ -70,6 +70,7 @@ class prune:
                 if isinstance(module, nn.Conv2d)
             ]
             example_inputs = next(iter(self.dataloader['test']))[0][:1, :].to(model_device)
+            
 
         layer_iter = tqdm(named_all_weights, desc="layer", leave=False)
 
@@ -95,13 +96,21 @@ class prune:
                     # prune_indices = torch.argsort(importance)[n_keep:]
 
                     # Build dependency graph and prune
+                    if self.attention_heads:
+                        channel_groups = {}
+                        for m in original_model.modules():
+                            if isinstance(m, nn.MultiheadAttention):
+                                channel_groups[m] = m.num_heads
+                    else:
+                        channel_groups = None
                     pruner = tp.pruner.MetaPruner(
                         self.model,
                         example_inputs,
                         importance=tp.importance.MagnitudeImportance(p=2, group_reduction='mean'),
                         pruning_ratio=0,
                         pruning_ratio_dict={current_module:sparsity},
-                        # round_to=8,
+                        # round_to=8, # round channels
+                        channel_groups = channel_groups, # Group pruning for attention heads
                     )
                     pruner.step()
                     hit_flag = True

@@ -120,6 +120,7 @@ class sconce(quantization, performance, prune):
 		self.prune_indexes = []
 		self.record_prune_indexes = False
 		self.layer_idx = 0
+		self.attention_heads = False
 		
 		self.bitwidth = 4
 		
