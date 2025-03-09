@@ -113,12 +113,17 @@ class prune:
                     unwrapped_params = []
                     if hasattr(original_model, 'encoder'):
                         encoder = original_model.encoder
-                        # Add pos_embedding if it exists
+                        # Add pos_embedding with name
                         if hasattr(encoder, 'pos_embedding'):
-                            unwrapped_params.append(encoder.pos_embedding)
-                        # Add class_token if it exists
+                            unwrapped_params.append( 
+                                (encoder.pos_embedding, 'encoder.pos_embedding') 
+                            )
+                        # Add class_token with name
                         if hasattr(encoder, 'class_token'):
-                            unwrapped_params.append(encoder.class_token)
+                            unwrapped_params.append(
+                                (encoder.class_token, 'encoder.class_token')
+                            )
+
                     
                     # Create pruner with unwrapped_parameters
                     pruner = tp.pruner.MetaPruner(
