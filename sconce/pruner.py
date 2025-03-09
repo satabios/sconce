@@ -105,16 +105,27 @@ class prune:
                     # prune_indices = torch.argsort(importance)[n_keep:]
 
                     # Build dependency graph and prune 
-                    
-                    pruner = tp.pruner.MetaPruner(
-                        self.model,
-                        example_inputs,
-                        importance=tp.importance.MagnitudeImportance(p=2, group_reduction='mean'),
-                        pruning_ratio=0,
-                        pruning_ratio_dict={current_module:sparsity},
-                        # round_to=8, # round channels
-                        channel_groups = channel_groups, # Group pruning for attention heads
-                    )
+                    if self.attention_heads:
+                        pruner = tp.pruner.GroupNormPruner(
+                                self.model,
+                                example_inputs,
+                                importance=tp.importance.MagnitudeImportance(p=2, group_reduction='mean'),
+                                global_pruning=False, # Please refer to Page 9 of https://www.cs.princeton.edu/courses/archive/spring21/cos598D/lectures/pruning.pdf
+                                pruning_ratio_dict={current_module:sparsity},
+                                iterative_steps = 1,  # number of steps to achieve the target ch_sparsity.
+                                channel_groups = channel_groups,  # round channels
+                                #unwrapped_parameters=[ (model.features[1][1].layer_scale, 0), (model.features[5][4].layer_scale, 0) ],
+                            )
+                    else:
+                        pruner = tp.pruner.MetaPruner(
+                            self.model,
+                            example_inputs,
+                            importance=tp.importance.MagnitudeImportance(p=2, group_reduction='mean'),
+                            pruning_ratio=0,
+                            pruning_ratio_dict={current_module:sparsity},
+                            # round_to=8, # round channels
+                            channel_groups = channel_groups, # Group pruning for attention heads
+                        )
                     pruner.step()
                     hit_flag = True
 
