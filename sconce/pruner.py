@@ -114,7 +114,7 @@ class prune:
                                 pruning_ratio_dict={current_module:sparsity},
                                 iterative_steps = 1,  # number of steps to achieve the target ch_sparsity.
                                 channel_groups = channel_groups,  # round channels
-                                #unwrapped_parameters=[ (model.features[1][1].layer_scale, 0), (model.features[5][4].layer_scale, 0) ],
+                                unwrapped_parameters=[ (model.features[1][1].layer_scale, 0), (model.features[5][4].layer_scale, 0) ],
                             )
                     else:
                         pruner = tp.pruner.MetaPruner(
