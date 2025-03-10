@@ -48,6 +48,7 @@ class prune:
         sparsities = np.flip(np.arange(start=scan_start, stop=scan_end, step=scan_step))
         accuracies = []
         channel_groups = {}
+        unwrapped_params = []
         # Create a deep copy of the model first
         original_model = copy.deepcopy(self.model)
 
@@ -80,8 +81,23 @@ class prune:
                 for m in self.model.modules():
                     if isinstance(m, nn.MultiheadAttention):
                         channel_groups[m] = m.num_heads
+                
+                if hasattr(original_model, 'encoder'):
+                    encoder = original_model.encoder
+                    # Add pos_embedding with name
+                    if hasattr(encoder, 'pos_embedding'):
+                        unwrapped_params.append( 
+                            (encoder.pos_embedding, 'encoder.pos_embedding') 
+                        )
+                    # Add class_token with name
+                    if hasattr(encoder, 'class_token'):
+                        unwrapped_params.append(
+                            (encoder.class_token, 'encoder.class_token')
+                        )
+
             else:
                 channel_groups = None
+            
             print("Channel Groups:", channel_groups)
             
 
@@ -110,20 +126,7 @@ class prune:
 
                     # Build dependency graph and prune 
                     
-                    unwrapped_params = []
-                    if hasattr(original_model, 'encoder'):
-                        encoder = original_model.encoder
-                        # Add pos_embedding with name
-                        if hasattr(encoder, 'pos_embedding'):
-                            unwrapped_params.append( 
-                                (encoder.pos_embedding, 'encoder.pos_embedding') 
-                            )
-                        # Add class_token with name
-                        if hasattr(encoder, 'class_token'):
-                            unwrapped_params.append(
-                                (encoder.class_token, 'encoder.class_token')
-                            )
-
+                    
                     
                     # Create pruner with unwrapped_parameters
                     pruner = tp.pruner.MetaPruner(
