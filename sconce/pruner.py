@@ -119,7 +119,7 @@ class prune:
                 if hit_flag:
                     # Evaluate the pruned model
                     acc = self.evaluate(Tqdm=False) - dense_model_accuracy
-                    if abs(acc) <= (self.degradation_value)/2:
+                    if abs(acc) <= (self.degradation_value)/3:
                         self.sparsity_dict[name] = sparsity
                         break
                     elif sparsity == sparsities[-1]:  # Last sparsity step
