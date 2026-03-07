@@ -481,6 +481,7 @@ class TestCWPPruning:
 
         pruner.model = hf_vit_classifier
         pruner.dataloader = {'test': FakeLoader()}
+        pruner.attention_heads = True
         pruner.CWP_Pruning()
 
         after = param_count(pruner.model)

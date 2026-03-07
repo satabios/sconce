@@ -412,6 +412,7 @@ class TestCWPPruning:
 
         pruner.model = timm_vit
         pruner.dataloader = {'test': FakeLoader()}
+        pruner.attention_heads = True
         pruner.CWP_Pruning()
 
         after = param_count(pruner.model)
