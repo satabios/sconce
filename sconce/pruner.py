@@ -5,13 +5,43 @@ from tqdm import tqdm
 import copy
 import types
 import torch.nn as nn
-from collections import OrderedDict, defaultdict
+from collections import OrderedDict
 from typing import Union, List
 import torch_pruning as tp
 
+
 class prune:
 
+    # ===================================================================
+    # Importance Scoring
+    # ===================================================================
+
+    def get_input_channel_importance(self, weight):
+        """Compute L2-norm importance of each input channel in a weight tensor.
+
+        Args:
+            weight: weight tensor with input channels on dim=1.
+
+        Returns:
+            Tensor of importance scores, one per input channel.
+        """
+        importances = []
+        for i_c in range(weight.shape[1]):
+            channel_weight = weight.detach()[:, i_c]
+            importance = torch.norm(channel_weight)
+            importances.append(importance.view(1))
+        return torch.cat(importances)
+
     def get_input_channel_importance_channel(self, weight, dim=1):
+        """Compute L2-norm importance along a given dimension of a weight tensor.
+
+        Args:
+            weight: weight tensor.
+            dim: dimension along which to compute per-channel importance.
+
+        Returns:
+            Tensor of importance scores, one per channel along dim.
+        """
         in_channels = weight.shape[dim]
         importances = []
         for i_c in range(in_channels):
@@ -41,18 +71,20 @@ class prune:
             # Separate Q, K, V path (HuggingFace)
             head_importances = []
             for w in weights:
-                head_dim = w.shape[0] // num_heads
                 w_reshaped = w.detach().reshape(num_heads, -1)
                 head_importances.append(torch.norm(w_reshaped, dim=1))
             return torch.stack(head_importances).mean(dim=0)
         else:
             # Fused QKV path (timm, torchvision in_proj_weight)
-            head_dim = weights.shape[0] // (3 * num_heads)
             w = weights.detach().reshape(3 * num_heads, -1)
             # Compute L2 norm per row, then average every 3 (Q, K, V for same head)
             per_row_norm = torch.norm(w, dim=1)  # (3*num_heads,)
             # Reshape to (3, num_heads) and average across Q, K, V
             return per_row_norm.reshape(3, num_heads).mean(dim=0)
+
+    # ===================================================================
+    # ViT Framework Detection & Support
+    # ===================================================================
 
     def _detect_vit_config(self, model):
         """Auto-detect ViT framework and return pruning configuration.
@@ -125,11 +157,6 @@ class prune:
         # - Attention output projections, fc2, norms: affect embed_dim, skip
         # - Attention QKV: use head pruning (separate path via attention_modules)
         # - Conv2d (patch embed etc.): typically affects embed_dim, skip
-        #
-        # For timm: skip .proj, .fc2, .qkv
-        # For HF: skip .query, .key, .value, .output.dense (attn out + MLP fc2)
-        #          but keep .intermediate.dense (MLP fc1)
-        # For torchvision: skip .out_proj; also skip MLP fc2 via dimension check
         skip_suffixes = {
             'timm': ['.proj', '.fc2', '.qkv'],
             'huggingface': ['.query', '.key', '.value', '.output.dense'],
@@ -152,7 +179,6 @@ class prune:
                     # Skip Linear layers that project back to embed_dim (fc2 equivalents)
                     if framework and isinstance(module, nn.Linear):
                         # MLP intermediate layers expand: out_features > in_features
-                        # fc2/proj layers contract or keep same: out_features <= in_features
                         if module.out_features <= module.in_features:
                             continue
                     prunable_modules.append((name, module))
@@ -242,6 +268,22 @@ class prune:
             if hasattr(module, 'qkv') and hasattr(module, 'proj') and hasattr(module, 'num_heads'):
                 module.forward = types.MethodType(self._patched_timm_attn_forward, module)
 
+    # ===================================================================
+    # Structural Pruning (DG-based)
+    # ===================================================================
+
+    def _compute_head_prune_count(self, importance, num_heads, sparsity):
+        """Select which heads to prune based on importance scores.
+
+        Returns:
+            (n_prune, head_indices): number of heads to prune and their indices.
+        """
+        n_prune = max(1, int(round(num_heads * sparsity)))
+        if n_prune >= num_heads:
+            n_prune = num_heads - 1
+        head_indices = torch.argsort(importance)[:n_prune]
+        return n_prune, head_indices
+
     def _prune_attention_heads(self, model, example_inputs, attn_module, name,
                                sparsity, framework, vit_config):
         """Prune attention heads using DependencyGraph.
@@ -259,7 +301,7 @@ class prune:
         Args:
             model: the model to prune
             example_inputs: example input tensor for DG tracing
-            attn_module: the attention parent module (timm Attention, HF ViTSelfAttention, or nn.MHA)
+            attn_module: the attention parent module
             name: dotted module name
             sparsity: fraction of heads to remove (0.0 to 1.0)
             framework: 'timm', 'huggingface', or 'torchvision'
@@ -280,10 +322,7 @@ class prune:
             head_dim = attn_module.head_dim
             qkv = attn_module.qkv
             importance = self.get_attention_head_importance(qkv.weight, num_heads)
-            n_prune = max(1, int(round(num_heads * sparsity)))
-            if n_prune >= num_heads:
-                n_prune = num_heads - 1
-            head_indices = torch.argsort(importance)[:n_prune]
+            n_prune, head_indices = self._compute_head_prune_count(importance, num_heads, sparsity)
             # Build fused QKV pruning indices: [Q_h0, Q_h1, ..., K_h0, ..., V_h0, ...]
             prune_idxs = []
             for h in head_indices:
@@ -302,10 +341,7 @@ class prune:
                 [attn_module.query.weight, attn_module.key.weight, attn_module.value.weight],
                 num_heads
             )
-            n_prune = max(1, int(round(num_heads * sparsity)))
-            if n_prune >= num_heads:
-                n_prune = num_heads - 1
-            head_indices = torch.argsort(importance)[:n_prune]
+            n_prune, head_indices = self._compute_head_prune_count(importance, num_heads, sparsity)
             prune_idxs = []
             for h in head_indices:
                 prune_idxs.extend(range(h.item() * head_dim, (h.item() + 1) * head_dim))
@@ -323,10 +359,7 @@ class prune:
             num_heads = attn_module.num_heads
             head_dim = attn_module.embed_dim // num_heads
             importance = self.get_attention_head_importance(attn_module.in_proj_weight, num_heads)
-            n_prune = max(1, int(round(num_heads * sparsity)))
-            if n_prune >= num_heads:
-                n_prune = num_heads - 1
-            head_indices = torch.argsort(importance)[:n_prune]
+            n_prune, head_indices = self._compute_head_prune_count(importance, num_heads, sparsity)
             prune_idxs = []
             for h in head_indices:
                 prune_idxs.extend(range(h.item() * head_dim, (h.item() + 1) * head_dim))
@@ -375,10 +408,7 @@ class prune:
             if framework == 'timm' and hasattr(parent, 'num_heads') and name.endswith('.qkv'):
                 num_heads = parent.num_heads
                 importance = self.get_attention_head_importance(module.weight, num_heads)
-                n_prune = max(1, int(round(num_heads * sparsity)))
-                if n_prune >= num_heads:
-                    n_prune = num_heads - 1
-                head_indices = torch.argsort(importance)[:n_prune]
+                n_prune, head_indices = self._compute_head_prune_count(importance, num_heads, sparsity)
                 head_dim = module.out_features // (3 * num_heads)
                 prune_idxs = []
                 for h in head_indices:
@@ -392,10 +422,7 @@ class prune:
                 importance = self.get_attention_head_importance(
                     [parent.query.weight, parent.key.weight, parent.value.weight], num_heads
                 )
-                n_prune = max(1, int(round(num_heads * sparsity)))
-                if n_prune >= num_heads:
-                    n_prune = num_heads - 1
-                head_indices = torch.argsort(importance)[:n_prune]
+                n_prune, head_indices = self._compute_head_prune_count(importance, num_heads, sparsity)
                 head_dim = parent.query.out_features // num_heads
                 prune_idxs = []
                 for h in head_indices:
@@ -415,10 +442,7 @@ class prune:
         elif isinstance(module, nn.MultiheadAttention):
             num_heads = module.num_heads
             importance = self.get_attention_head_importance(module.in_proj_weight, num_heads)
-            n_prune = max(1, int(round(num_heads * sparsity)))
-            if n_prune >= num_heads:
-                n_prune = num_heads - 1
-            head_indices = torch.argsort(importance)[:n_prune]
+            n_prune, head_indices = self._compute_head_prune_count(importance, num_heads, sparsity)
             head_dim = module.embed_dim // num_heads
             prune_idxs = []
             for h in head_indices:
@@ -427,6 +451,10 @@ class prune:
 
         if group is not None:
             group.prune()
+
+    # ===================================================================
+    # Sensitivity Analysis
+    # ===================================================================
 
     def _scan_single_module(self, original_model, name, sparsities, dense_model_accuracy,
                             example_inputs, vit_config, verbose, i_layer, total_layers,
@@ -449,7 +477,6 @@ class prune:
                 if is_attention and framework:
                     # Attention head pruning via DependencyGraph
                     current_vit_config = self._detect_vit_config(self.model)
-                    # Find the attention module in the fresh copy
                     attn_module = dict(self.model.named_modules())[name]
                     if framework == 'timm':
                         self._patch_timm_attention(self.model)
@@ -486,7 +513,6 @@ class prune:
                 # GMP not applicable for attention heads
                 if is_attention:
                     continue
-                current_param = dict(self.model.named_parameters())[name]
                 sparse_list = np.zeros(total_layers)
                 sparse_list[i_layer] = sparsity
                 param_names = [n for n, p in original_model.named_parameters() if p.dim() > 1]
@@ -521,34 +547,31 @@ class prune:
             scan_end=1.0,
             verbose=True,
     ):
-        """
-        Scans the sensitivity of the model to weight pruning by gradually increasing the sparsity of each layer's weights
-        and measuring the resulting accuracy. Returns a dictionary mapping layer names to the sparsity values that resulted
-        in the highest accuracy for each layer.
+        """Scan model sensitivity to pruning by testing sparsity levels per layer.
 
         For ViT models (when attention_heads=True), uses a two-path approach:
         - MLP intermediate layers (fc1): scanned via MetaPruner per-module
         - Attention modules: scanned via DG-based head pruning with patched forward
 
-        :param dense_model_accuracy: the accuracy of the original dense model
-        :param scan_step: the step size for the sparsity scan
-        :param scan_start: the starting sparsity for the scan
-        :param scan_end: the ending sparsity for the scan
-        :param verbose: whether to print progress information during the scan
-        :return: a dictionary mapping layer names to the sparsity values that resulted in the highest accuracy for each layer
-        """
+        Args:
+            dense_model_accuracy: accuracy of the original dense model.
+            scan_step: step size for the sparsity scan.
+            scan_start: starting sparsity for the scan.
+            scan_end: ending sparsity for the scan.
+            verbose: whether to print progress information.
 
+        Returns:
+            dict mapping layer names to best sparsity values.
+        """
         self.sparsity_dict = {}
         sparsities = np.flip(np.arange(start=scan_start, stop=scan_end, step=scan_step))
 
-        # Create a deep copy of the model first
         original_model = copy.deepcopy(self.model)
 
         # Detect ViT configuration if attention_heads mode is enabled
         vit_config = self._detect_vit_config(original_model) if self.attention_heads else None
         original_prune_mode = self.prune_mode
 
-        # Build the list of modules to scan and example inputs
         example_inputs = None
 
         if self.prune_mode == "CWP":
@@ -556,12 +579,10 @@ class prune:
             example_inputs = next(iter(self.dataloader['test']))[0][:1, :].to(model_device)
 
             if vit_config and vit_config['framework']:
-                # ViT mode: prunable_modules has MLP-safe layers only
                 named_all_weights = vit_config['prunable_modules']
                 attention_modules = vit_config['attention_modules']
                 framework = vit_config['framework']
             else:
-                # Original Conv2d-only path
                 named_all_weights = [
                     (name, module)
                     for name, module in original_model.named_modules()
@@ -596,7 +617,6 @@ class prune:
 
         # Phase 2: Scan attention modules (head pruning via DG)
         if attention_modules:
-            # For attention heads, use coarser sparsity steps based on head counts
             if verbose:
                 print(f"Phase 2: Scanning {len(attention_modules)} attention modules (head pruning)...")
             attn_iter = tqdm(enumerate(attention_modules), desc="Attention heads",
@@ -615,15 +635,19 @@ class prune:
         self.prune_mode = original_prune_mode
         return self.sparsity_dict
 
-    def fine_grained_prune(self, tensor: torch.Tensor, sparsity: float) -> torch.Tensor:
-        """
-        Magnitude-based pruning for single tensor
+    # ===================================================================
+    # Pruning Strategies
+    # ===================================================================
 
-        :param tensor: torch.(cuda.)Tensor, weight of conv/fc layer
-        :param sparsity: float, pruning sparsity
-            sparsity = #zeros / #elements = 1 - #nonzeros / #elements
-        :return:
-            torch.(cuda.)Tensor, mask for zeros
+    def fine_grained_prune(self, tensor: torch.Tensor, sparsity: float) -> torch.Tensor:
+        """Magnitude-based pruning for a single tensor.
+
+        Args:
+            tensor: weight tensor of conv/fc layer.
+            sparsity: pruning sparsity (fraction of zeros).
+
+        Returns:
+            Binary mask (1 for kept weights, 0 for pruned).
         """
         sparsity = min(max(0.0, sparsity), 1.0)
         if sparsity == 1.0:
@@ -633,356 +657,41 @@ class prune:
             return torch.ones_like(tensor)
 
         num_elements = tensor.numel()
-
-        # Step 1: calculate the #zeros (please use round())
         num_zeros = round(num_elements * sparsity)
-        # Step 2: calculate the importance of weight
         importance = tensor.abs()
-        # Step 3: calculate the pruning threshold
         threshold = importance.view(-1).kthvalue(num_zeros).values
-        # Step 4: get binary mask (1 for nonzeros, 0 for zeros)
         mask = torch.gt(importance, threshold)
-
-        # Step 5: apply mask to prune the tensor
         tensor.mul_(mask)
-
         return mask
 
     @torch.no_grad()
     def GMP_apply(self):
-        """
-        Applies the Group Masking Procedure (GMP) to the model's parameters.
-
-        This function iterates over the model's named parameters and applies the corresponding mask
-        if it exists in the `masks` dictionary. The mask is applied by element-wise multiplication
-        with the parameter tensor.
-
-        Args:
-          self (object): The `sconce` object.
-
-        Returns:
-          None
-        """
+        """Apply stored masks to model parameters (re-zero pruned weights)."""
+        masks = getattr(self, 'masks', {})
         for name, param in self.model.named_parameters():
-            if name in self.masks:
-                param *= self.masks[name].to(self.device)
+            if name in masks:
+                param *= masks[name].to(self.device)
 
-    # @staticmethod
     @torch.no_grad()
     def GMP_Pruning(self, model=None, prune_dict=None):
+        """Apply Group-wise Magnitude Pruning (GMP) to conv and fc weights.
+
+        Uses sparsity levels from prune_dict or self.sparsity_dict.
+        Stores resulting masks in self.masks.
         """
-        Applies Group-wise Magnitude Pruning (GMP) to the model's convolutional and fully-connected weights.
-        The pruning is performed based on the sparsity levels specified in the `sparsity_dict` attribute.
-        The pruned weights are stored in the `masks` attribute.
-        """
-        if prune_dict != None:
-            sparse_dict = prune_dict
-        else:
-            sparse_dict = self.sparsity_dict
+        sparse_dict = prune_dict if prune_dict is not None else self.sparsity_dict
+        if not hasattr(self, 'masks'):
+            self.masks = {}
 
         for name, param in self.model.named_parameters():
-            if param.dim() > 1:  # we only prune conv and fc weights
+            if param.dim() > 1:
                 self.masks[name] = self.fine_grained_prune(param, sparse_dict[name])
 
-    def find_instance(
-            self, obj, object_of_importance=(nn.Conv2d, nn.Linear), sparsity=None
-    ):
-        if isinstance(obj, object_of_importance):
-            if "venum" in self.prune_mode:
-                if self.layer_idx == 0:
-                    # print("LID, sp:", obj, self.layer_idx, sparsity)
-                    self.handles.append(obj.register_forward_hook(self.venum(sparsity)))
-                    self.layer_idx -= 1
-                elif self.layer_idx < 0:
-                    return
-                else:
-                    self.layer_idx -= 1
-            # Add Wanda and SparseGPT here
-            else:
-                if object_of_importance == nn.Conv2d:
-                    self.conv_layer.append(obj)
-                elif object_of_importance == nn.BatchNorm2d:
-                    self.linear_layer.append(obj)
-            return
-
-        elif isinstance(obj, nn.Sequential):
-            for layer_id in range(len(obj)):
-                internal_obj = obj[layer_id]
-                self.find_instance(internal_obj, object_of_importance, sparsity)
-        elif isinstance(obj, list):
-            for internal_obj in obj:
-                self.find_instance(internal_obj, object_of_importance, sparsity)
-        elif hasattr(obj, "__class__"):
-            for internal_obj in obj.children():
-                self.find_instance(internal_obj, object_of_importance, sparsity)
-        elif isinstance(obj, OrderedDict):
-            for key, value in obj.items():
-                self.find_instance(value, object_of_importance, sparsity)
-
-    def get_input_channel_importance(self, weight):
-        """
-        Computes the importance of each input channel in a weight tensor.
-
-        Args:
-          weight (torch.Tensor): The weight tensor to compute channel importance for.
-
-        Returns:
-          torch.Tensor: A tensor containing the importance of each input channel.
-        """
-
-        in_channels = weight.shape[1]
-        importances = []
-        # compute the importance for each input channel
-        for i_c in range(weight.shape[1]):
-            channel_weight = weight.detach()[:, i_c]
-
-            importance = torch.norm(channel_weight)
-
-            importances.append(importance.view(1))
-        return torch.cat(importances)
-
-    @torch.no_grad()
-    def apply_channel_sorting(self):
-        """
-        Applies channel sorting to the model's convolutional and batch normalization layers.
-        Returns a copy of the model with sorted channels.
-
-        Returns:
-        model (torch.nn.Module): A copy of the model with sorted channels.
-        """
-
-        model = copy.deepcopy(self.model)  # do not modify the original model
-        # fetch all the conv and bn layers from the backbone
-
-        all_convs = []
-        all_bns = []
-
-        # Universal Layer Seeking by Parsing
-        def find_instance(obj, object_of_importance):
-            if isinstance(obj, object_of_importance):
-                if object_of_importance == nn.Conv2d:
-                    all_convs.append(obj)
-                elif object_of_importance == nn.BatchNorm2d:
-                    all_bns.append(obj)
-                return None
-            elif isinstance(obj, list):
-                for internal_obj in obj:
-                    find_instance(internal_obj, object_of_importance)
-            elif hasattr(obj, "__class__"):
-                for internal_obj in obj.children():
-                    find_instance(internal_obj, object_of_importance)
-            elif isinstance(obj, OrderedDict):
-                for key, value in obj.items():
-                    find_instance(value, object_of_importance)
-
-        find_instance(obj=model, object_of_importance=nn.Conv2d)
-        find_instance(obj=model, object_of_importance=nn.BatchNorm2d)
-
-        # iterate through conv layers
-        for i_conv in range(len(all_convs) - 1):
-            # each channel sorting index, we need to apply it to:
-            # - the output dimension of the previous conv
-            # - the previous BN layer
-            # - the input dimension of the next conv (we compute importance here)
-            prev_conv = all_convs[i_conv]
-            prev_bn = all_bns[i_conv]
-            next_conv = all_convs[i_conv + 1]
-            # note that we always compute the importance according to input channels
-            importance = self.get_input_channel_importance(next_conv.weight)
-            # sorting from large to small
-            sort_idx = torch.argsort(importance, descending=True)
-
-            # apply to previous conv and its following bn
-            prev_conv.weight.copy_(
-                torch.index_select(prev_conv.weight.detach(), 0, sort_idx)
-            )
-            for tensor_name in ["weight", "bias", "running_mean", "running_var"]:
-                tensor_to_apply = getattr(prev_bn, tensor_name)
-                tensor_to_apply.copy_(
-                    torch.index_select(tensor_to_apply.detach(), 0, sort_idx)
-                )
-
-            # apply to the next conv input (hint: one line of code)
-
-            next_conv.weight.copy_(
-                torch.index_select(next_conv.weight.detach(), 1, sort_idx)
-            )
-
-        return model
-
-    def get_num_channels_to_keep(self, channels: int, prune_ratio: float) -> int:
-        """A function to calculate the number of layers to PRESERVE after pruning
-        Note that preserve_rate = 1. - prune_ratio
-        """
-
-        return int(round(channels * (1.0 - prune_ratio)))
-
-    def get_num_channels_to_keep(self, channels: int, prune_ratio: float) -> int:
-        """A function to calculate the number of layers to PRESERVE after pruning
-        Note that preserve_rate = 1. - prune_ratio
-        """
-
-        return int(round(channels * (1.0 - prune_ratio)))
-
-    @torch.no_grad()
-    def channel_prune_layerwise(
-            self, model: nn.Module, prune_ratio: Union[List, float], i_layer
-    ) -> nn.Module:
-        """Apply channel pruning to each of the conv layer in the backbone
-        Note that for prune_ratio, we can either provide a floating-point number,
-        indicating that we use a uniform pruning rate for all layers, or a list of
-        numbers to indicate per-layer pruning rate.
-        """
-        # sanity check of provided prune_ratio
-        assert isinstance(prune_ratio, (float, list))
-
-        all_convs = []
-        all_bns = []
-
-        # Universal Layer Seeking by Parsing
-        def find_instance(obj, object_of_importance):
-            if isinstance(obj, object_of_importance):
-                if object_of_importance == nn.Conv2d:
-                    all_convs.append(obj)
-                elif object_of_importance == nn.BatchNorm2d:
-                    all_bns.append(obj)
-                return None
-            elif isinstance(obj, list):
-                for internal_obj in obj:
-                    find_instance(internal_obj, object_of_importance)
-            elif hasattr(obj, "__class__"):
-                for internal_obj in obj.children():
-                    find_instance(internal_obj, object_of_importance)
-            elif isinstance(obj, OrderedDict):
-                for key, value in obj.items():
-                    find_instance(value, object_of_importance)
-
-        # we prune the convs in the backbone with a uniform ratio
-        new_model = copy.deepcopy(model)  # prevent overwrite
-        find_instance(obj=new_model, object_of_importance=nn.Conv2d)
-        find_instance(obj=new_model, object_of_importance=nn.BatchNorm2d)
-        n_conv = len(all_convs)
-        # note that for the ratios, it affects the previous conv output and next
-        # conv input, i.e., conv0 - ratio0 - conv1 - ratio1-...
-
-        # we only apply pruning to the backbone features
-
-        # apply pruning. we naively keep the first k channels
-        # assert len(all_convs) == len(all_bns)
-        # for i_ratio, p_ratio in enumerate(prune_ratio):
-        prev_conv = all_convs[i_layer]
-        if self.snn == False:
-            prev_bn = all_bns[i_layer]
-        next_conv = all_convs[i_layer + 1]
-        original_channels = prev_conv.out_channels  # same as next_conv.in_channels
-        n_keep = self.get_num_channels_to_keep(original_channels, prune_ratio)
-
-        # prune the output of the previous conv and bn
-        prev_conv.weight.set_(prev_conv.weight.detach()[:n_keep])
-        if self.snn == False:
-            prev_bn.weight.set_(prev_bn.weight.detach()[:n_keep])
-            prev_bn.bias.set_(prev_bn.bias.detach()[:n_keep])
-            prev_bn.running_mean.set_(prev_bn.running_mean.detach()[:n_keep])
-            prev_bn.running_var.set_(prev_bn.running_var.detach()[:n_keep])
-
-        # prune the input of the next conv (hint: just one line of code)
-
-        next_conv.weight.set_(next_conv.weight.detach()[:, :n_keep])
-
-        return new_model
-
-    @torch.no_grad()
-    def channel_prune(
-            self, model: nn.Module, prune_ratio: Union[List, float]
-    ) -> nn.Module:
-        """Apply channel pruning to each of the conv layer in the backbone
-        Note that for prune_ratio, we can either provide a floating-point number,
-        indicating that we use a uniform pruning rate for all layers, or a list of
-        numbers to indicate per-layer pruning rate.
-        """
-        # sanity check of provided prune_ratio
-        assert isinstance(prune_ratio, (float, list))
-
-        all_convs = []
-        all_bns = []
-
-        # Universal Layer Seeking by Parsing
-        def find_instance(obj, object_of_importance):
-            if isinstance(obj, object_of_importance):
-                if object_of_importance == nn.Conv2d:
-                    all_convs.append(obj)
-                elif object_of_importance == nn.BatchNorm2d:
-                    all_bns.append(obj)
-                return None
-            elif isinstance(obj, list):
-                for internal_obj in obj:
-                    find_instance(internal_obj, object_of_importance)
-            elif hasattr(obj, "__class__"):
-                for internal_obj in obj.children():
-                    find_instance(internal_obj, object_of_importance)
-            elif isinstance(obj, OrderedDict):
-                for key, value in obj.items():
-                    find_instance(value, object_of_importance)
-
-        # we prune the convs in the backbone with a uniform ratio
-        new_model = copy.deepcopy(model)  # prevent overwrite
-        find_instance(obj=new_model, object_of_importance=nn.Conv2d)
-        find_instance(obj=new_model, object_of_importance=nn.BatchNorm2d)
-        n_conv = len(all_convs)
-        # note that for the ratios, it affects the previous conv output and next
-        # conv input, i.e., conv0 - ratio0 - conv1 - ratio1-...
-        if not isinstance(prune_ratio, list):
-            prune_ratio = [prune_ratio] * (n_conv - 1)
-
-        assert len(all_convs) == len(all_bns)
-
-        for i_ratio, p_ratio in enumerate(prune_ratio):
-            prev_conv = all_convs[i_ratio]
-            prev_bn = all_bns[i_ratio]
-            next_conv = all_convs[i_ratio + 1]
-            original_channels = prev_conv.out_channels  # same as next_conv.in_channels
-            if self.prune_mode != "venum_cwp":
-                n_keep = self.get_num_channels_to_keep(original_channels, p_ratio)
-
-                # prune the output of the previous conv and bn
-                prev_conv.weight.set_(prev_conv.weight.detach()[:n_keep])
-                if prev_conv.bias is not None:
-                    prev_conv.bias = nn.Parameter(prev_conv.bias.detach()[:n_keep])
-                prev_conv.out_channels = n_keep
-
-                prev_bn.weight.set_(prev_bn.weight.detach()[:n_keep])
-                prev_bn.bias.set_(prev_bn.bias.detach()[:n_keep])
-                prev_bn.running_mean.set_(prev_bn.running_mean.detach()[:n_keep])
-                prev_bn.running_var.set_(prev_bn.running_var.detach()[:n_keep])
-                prev_bn.num_features = n_keep
-
-                # prune the input of the next conv (hint: just one line of code)
-
-                next_conv.weight.set_(next_conv.weight.detach()[:, :n_keep])
-                next_conv.in_channels = n_keep
-            else:
-                pick_list = self.venum_sorted_list[i_ratio]
-                salient_indices = pick_list[int(original_channels * p_ratio):]
-
-                # prune the output of the previous conv and bn
-                prev_conv.weight.set_(prev_conv.weight.detach()[salient_indices])
-                prev_bn.weight.set_(prev_bn.weight.detach()[salient_indices])
-                prev_bn.bias.set_(prev_bn.bias.detach()[salient_indices])
-                prev_bn.running_mean.set_(
-                    prev_bn.running_mean.detach()[salient_indices]
-                )
-                prev_bn.running_var.set_(prev_bn.running_var.detach()[salient_indices])
-
-                # prune the input of the next conv (hint: just one line of code)
-
-                next_conv.weight.set_(next_conv.weight.detach()[:, salient_indices])
-
-        return new_model
-
     def CWP_Pruning(self):
-        """
-        Applies channel pruning to the model using the specified channel pruning ratio.
-        Supports Conv2d-based models (default) and ViT architectures (when attention_heads=True).
+        """Apply Channel-Wise Pruning using per-layer sparsity from self.sparsity_dict.
+
+        Supports Conv2d-based models (default) and ViT architectures
+        (when attention_heads=True).
 
         For ViT models, uses a two-path approach:
         1. MLP intermediate layers: pruned via MetaPruner with per-module ratios
@@ -1008,7 +717,6 @@ class prune:
                 if sname in attn_names:
                     attn_sparsities[sname] = sparsity
                 elif sname in mlp_names:
-                    # Map name -> module object for MetaPruner
                     module = dict(self.model.named_modules())[sname]
                     mlp_ratio_dict[module] = sparsity
 
@@ -1058,3 +766,190 @@ class prune:
 
             pruner = tp.pruner.MetaPruner(self.model, example_inputs, **pruner_kwargs)
             pruner.step()
+
+    # ===================================================================
+    # Channel Pruning & Sorting
+    # ===================================================================
+
+    def get_num_channels_to_keep(self, channels: int, prune_ratio: float) -> int:
+        """Calculate the number of channels to PRESERVE after pruning."""
+        return int(round(channels * (1.0 - prune_ratio)))
+
+    @staticmethod
+    def _collect_modules(model, module_type):
+        """Collect all modules of a given type from a model.
+
+        Uses the same recursive traversal as PyTorch's model.modules().
+        """
+        return [m for m in model.modules() if isinstance(m, module_type)]
+
+    @torch.no_grad()
+    def apply_channel_sorting(self):
+        """Sort channels by importance for better pruning alignment.
+
+        Returns a copy of the model with sorted channels.
+        """
+        model = copy.deepcopy(self.model)
+
+        all_convs = self._collect_modules(model, nn.Conv2d)
+        all_bns = self._collect_modules(model, nn.BatchNorm2d)
+
+        for i_conv in range(len(all_convs) - 1):
+            prev_conv = all_convs[i_conv]
+            prev_bn = all_bns[i_conv]
+            next_conv = all_convs[i_conv + 1]
+            importance = self.get_input_channel_importance(next_conv.weight)
+            sort_idx = torch.argsort(importance, descending=True)
+
+            prev_conv.weight.copy_(
+                torch.index_select(prev_conv.weight.detach(), 0, sort_idx)
+            )
+            for tensor_name in ["weight", "bias", "running_mean", "running_var"]:
+                tensor_to_apply = getattr(prev_bn, tensor_name)
+                tensor_to_apply.copy_(
+                    torch.index_select(tensor_to_apply.detach(), 0, sort_idx)
+                )
+
+            next_conv.weight.copy_(
+                torch.index_select(next_conv.weight.detach(), 1, sort_idx)
+            )
+
+        return model
+
+    @torch.no_grad()
+    def channel_prune_layerwise(
+            self, model: nn.Module, prune_ratio: Union[List, float], i_layer
+    ) -> nn.Module:
+        """Apply channel pruning to a single conv layer in the backbone."""
+        assert isinstance(prune_ratio, (float, list))
+
+        new_model = copy.deepcopy(model)
+        all_convs = self._collect_modules(new_model, nn.Conv2d)
+        all_bns = self._collect_modules(new_model, nn.BatchNorm2d)
+
+        prev_conv = all_convs[i_layer]
+        if not self.snn:
+            prev_bn = all_bns[i_layer]
+        next_conv = all_convs[i_layer + 1]
+        original_channels = prev_conv.out_channels
+        n_keep = self.get_num_channels_to_keep(original_channels, prune_ratio)
+
+        prev_conv.weight.set_(prev_conv.weight.detach()[:n_keep])
+        if prev_conv.bias is not None:
+            prev_conv.bias = nn.Parameter(prev_conv.bias.detach()[:n_keep])
+        prev_conv.out_channels = n_keep
+
+        if not self.snn:
+            prev_bn.weight.set_(prev_bn.weight.detach()[:n_keep])
+            prev_bn.bias.set_(prev_bn.bias.detach()[:n_keep])
+            prev_bn.running_mean.set_(prev_bn.running_mean.detach()[:n_keep])
+            prev_bn.running_var.set_(prev_bn.running_var.detach()[:n_keep])
+            prev_bn.num_features = n_keep
+
+        next_conv.weight.set_(next_conv.weight.detach()[:, :n_keep])
+        next_conv.in_channels = n_keep
+
+        return new_model
+
+    @torch.no_grad()
+    def channel_prune(
+            self, model: nn.Module, prune_ratio: Union[List, float]
+    ) -> nn.Module:
+        """Apply channel pruning to each conv layer in the backbone.
+
+        Args:
+            model: the model to prune.
+            prune_ratio: uniform ratio (float) or per-layer ratios (list).
+
+        Returns:
+            A new pruned model (deepcopy).
+        """
+        assert isinstance(prune_ratio, (float, list))
+
+        new_model = copy.deepcopy(model)
+        all_convs = self._collect_modules(new_model, nn.Conv2d)
+        all_bns = self._collect_modules(new_model, nn.BatchNorm2d)
+        n_conv = len(all_convs)
+
+        if not isinstance(prune_ratio, list):
+            prune_ratio = [prune_ratio] * (n_conv - 1)
+
+        assert len(all_convs) == len(all_bns)
+
+        for i_ratio, p_ratio in enumerate(prune_ratio):
+            prev_conv = all_convs[i_ratio]
+            prev_bn = all_bns[i_ratio]
+            next_conv = all_convs[i_ratio + 1]
+            original_channels = prev_conv.out_channels
+            if self.prune_mode != "venum_cwp":
+                n_keep = self.get_num_channels_to_keep(original_channels, p_ratio)
+
+                prev_conv.weight.set_(prev_conv.weight.detach()[:n_keep])
+                if prev_conv.bias is not None:
+                    prev_conv.bias = nn.Parameter(prev_conv.bias.detach()[:n_keep])
+                prev_conv.out_channels = n_keep
+
+                prev_bn.weight.set_(prev_bn.weight.detach()[:n_keep])
+                prev_bn.bias.set_(prev_bn.bias.detach()[:n_keep])
+                prev_bn.running_mean.set_(prev_bn.running_mean.detach()[:n_keep])
+                prev_bn.running_var.set_(prev_bn.running_var.detach()[:n_keep])
+                prev_bn.num_features = n_keep
+
+                next_conv.weight.set_(next_conv.weight.detach()[:, :n_keep])
+                next_conv.in_channels = n_keep
+            else:
+                pick_list = self.venum_sorted_list[i_ratio]
+                salient_indices = pick_list[int(original_channels * p_ratio):]
+
+                prev_conv.weight.set_(prev_conv.weight.detach()[salient_indices])
+                prev_bn.weight.set_(prev_bn.weight.detach()[salient_indices])
+                prev_bn.bias.set_(prev_bn.bias.detach()[salient_indices])
+                prev_bn.running_mean.set_(
+                    prev_bn.running_mean.detach()[salient_indices]
+                )
+                prev_bn.running_var.set_(prev_bn.running_var.detach()[salient_indices])
+
+                next_conv.weight.set_(next_conv.weight.detach()[:, salient_indices])
+
+        return new_model
+
+    # ===================================================================
+    # Utility
+    # ===================================================================
+
+    def find_instance(
+            self, obj, object_of_importance=(nn.Conv2d, nn.Linear), sparsity=None
+    ):
+        """Recursively find module instances and apply hooks or collect them.
+
+        Used by venum pruning mode to register forward hooks on target layers.
+        """
+        if isinstance(obj, object_of_importance):
+            if "venum" in self.prune_mode:
+                if self.layer_idx == 0:
+                    self.handles.append(obj.register_forward_hook(self.venum(sparsity)))
+                    self.layer_idx -= 1
+                elif self.layer_idx < 0:
+                    return
+                else:
+                    self.layer_idx -= 1
+            else:
+                if object_of_importance == nn.Conv2d:
+                    self.conv_layer.append(obj)
+                elif object_of_importance == nn.BatchNorm2d:
+                    self.linear_layer.append(obj)
+            return
+
+        elif isinstance(obj, nn.Sequential):
+            for layer_id in range(len(obj)):
+                internal_obj = obj[layer_id]
+                self.find_instance(internal_obj, object_of_importance, sparsity)
+        elif isinstance(obj, list):
+            for internal_obj in obj:
+                self.find_instance(internal_obj, object_of_importance, sparsity)
+        elif hasattr(obj, "__class__"):
+            for internal_obj in obj.children():
+                self.find_instance(internal_obj, object_of_importance, sparsity)
+        elif isinstance(obj, OrderedDict):
+            for key, value in obj.items():
+                self.find_instance(value, object_of_importance, sparsity)
