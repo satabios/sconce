@@ -110,9 +110,20 @@ class prune:
 
         for name, module in model.named_modules():
             # timm: Attention class with fused 'qkv' Linear
-            if hasattr(module, 'qkv') and hasattr(module, 'proj') and hasattr(module, 'num_heads'):
+            if hasattr(module, 'qkv') and module.qkv is not None and hasattr(module, 'proj') and hasattr(module, 'num_heads'):
                 framework = 'timm'
                 num_heads[module.qkv] = module.num_heads
+                attention_modules.append((name, module))
+
+            # timm separate Q/K/V: e.g. EVA-02 B/L with q_proj, k_proj, v_proj
+            elif (hasattr(module, 'q_proj') and isinstance(getattr(module, 'q_proj', None), nn.Linear) and
+                  hasattr(module, 'k_proj') and hasattr(module, 'v_proj') and
+                  hasattr(module, 'proj') and hasattr(module, 'num_heads') and
+                  not hasattr(module, 'num_attention_heads')):
+                framework = 'timm'
+                num_heads[module.q_proj] = module.num_heads
+                num_heads[module.k_proj] = module.num_heads
+                num_heads[module.v_proj] = module.num_heads
                 attention_modules.append((name, module))
 
             # HuggingFace: ViTSelfAttention with separate query/key/value
@@ -158,7 +169,7 @@ class prune:
         # - Attention QKV: use head pruning (separate path via attention_modules)
         # - Conv2d (patch embed etc.): typically affects embed_dim, skip
         skip_suffixes = {
-            'timm': ['.proj', '.fc2', '.qkv'],
+            'timm': ['.proj', '.fc2', '.qkv', '.q_proj', '.k_proj', '.v_proj'],
             'huggingface': ['.query', '.key', '.value', '.output.dense'],
             'torchvision': ['.out_proj'],
             None: [],
@@ -181,6 +192,15 @@ class prune:
                         # MLP intermediate layers expand: out_features > in_features
                         if module.out_features <= module.in_features:
                             continue
+                        # Skip GluMlp fc1 where chunk creates untraceable DG dependency
+                        if framework == 'timm' and name.endswith('.fc1'):
+                            parent_name = '.'.join(name.split('.')[:-1])
+                            parent_mod = dict(model.named_modules()).get(parent_name)
+                            if parent_mod is not None:
+                                sibling_fc2 = getattr(parent_mod, 'fc2', None)
+                                if (isinstance(sibling_fc2, nn.Linear) and
+                                        module.out_features == 2 * sibling_fc2.in_features):
+                                    continue
                     prunable_modules.append((name, module))
 
         return {
@@ -213,10 +233,15 @@ class prune:
         """After MetaPruner.step(), sync num_heads/head_dim on attention modules."""
         if framework == 'timm':
             for _, module in model.named_modules():
-                if hasattr(module, 'qkv') and hasattr(module, 'num_heads'):
+                if hasattr(module, 'qkv') and module.qkv is not None and hasattr(module, 'num_heads'):
                     new_heads = pruner.num_heads.get(module.qkv, module.num_heads)
                     module.num_heads = new_heads
-                    module.head_dim = module.qkv.out_features // (3 * new_heads)
+                    if hasattr(module, 'head_dim'):
+                        module.head_dim = module.qkv.out_features // (3 * new_heads)
+                elif (hasattr(module, 'q_proj') and isinstance(getattr(module, 'q_proj', None), nn.Linear) and
+                      hasattr(module, 'num_heads')):
+                    new_heads = pruner.num_heads.get(module.q_proj, module.num_heads)
+                    module.num_heads = new_heads
         elif framework == 'torchvision':
             for _, module in model.named_modules():
                 if isinstance(module, nn.MultiheadAttention):
@@ -231,15 +256,18 @@ class prune:
                     module.all_head_size = module.query.out_features
 
     @staticmethod
-    def _patched_timm_attn_forward(self, x, attn_mask=None):
+    def _patched_timm_attn_forward(self, x, attn_mask=None, **kwargs):
         """Patched forward for timm Attention that uses -1 reshape.
 
         timm's original forward uses C from input shape to reshape attention
         output, but after head pruning num_heads*head_dim != embed_dim.
         This version uses -1 to infer the correct reshape dimension.
+        Computes head_dim dynamically as a fallback for models that don't
+        store it as an attribute (e.g. EVA-02).
         """
         B, N, C = x.shape
-        qkv = self.qkv(x).reshape(B, N, 3, self.num_heads, self.head_dim).permute(2, 0, 3, 1, 4)
+        head_dim = getattr(self, 'head_dim', self.qkv.out_features // (3 * self.num_heads))
+        qkv = self.qkv(x).reshape(B, N, 3, self.num_heads, head_dim).permute(2, 0, 3, 1, 4)
         q, k, v = qkv.unbind(0)
         q, k = self.q_norm(q), self.k_norm(k)
 
@@ -265,7 +293,7 @@ class prune:
     def _patch_timm_attention(self, model):
         """Patch all timm Attention modules to use -1 reshape for pruning compat."""
         for _, module in model.named_modules():
-            if hasattr(module, 'qkv') and hasattr(module, 'proj') and hasattr(module, 'num_heads'):
+            if hasattr(module, 'qkv') and module.qkv is not None and hasattr(module, 'proj') and hasattr(module, 'num_heads'):
                 module.forward = types.MethodType(self._patched_timm_attn_forward, module)
 
     # ===================================================================
@@ -319,19 +347,35 @@ class prune:
 
         if framework == 'timm':
             num_heads = attn_module.num_heads
-            head_dim = attn_module.head_dim
-            qkv = attn_module.qkv
-            importance = self.get_attention_head_importance(qkv.weight, num_heads)
-            n_prune, head_indices = self._compute_head_prune_count(importance, num_heads, sparsity)
-            # Build fused QKV pruning indices: [Q_h0, Q_h1, ..., K_h0, ..., V_h0, ...]
-            prune_idxs = []
-            for h in head_indices:
-                for qkv_offset in range(3):
-                    start = qkv_offset * num_heads * head_dim + h.item() * head_dim
-                    prune_idxs.extend(range(start, start + head_dim))
-            group = DG.get_pruning_group(qkv, tp.prune_linear_out_channels, idxs=prune_idxs)
-            if group is not None:
-                group.prune()
+            if hasattr(attn_module, 'qkv') and attn_module.qkv is not None:
+                # Fused QKV path (timm Attention, EVA-02 Ti/S, InternViT)
+                qkv = attn_module.qkv
+                head_dim = getattr(attn_module, 'head_dim', qkv.out_features // (3 * num_heads))
+                importance = self.get_attention_head_importance(qkv.weight, num_heads)
+                n_prune, head_indices = self._compute_head_prune_count(importance, num_heads, sparsity)
+                # Build fused QKV pruning indices: [Q_h0, Q_h1, ..., K_h0, ..., V_h0, ...]
+                prune_idxs = []
+                for h in head_indices:
+                    for qkv_offset in range(3):
+                        start = qkv_offset * num_heads * head_dim + h.item() * head_dim
+                        prune_idxs.extend(range(start, start + head_dim))
+                group = DG.get_pruning_group(qkv, tp.prune_linear_out_channels, idxs=prune_idxs)
+                if group is not None:
+                    group.prune()
+            elif hasattr(attn_module, 'q_proj') and isinstance(getattr(attn_module, 'q_proj', None), nn.Linear):
+                # Separate Q/K/V path (EVA-02 B/L)
+                head_dim = attn_module.q_proj.out_features // num_heads
+                importance = self.get_attention_head_importance(
+                    [attn_module.q_proj.weight, attn_module.k_proj.weight, attn_module.v_proj.weight],
+                    num_heads
+                )
+                n_prune, head_indices = self._compute_head_prune_count(importance, num_heads, sparsity)
+                prune_idxs = []
+                for h in head_indices:
+                    prune_idxs.extend(range(h.item() * head_dim, (h.item() + 1) * head_dim))
+                group = DG.get_pruning_group(attn_module.q_proj, tp.prune_linear_out_channels, idxs=prune_idxs)
+                if group is not None:
+                    group.prune()
             attn_module.num_heads = num_heads - n_prune
 
         elif framework == 'huggingface':
