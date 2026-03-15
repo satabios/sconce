@@ -10,8 +10,7 @@ tutorials/.ipynb_checkpoints/*
 sconce/__pycache__/
 data/
 examples/data/
-tests/__pycache__/*
-tests/__pycache__/*
+tests/__pycache__/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
