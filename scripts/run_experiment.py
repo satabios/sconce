@@ -124,10 +124,13 @@ def evaluate(model, loader, device, max_batches=None):
     model.eval()
     model.to(device)
     correct, total = 0, 0
+    # Cast inputs to match model dtype (e.g. fp16)
+    model_dtype = next(model.parameters()).dtype
     for i, (images, labels) in enumerate(tqdm(loader, desc="eval", leave=False)):
         if max_batches is not None and i >= max_batches:
             break
-        images, labels = images.to(device), labels.to(device)
+        images = images.to(device=device, dtype=model_dtype)
+        labels = labels.to(device)
         logits = forward_model(model, images)
         _, predicted = torch.max(logits, 1)
         total += labels.size(0)
@@ -138,7 +141,8 @@ def evaluate(model, loader, device, max_batches=None):
 def measure_latency_ms(model, dummy_input, n_warmup=20, n_test=100):
     model.eval()
     model.to("cpu")
-    dummy = dummy_input.to("cpu")
+    model_dtype = next(model.parameters()).dtype
+    dummy = dummy_input.to(device="cpu", dtype=model_dtype)
     with torch.no_grad():
         for _ in range(n_warmup):
             forward_model(model, dummy)
@@ -167,8 +171,9 @@ def get_peak_vram_mb(model, dummy_input, device):
         return 0.0
     torch.cuda.reset_peak_memory_stats(device)
     model.to(device)
+    model_dtype = next(model.parameters()).dtype
     with torch.no_grad():
-        forward_model(model, dummy_input.to(device))
+        forward_model(model, dummy_input.to(device=device, dtype=model_dtype))
     return torch.cuda.max_memory_allocated(device) / MiB
 
 
@@ -203,11 +208,13 @@ def finetune(model, dataloader, device, cfg):
 
     model.to(device)
     best_acc = 0.0
+    model_dtype = next(model.parameters()).dtype
     for epoch in range(ft_epochs):
         model.train()
         running_loss = 0.0
         for images, labels in tqdm(dataloader["train"], desc=f"epoch {epoch+1}/{ft_epochs}", leave=False):
-            images, labels = images.to(device), labels.to(device)
+            images = images.to(device=device, dtype=model_dtype)
+            labels = labels.to(device)
             optimizer.zero_grad()
             logits = forward_model(model, images)
             loss = criterion(logits, labels)
