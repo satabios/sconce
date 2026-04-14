@@ -298,6 +298,77 @@ def prune_attention_heads(model, dataloader, device, head_sparsity=0.25):
 
 
 # ---------------------------------------------------------------------------
+# Attention head structural pruning (physically reshape qkv + proj per block)
+# ---------------------------------------------------------------------------
+
+def prune_attention_structural(model, head_sparsity=0.33):
+    """
+    Structurally prune attention heads by physically removing head-corresponding
+    rows from qkv and columns from proj in each transformer block.
+    Updates attn.num_heads and attn.attn_dim to match new shape.
+    Works on timm ViT (model.blocks[i].attn).
+    """
+    if not hasattr(model, "blocks"):
+        print("  [Attention structural] no .blocks, skipping")
+        return model
+
+    for layer_idx, block in enumerate(model.blocks):
+        attn = block.attn
+        num_heads = attn.num_heads
+        head_dim = attn.head_dim
+        inner_dim = num_heads * head_dim
+
+        n_prune = max(0, int(num_heads * head_sparsity))
+        n_keep = max(1, num_heads - n_prune)
+        if n_keep == num_heads:
+            continue
+
+        # Score heads: L1 norm of proj weight cols per head
+        proj_w = attn.proj.weight.data  # (embed_dim, inner_dim)
+        head_importance = torch.stack([
+            proj_w[:, h * head_dim:(h + 1) * head_dim].abs().mean()
+            for h in range(num_heads)
+        ])
+        keep_idx = head_importance.topk(n_keep, largest=True).indices.sort().values.tolist()
+
+        # Build row indices to keep in qkv (Q block, K block, V block each of size inner_dim)
+        keep_rows = []
+        for offset in [0, inner_dim, 2 * inner_dim]:
+            for h in keep_idx:
+                keep_rows.extend(range(offset + h * head_dim, offset + (h + 1) * head_dim))
+        keep_rows = torch.tensor(keep_rows, dtype=torch.long)
+
+        # Build col indices to keep in proj
+        keep_cols = []
+        for h in keep_idx:
+            keep_cols.extend(range(h * head_dim, (h + 1) * head_dim))
+        keep_cols = torch.tensor(keep_cols, dtype=torch.long)
+
+        embed_dim = attn.qkv.in_features
+        new_inner = n_keep * head_dim
+
+        new_qkv = nn.Linear(embed_dim, 3 * new_inner, bias=(attn.qkv.bias is not None))
+        new_proj = nn.Linear(new_inner, embed_dim, bias=(attn.proj.bias is not None))
+
+        with torch.no_grad():
+            new_qkv.weight.copy_(attn.qkv.weight.data[keep_rows, :])
+            if attn.qkv.bias is not None:
+                new_qkv.bias.copy_(attn.qkv.bias.data[keep_rows])
+            new_proj.weight.copy_(attn.proj.weight.data[:, keep_cols])
+            if attn.proj.bias is not None:
+                new_proj.bias.copy_(attn.proj.bias.data)
+
+        attn.qkv = new_qkv
+        attn.proj = new_proj
+        attn.num_heads = n_keep
+        attn.attn_dim = new_inner
+
+    print(f"  Attention structural: kept {n_keep}/{num_heads} heads per block "
+          f"({head_sparsity*100:.0f}% pruned)")
+    return model
+
+
+# ---------------------------------------------------------------------------
 # FFN neuron pruning (structured: zero lowest-L1 intermediate neurons in MLP)
 # ---------------------------------------------------------------------------
 
@@ -485,6 +556,11 @@ def main():
             compressed_model, dataloader, device, head_sparsity)
         sens_time_min = (time.perf_counter() - sens_t0) / 60
 
+    elif prune_mode == "attention_structural":
+        head_sparsity = cfg.get("head_sparsity", 0.33)
+        print(f"\nAttention structural pruning — head_sparsity={head_sparsity}")
+        compressed_model = prune_attention_structural(compressed_model, head_sparsity)
+
     elif prune_mode == "ffn":
         ffn_sparsity = cfg.get("ffn_sparsity", 0.25)
         print(f"\nFFN neuron pruning — ffn_sparsity={ffn_sparsity}")
@@ -493,6 +569,13 @@ def main():
     elif prune_mode == "ffn_structural":
         ffn_sparsity = cfg.get("ffn_sparsity", 0.5)
         print(f"\nFFN structural pruning — ffn_sparsity={ffn_sparsity}")
+        compressed_model = prune_ffn_structural(compressed_model, ffn_sparsity)
+
+    elif prune_mode == "combined_structural":
+        head_sparsity = cfg.get("head_sparsity", 0.33)
+        ffn_sparsity = cfg.get("ffn_sparsity", 0.5)
+        print(f"\nCombined structural: attn head_sparsity={head_sparsity}, ffn_sparsity={ffn_sparsity}")
+        compressed_model = prune_attention_structural(compressed_model, head_sparsity)
         compressed_model = prune_ffn_structural(compressed_model, ffn_sparsity)
 
     elif prune_mode == "none":

@@ -1,0 +1,19 @@
+{
+  "_comment": "FFN 25% + finetune + int8 — challenge GMP-30%+ft+int8 at same compression class",
+  "model": "vit_tiny_patch16_224",
+  "model_source": "timm",
+  "num_classes": 10,
+  "pretrained": true,
+  "dataset": "cifar10",
+  "img_size": 224,
+  "batch_size": 128,
+  "num_workers": 4,
+  "finetune_epochs": 0,
+  "checkpoint": "/tmp/sconce_checkpoints/vit_tiny_cifar10.pth",
+  "prune_mode": "ffn",
+  "ffn_sparsity": 0.25,
+  "finetune_after_prune": true,
+  "finetune_after_prune_epochs": 3,
+  "finetune_lr": 1e-4,
+  "quant": "int8"
+}
