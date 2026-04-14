@@ -332,6 +332,56 @@ def prune_ffn_neurons(model, ffn_sparsity=0.25):
 
 
 # ---------------------------------------------------------------------------
+# FFN structural pruning (physically resize fc1/fc2 — true param reduction)
+# ---------------------------------------------------------------------------
+
+def prune_ffn_structural(model, ffn_sparsity=0.5):
+    """
+    Structurally prune FFN intermediate neurons by physically removing
+    rows/columns from fc1 and fc2 weight matrices.
+    Works on timm ViT (model.blocks[i].mlp.fc1 / fc2).
+    Result: truly smaller Linear layers → smaller model file + faster inference.
+    """
+    if not hasattr(model, "blocks"):
+        print("  [FFN structural] model has no .blocks, skipping")
+        return model
+
+    for layer_idx, block in enumerate(model.blocks):
+        mlp = block.mlp
+        fc1 = mlp.fc1  # (hidden_dim → intermediate_dim)
+        fc2 = mlp.fc2  # (intermediate_dim → hidden_dim)
+
+        intermediate_dim = fc1.out_features
+        n_keep = max(1, int(intermediate_dim * (1.0 - ffn_sparsity)))
+
+        # Score: L1 norm of fc2 input weight column (how much each neuron contributes)
+        neuron_importance = fc2.weight.data.abs().mean(dim=0)  # (intermediate_dim,)
+        keep_idx = neuron_importance.topk(n_keep, largest=True).indices.sort().values
+
+        # Build new smaller Linear layers
+        in_features = fc1.in_features
+        out_features = fc2.out_features
+
+        new_fc1 = nn.Linear(in_features, n_keep, bias=(fc1.bias is not None))
+        new_fc2 = nn.Linear(n_keep, out_features, bias=(fc2.bias is not None))
+
+        with torch.no_grad():
+            new_fc1.weight.copy_(fc1.weight.data[keep_idx, :])
+            if fc1.bias is not None:
+                new_fc1.bias.copy_(fc1.bias.data[keep_idx])
+            new_fc2.weight.copy_(fc2.weight.data[:, keep_idx])
+            if fc2.bias is not None:
+                new_fc2.bias.copy_(fc2.bias.data)
+
+        mlp.fc1 = new_fc1
+        mlp.fc2 = new_fc2
+
+    kept_pct = (1.0 - ffn_sparsity) * 100
+    print(f"  FFN structural: kept {kept_pct:.0f}% of intermediate neurons ({n_keep}/{intermediate_dim}) per block")
+    return model
+
+
+# ---------------------------------------------------------------------------
 # PTQ int8 (CPU-only, via PyTorch static quant)
 # ---------------------------------------------------------------------------
 
@@ -439,6 +489,11 @@ def main():
         ffn_sparsity = cfg.get("ffn_sparsity", 0.25)
         print(f"\nFFN neuron pruning — ffn_sparsity={ffn_sparsity}")
         compressed_model = prune_ffn_neurons(compressed_model, ffn_sparsity)
+
+    elif prune_mode == "ffn_structural":
+        ffn_sparsity = cfg.get("ffn_sparsity", 0.5)
+        print(f"\nFFN structural pruning — ffn_sparsity={ffn_sparsity}")
+        compressed_model = prune_ffn_structural(compressed_model, ffn_sparsity)
 
     elif prune_mode == "none":
         pass  # baseline only
