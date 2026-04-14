@@ -250,17 +250,17 @@ def gmp_remove_masks(model):
 
 
 # ---------------------------------------------------------------------------
-# Attention-head pruning
+# Attention-head pruning (L1-norm based, simpler + more reliable)
 # ---------------------------------------------------------------------------
 
 def prune_attention_heads(model, dataloader, device, head_sparsity=0.25):
     """
-    Score each attention head by gradient-based importance, prune the least
-    important `head_sparsity` fraction of heads by zeroing their output
-    projections.  Works on timm ViT (model.blocks[i].attn).
+    Score each attention head by L1-norm of its output-projection weights.
+    Zero out the columns in the output projection for the least important heads.
+    Works on timm ViT (model.blocks[i].attn).
     """
     if not hasattr(model, "blocks"):
-        print("  [attention-head pruning] model has no .blocks attribute, skipping")
+        print("  [attention-head pruning] model has no .blocks, skipping")
         return model
 
     num_layers = len(model.blocks)
@@ -268,52 +268,66 @@ def prune_attention_heads(model, dataloader, device, head_sparsity=0.25):
     num_heads = first_attn.num_heads
     head_dim = first_attn.head_dim
 
-    head_importance = torch.zeros(num_layers, num_heads, device=device)
-    model.to(device)
-    criterion = nn.CrossEntropyLoss()
-
-    # Accumulate gradient-based head importance over one mini-batch
-    model.train()
-    images, labels = next(iter(dataloader["train"]))
-    images, labels = images.to(device), labels.to(device)
-    logits = forward_model(model, images)
-    loss = criterion(logits, labels)
-    loss.backward()
-
+    # Score: L1 norm of output-projection columns for each head
+    head_importance = torch.zeros(num_layers, num_heads)
     for layer_idx, block in enumerate(model.blocks):
-        q_weight = block.attn.qkv.weight  # (3*d, d)
-        if q_weight.grad is None:
-            continue
-        # Use query-weight gradient norm per head as importance score
-        q_grad = q_weight.grad[:num_heads * head_dim]  # query portion
-        head_importance[layer_idx] = q_grad.view(num_heads, -1).norm(dim=1)
+        proj_w = block.attn.proj.weight.data  # (d, d)
+        for head_idx in range(num_heads):
+            start = head_idx * head_dim
+            end = start + head_dim
+            head_importance[layer_idx, head_idx] = proj_w[:, start:end].abs().mean()
 
-    # Determine threshold: prune bottom `head_sparsity` fraction globally
+    # Prune bottom `head_sparsity` fraction globally
     flat = head_importance.view(-1)
     k = max(1, int(flat.numel() * head_sparsity))
     threshold = flat.kthvalue(k).values.item()
 
-    # Zero out output projection weights for pruned heads
     pruned_count = 0
-    model.eval()
     for layer_idx, block in enumerate(model.blocks):
         for head_idx in range(num_heads):
             if head_importance[layer_idx, head_idx].item() <= threshold:
                 start = head_idx * head_dim
                 end = start + head_dim
                 with torch.no_grad():
-                    # proj weight rows corresponding to this head
-                    block.attn.proj.weight.data[:, start:end] = 0
+                    block.attn.proj.weight.data[:, start:end] = 0.0
                 pruned_count += 1
 
-    total_heads = num_layers * num_heads
-    print(f"  Pruned {pruned_count}/{total_heads} attention heads "
-          f"({100*pruned_count/total_heads:.1f}%)")
+    total = num_layers * num_heads
+    print(f"  Pruned {pruned_count}/{total} attention heads ({100*pruned_count/total:.1f}%)")
+    return model
 
-    # Clear gradients
-    for p in model.parameters():
-        p.grad = None
 
+# ---------------------------------------------------------------------------
+# FFN neuron pruning (structured: zero lowest-L1 intermediate neurons in MLP)
+# ---------------------------------------------------------------------------
+
+def prune_ffn_neurons(model, ffn_sparsity=0.25):
+    """
+    Prune FFN neurons in each transformer block's MLP by zeroing the
+    output weights of the least-important intermediate neurons.
+    Works on timm ViT (model.blocks[i].mlp.fc1 / fc2).
+    """
+    if not hasattr(model, "blocks"):
+        print("  [FFN pruning] model has no .blocks, skipping")
+        return model
+
+    for layer_idx, block in enumerate(model.blocks):
+        mlp = block.mlp
+        fc1 = mlp.fc1  # (hidden_dim → intermediate_dim)
+        fc2 = mlp.fc2  # (intermediate_dim → hidden_dim)
+
+        # Score each neuron by L1 norm of its fc2 input weight column
+        neuron_importance = fc2.weight.data.abs().mean(dim=0)  # (intermediate_dim,)
+        k = max(1, int(len(neuron_importance) * ffn_sparsity))
+        _, prune_idx = neuron_importance.topk(k, largest=False)
+
+        with torch.no_grad():
+            fc1.weight.data[prune_idx, :] = 0.0
+            if fc1.bias is not None:
+                fc1.bias.data[prune_idx] = 0.0
+            fc2.weight.data[:, prune_idx] = 0.0
+
+    print(f"  FFN: zeroed {ffn_sparsity*100:.0f}% of intermediate neurons per block")
     return model
 
 
@@ -421,10 +435,13 @@ def main():
             compressed_model, dataloader, device, head_sparsity)
         sens_time_min = (time.perf_counter() - sens_t0) / 60
 
+    elif prune_mode == "ffn":
+        ffn_sparsity = cfg.get("ffn_sparsity", 0.25)
+        print(f"\nFFN neuron pruning — ffn_sparsity={ffn_sparsity}")
+        compressed_model = prune_ffn_neurons(compressed_model, ffn_sparsity)
+
     elif prune_mode == "none":
         pass  # baseline only
-
-    # ---- Fine-tune after pruning ----
     if prune_mode != "none" and cfg.get("finetune_after_prune", False):
         ft_cfg = {**cfg, "finetune_epochs": cfg.get("finetune_after_prune_epochs", 3),
                   "freeze_backbone": False}
@@ -440,7 +457,9 @@ def main():
 
     # ---- Compressed metrics ----
     print("\nCollecting compressed metrics...")
-    compressed = collect_metrics(compressed_model, dataloader, device, cfg, "compressed")
+    # Dynamic/static quantized models must run on CPU
+    eval_device = "cpu" if quant in ("int8", "int4") else device
+    compressed = collect_metrics(compressed_model, dataloader, eval_device, cfg, "compressed")
 
     total_time_min = (time.perf_counter() - t_start) / 60
     compression_ratio = original_size / compressed["size_mb"] if compressed["size_mb"] > 0 else 0.0

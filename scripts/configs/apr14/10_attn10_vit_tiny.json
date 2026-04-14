@@ -1,0 +1,15 @@
+{
+  "model": "vit_tiny_patch16_224",
+  "model_source": "timm",
+  "num_classes": 10,
+  "pretrained": true,
+  "dataset": "cifar10",
+  "img_size": 224,
+  "batch_size": 128,
+  "num_workers": 4,
+  "finetune_epochs": 0,
+  "checkpoint": "/tmp/sconce_checkpoints/vit_tiny_cifar10.pth",
+  "prune_mode": "attention",
+  "head_sparsity": 0.10,
+  "quant": "none"
+}
