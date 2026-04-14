@@ -225,6 +225,63 @@ def finetune(model, dataloader, device, cfg):
 
 
 # ---------------------------------------------------------------------------
+# Knowledge distillation fine-tuning (teacher = original model)
+# ---------------------------------------------------------------------------
+
+def finetune_kd(model, teacher_model, dataloader, device, cfg, temperature=4.0, alpha=0.5):
+    """
+    Fine-tune pruned model with knowledge distillation from teacher.
+    Loss = alpha * KL(student/T || teacher/T) + (1-alpha) * CE(student, labels)
+    """
+    import torch.nn.functional as F
+
+    ft_epochs = cfg.get("finetune_epochs", 3)
+    lr = cfg.get("finetune_lr", 1e-4)
+
+    trainable_params = list(model.parameters())
+    optimizer = torch.optim.AdamW(trainable_params, lr=lr, weight_decay=1e-4)
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=ft_epochs)
+
+    model.to(device)
+    teacher_model.to(device).eval()
+    ce_criterion = nn.CrossEntropyLoss()
+
+    for epoch in range(ft_epochs):
+        model.train()
+        running_loss = 0.0
+        for images, labels in tqdm(dataloader["train"], desc=f"KD epoch {epoch+1}/{ft_epochs}", leave=False):
+            images, labels = images.to(device), labels.to(device)
+            optimizer.zero_grad()
+
+            student_logits = forward_model(model, images)
+            with torch.no_grad():
+                teacher_logits = forward_model(teacher_model, images)
+
+            # KD loss
+            T = temperature
+            kd_loss = F.kl_div(
+                F.log_softmax(student_logits / T, dim=-1),
+                F.softmax(teacher_logits / T, dim=-1),
+                reduction="batchmean",
+            ) * (T * T)
+            ce_loss = ce_criterion(student_logits, labels)
+            loss = alpha * kd_loss + (1.0 - alpha) * ce_loss
+
+            loss.backward()
+            optimizer.step()
+            running_loss += loss.item()
+
+        scheduler.step()
+        val_acc = evaluate(model, dataloader["test"], device)
+        print(f"  KD epoch {epoch+1}: loss={running_loss/len(dataloader['train']):.4f} val_acc={val_acc:.2f}%")
+
+    for param in model.parameters():
+        param.requires_grad_(True)
+
+    return model
+
+
+# ---------------------------------------------------------------------------
 # GMP pruning (magnitude-based unstructured) for transformer Linear layers
 # ---------------------------------------------------------------------------
 
@@ -637,8 +694,16 @@ def main():
     if prune_mode != "none" and cfg.get("finetune_after_prune", False):
         ft_cfg = {**cfg, "finetune_epochs": cfg.get("finetune_after_prune_epochs", 3),
                   "freeze_backbone": False}
-        print("\nFine-tuning after pruning...")
-        compressed_model = finetune(compressed_model, dataloader, device, ft_cfg)
+        if cfg.get("use_kd", False):
+            print("\nKnowledge distillation fine-tuning after pruning...")
+            compressed_model = finetune_kd(
+                compressed_model, model, dataloader, device, ft_cfg,
+                temperature=cfg.get("kd_temperature", 4.0),
+                alpha=cfg.get("kd_alpha", 0.5),
+            )
+        else:
+            print("\nFine-tuning after pruning...")
+            compressed_model = finetune(compressed_model, dataloader, device, ft_cfg)
 
     # ---- Quantization ----
     if quant == "int8":
