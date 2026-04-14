@@ -1,0 +1,19 @@
+{
+  "_comment": "FFN25 structural + 15ep + fp16 — fill 1x→3.5x gap with structural+fp16, expect ~2.4x @96%",
+  "model": "vit_tiny_patch16_224",
+  "model_source": "timm",
+  "num_classes": 10,
+  "pretrained": true,
+  "dataset": "cifar10",
+  "img_size": 224,
+  "batch_size": 128,
+  "num_workers": 4,
+  "finetune_epochs": 0,
+  "checkpoint": "/tmp/sconce_checkpoints/vit_tiny_cifar10.pth",
+  "prune_mode": "ffn_structural",
+  "ffn_sparsity": 0.25,
+  "finetune_after_prune": true,
+  "finetune_after_prune_epochs": 15,
+  "finetune_lr": 1e-4,
+  "quant": "fp16"
+}

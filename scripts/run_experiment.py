@@ -574,6 +574,16 @@ def ptq_int8(model, dataloader, num_calibration_batches=32):
 
 
 # ---------------------------------------------------------------------------
+# Float16 quantization
+# ---------------------------------------------------------------------------
+
+def ptq_fp16(model):
+    """Convert model weights to float16 (~2x size reduction)."""
+    model_fp16 = copy.deepcopy(model).half()
+    return model_fp16
+
+
+# ---------------------------------------------------------------------------
 # Metrics collection
 # ---------------------------------------------------------------------------
 
@@ -712,6 +722,9 @@ def main():
     if quant == "int8":
         print("\nPTQ int8 (dynamic quantization)...")
         compressed_model = ptq_int8(compressed_model, dataloader)
+    elif quant == "fp16":
+        print("\nFP16 quantization...")
+        compressed_model = ptq_fp16(compressed_model)
     elif quant == "none":
         pass
 
