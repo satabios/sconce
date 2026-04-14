@@ -1,0 +1,15 @@
+{
+  "_comment": "head25 (14→10 Q heads) + 1ep + int8. Same idea as head25+fp16 but more compression.",
+  "model": "Qwen/Qwen2-0.5B",
+  "prune_mode": "attention_heads",
+  "head_sparsity": 0.25,
+  "finetune_after_prune": true,
+  "finetune_after_prune_epochs": 1,
+  "finetune_lr": 2e-5,
+  "quant": "int8",
+  "seq_len": 512,
+  "batch_size": 4,
+  "num_workers": 2,
+  "eval_max_tokens": 500000,
+  "finetune_max_tokens": 200000
+}

@@ -1,0 +1,10 @@
+{
+  "_comment": "Qwen2-0.5B int8 only — no pruning. Expect ~4x compression, minimal PPL change.",
+  "model": "Qwen/Qwen2-0.5B",
+  "prune_mode": "none",
+  "quant": "int8",
+  "seq_len": 512,
+  "batch_size": 4,
+  "num_workers": 2,
+  "eval_max_tokens": 500000
+}

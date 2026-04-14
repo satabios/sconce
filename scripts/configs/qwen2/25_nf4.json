@@ -1,0 +1,10 @@
+{
+  "_comment": "Qwen2-0.5B NF4 4-bit only (no pruning). Expect ~3.5x.",
+  "model": "Qwen/Qwen2-0.5B",
+  "prune_mode": "none",
+  "quant": "nf4",
+  "seq_len": 512,
+  "batch_size": 4,
+  "num_workers": 2,
+  "eval_max_tokens": 500000
+}

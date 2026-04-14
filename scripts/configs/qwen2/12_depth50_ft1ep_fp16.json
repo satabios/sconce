@@ -1,0 +1,15 @@
+{
+  "_comment": "Qwen2-0.5B depth50 (uniform) + 1ep finetune + fp16. Remove 12 of 24 layers. Expect ~3.8x.",
+  "model": "Qwen/Qwen2-0.5B",
+  "prune_mode": "depth",
+  "depth_sparsity": 0.50,
+  "finetune_after_prune": true,
+  "finetune_after_prune_epochs": 1,
+  "finetune_lr": 2e-5,
+  "quant": "fp16",
+  "seq_len": 512,
+  "batch_size": 4,
+  "num_workers": 2,
+  "eval_max_tokens": 500000,
+  "finetune_max_tokens": 200000
+}

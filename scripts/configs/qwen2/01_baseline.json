@@ -1,0 +1,10 @@
+{
+  "_comment": "Qwen2-0.5B baseline — no pruning, no quantization. Establishes PPL anchor.",
+  "model": "Qwen/Qwen2-0.5B",
+  "prune_mode": "none",
+  "quant": "none",
+  "seq_len": 512,
+  "batch_size": 4,
+  "num_workers": 2,
+  "eval_max_tokens": 500000
+}

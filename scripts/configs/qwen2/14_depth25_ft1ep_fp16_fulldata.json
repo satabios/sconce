@@ -1,0 +1,15 @@
+{
+  "_comment": "depth25 + 1ep + fp16, but full 2M tokens finetune. Test if data is the bottleneck.",
+  "model": "Qwen/Qwen2-0.5B",
+  "prune_mode": "depth",
+  "depth_sparsity": 0.25,
+  "finetune_after_prune": true,
+  "finetune_after_prune_epochs": 1,
+  "finetune_lr": 2e-5,
+  "quant": "fp16",
+  "seq_len": 512,
+  "batch_size": 4,
+  "num_workers": 2,
+  "eval_max_tokens": 500000,
+  "finetune_max_tokens": 2000000
+}

@@ -1,0 +1,15 @@
+{
+  "_comment": "head57 (14→6 Q heads) + 1ep + NF4. Aggressive head pruning. Expect ~3.2x.",
+  "model": "Qwen/Qwen2-0.5B",
+  "prune_mode": "attention_heads",
+  "head_sparsity": 0.57,
+  "finetune_after_prune": true,
+  "finetune_after_prune_epochs": 1,
+  "finetune_lr": 2e-5,
+  "quant": "nf4",
+  "seq_len": 512,
+  "batch_size": 4,
+  "num_workers": 2,
+  "eval_max_tokens": 500000,
+  "finetune_max_tokens": 200000
+}
