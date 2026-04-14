@@ -1,0 +1,19 @@
+{
+  "_comment": "Depth 33% (4/12 blocks) + FFN structural 90% + 10ep finetune",
+  "model": "vit_tiny_patch16_224",
+  "model_source": "timm",
+  "num_classes": 10,
+  "pretrained": true,
+  "dataset": "cifar10",
+  "img_size": 224,
+  "batch_size": 128,
+  "num_workers": 4,
+  "finetune_epochs": 0,
+  "checkpoint": "/tmp/sconce_checkpoints/vit_tiny_cifar10.pth",
+  "prune_mode": "depth_plus_ffn",
+  "depth_sparsity": 0.33,
+  "ffn_sparsity": 0.90,
+  "finetune_after_prune": true,
+  "finetune_after_prune_epochs": 10,
+  "finetune_lr": 1e-4
+}

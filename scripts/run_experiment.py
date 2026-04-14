@@ -152,11 +152,16 @@ def measure_latency_ms(model, dummy_input, n_warmup=20, n_test=100):
 
 
 def get_model_size_mb(model):
-    total_bits = sum(
-        p.count_nonzero().item() * p.element_size() * Byte
-        for p in model.parameters()
-    )
-    return total_bits / MiB
+    # Save to temp file to get true on-disk size (handles quantized models correctly)
+    import tempfile, os
+    with tempfile.NamedTemporaryFile(suffix=".pt", delete=False) as f:
+        tmp_path = f.name
+    try:
+        torch.save(model.state_dict(), tmp_path)
+        size_bytes = os.path.getsize(tmp_path)
+    finally:
+        os.unlink(tmp_path)
+    return size_bytes / MiB
 
 
 def get_peak_vram_mb(model, dummy_input, device):
