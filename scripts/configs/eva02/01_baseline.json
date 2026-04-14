@@ -1,0 +1,17 @@
+{
+  "_comment": "EVA02 base_patch14_448 — baseline: finetune on CIFAR-10 from ImageNet pretrained",
+  "model": "eva02_base_patch14_448",
+  "model_source": "timm",
+  "num_classes": 10,
+  "pretrained": true,
+  "dataset": "cifar10",
+  "img_size": 448,
+  "batch_size": 32,
+  "num_workers": 4,
+  "finetune_epochs": 5,
+  "finetune_lr": 1e-3,
+  "freeze_backbone": true,
+  "checkpoint": "/tmp/sconce_checkpoints/eva02_base_cifar10.pth",
+  "prune_mode": "none",
+  "quant": "none"
+}

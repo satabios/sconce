@@ -1,0 +1,100 @@
+commit	model	accuracy	accuracy_drop	size_mb	compression	latency_ms	speedup	prune_mode	quant	status	description
+2db0eee	vit_tiny_patch16_224	81.50	0.00	21.081	1.00x	9.594	1.00x	none	none	keep	baseline CIFAR-10 head-only finetune
+5265899	vit_tiny_patch16_224	74.10	-7.40	15.020	1.40x	9.594	1.00x	GMP	none	keep	GMP sparsity=0.30
+5265899	vit_tiny_patch16_224	35.04	-46.46	10.953	1.93x	9.594	1.00x	GMP	none	discard	GMP sparsity=0.50 too much loss
+5265899	vit_tiny_patch16_224	10.61	-70.89	6.901	3.06x	9.594	1.00x	GMP	none	discard	GMP sparsity=0.70 collapsed
+5265899	vit_tiny_patch16_224	73.11	-8.39	0.745	28.30x	9.815	0.98x	none	int8	keep	dynamic int8 quant 28x compression
+5265899	vit_tiny_patch16_224	23.30	-58.20	20.659	1.02x	9.815	0.98x	attention	none	discard	attention-head 25% too aggressive
+5265899	vit_tiny_patch16_224	31.49	-50.01	0.745	28.30x	9.815	0.98x	GMP	int8	discard	GMP-50+int8 dominated by int8 alone
+08_gmp30_ftvit_tiny_patch16_224cifar10GMP0.30none81.500097.1600+15.660021.08121.0811.000xfinetune_after_prune(3ep,full_backbone) causes gain - not GMP
+09_gmp30_ft_int8vit_tiny_patch16_224cifar10GMP+int80.30int881.500096.2600+14.760021.0810.74528.297xNEW PARETO: best acc at 28x compression
+10_attn10vit_tiny_patch16_224cifar10attentionhead_sp=0.10none81.500026.1600-55.340021.08120.9411.007xDISCARD: collapsed; needs post-prune ft
+11_ffn25vit_tiny_patch16_224cifar10ffnffn_sp=0.25none81.500027.5100-53.990021.08117.6981.191xDISCARD: collapsed; needs post-prune ft
+12_ffn50vit_tiny_patch16_224cifar10ffnffn_sp=0.50none81.500014.7600-66.740021.08114.3141.473xDISCARD: collapsed; needs post-prune ft
+13_fullft_baselinevit_tiny_patch16_224cifar10none(full_ft)sp=0.0none81.500097.3800+15.880021.08121.0811.000xTRUE BASELINE: full-backbone 3ep ft; use this vs configs 08-15
+14_attn10_ftvit_tiny_patch16_224cifar10attention+fthead_sp=0.10none81.500096.6700-0.71%(vs#13)21.08121.0811.000xNo compression gain; attention zeroing doesn't reduce size
+15_ffn25_ftvit_tiny_patch16_224cifar10ffn+ftffn_sp=0.25none81.500096.1700-1.21%(vs#13)21.08117.6981.191xMild compression; keep for Pareto
+e4a3f39	vit_tiny_patch16_224	95.4900	+13.9900	0.745	28.297x	9.436	0.987x	ffn+ft	int8	discard	FFN25+ft+int8: dominated by GMP30+ft+int8 (96.26 vs 95.49 @ 28x)
+7b551d6	vit_tiny_patch16_224	14.7600	-82.74	14.314	1.473x	7.506	1.270x	ffn_structural	none	discard	FFN struct 50o-ft: collapsed (needs finetune); real 1.473x compression confirmed
+7b551d6	vit_tiny_patch16_224	92.5800	-4.80	14.314	1.473x	7.788	1.240x	ffn_structural	none	keep	FFN struct 50+0.000000e+00p ft: real 1.473x compression 1.24x speedup; new Pareto point
+7b551d6	vit_tiny_patch16_224	92.5600	-4.80	0.745	28.297x	8.410	1.105x	ffn_struct+ft	int8	discard	FFN struct50+ft+int8: dominated by GMP30+ft+int8 (96.26 vs 92.56 @ 28x)
+7b551d6	vit_tiny_patch16_224	95.9300	-1.45	17.698	1.191x	8.677	1.083x	ffn_structural	none	keep	FFN struct 25+0.000000e+00p ft: real structural 1.191x, 1.08x speedup
+7b551d6	vit_tiny_patch16_224	93.8300	-3.55	14.314	1.473x	7.788	1.240x	ffn_structural	none	keep	FFN struct50+5ep ft: better recovery than 3ep (93.83 vs 92.58)
+7b551d6	vit_tiny_patch16_224	87.5500	-9.83	10.930	1.929x	7.346	1.366x	ffn_structural	none	keep	FFN struct75+5ep ft: new Pareto at 1.929x; 1.37x real speedup
+f51836d	vit_tiny_patch16_224	94.9000	-2.48	18.823	1.120x	8.785	1.057x	attn_structural	none	discard	attn struct33+3ep ft: dominated by ffn_struct25 (better acc+compression)
+f51836d	vit_tiny_patch16_224	87.7900	-9.59	12.055	1.749x	7.295	1.272x	combined_structural	none	discard	combined attn33+FFN50+5ep ft: dominated by FFN struct75 (1.929x same acc)
+b50fa95	vit_tiny_patch16_224	92.2600	-5.12	15.990	1.318x	7.198	1.325x	depth	none	discard	depth25+5ep ft: 1.325x speedup but dominated by ffn_struct50 on compression
+b50fa95	vit_tiny_patch16_224	81.8300	-15.55	14.293	1.475x	6.586	1.425x	depth	none	discard	depth33+5ep ft: good speedup 1.43x but acc collapse vs ffn_struct same compression
+b50fa95	vit_tiny_patch16_224	81.7700	-15.61	10.915	1.931x	5.950	1.572x	depth_plus_ffn	none	discard	depth25+ffn50+5ep: dominated by ffn_struct75 on accuracy at same compression
+b50fa95	vit_tiny_patch16_224	89.0000	-8.38	10.930	1.929x	7.597	1.316x	ffn_structural	none	keep	FFN struct75+7ep ft: Pareto-improving over 5ep (89.00 vs 87.55)
+47cf236	vit_tiny_patch16_224	86.4700	-10.91	10.930	1.929x	7.398	1.352x	ffn_structural+KD	none	discard	KD T=4 alpha=0.5 hurt vs regular ft (86.47 vs 89.00)
+47cf236	vit_tiny_patch16_224	90.0900	-7.30	10.930	1.929x	7.412	1.349x	ffn_structural	none	keep	FFN struct75+10ep ft: best at 1.929x so far (90.09)
+47cf236	vit_tiny_patch16_224	89.1800	-8.20	14.314	1.473x	8.524	1.174x	ffn_structural+KD	none	discard	KD 50truct 7ep: dominated by 5ep regular ft (89.18 vs 93.83)
+47cf236	vit_tiny_patch16_224	90.7500	-6.63	10.930	1.929x	7.441	1.345x	ffn_structural	none	keep	FFN struct75+15ep ft: best at 1.929x (90.75, Pareto-improving over 10ep)
+47cf236	vit_tiny_patch16_224	85.2100	-12.17	8.886	2.372x	7.338	1.365x	ffn_structural	none	keep	FFN struct90+10ep ft: new Pareto 2.372x compression; 76/768 neurons kept
+89b9d0a	vit_tiny_patch16_224	85.7400	-11.64	8.886	2.372x	6.689	1.496x	ffn_structural	none	keep	FFN struct90+15ep ft: Pareto-improving over 10ep (85.74 vs 85.21)
+89b9d0a	vit_tiny_patch16_224	78.3900	-19.00	6.843	3.081x	4.977	1.926x	depth_plus_ffn	none	keep	depth25+FFN90+10ep ft: NEW Pareto 3.081x 1.926x speedup
+19e5b67vit_tiny_patch16_22474.51-22.874.8014.391x3.5742.683xdepth_plus_ffnnonekeepdepth50+FFN90+10ep: new Pareto extreme compression 4.4x
+19e5b67vit_tiny_patch16_22479.92-17.466.8433.081x4.9571.935xdepth_plus_ffnnonekeepdepth25+FFN90+15ep: beats #35 (79.92>78.39) same compression Pareto
+5451245vit_tiny_patch16_22478.07-3.430.8613.069x5.4101.846xdepth_plus_ffnnonediscarddepth33+FFN90+10ep: dominated by #37 (79.92% at 3.081x)
+5451245vit_tiny_patch16_22476.52-4.980.6044.374x3.5782.797xdepth_plus_ffnnonekeepdepth50+FFN90+15ep: beats #36 (76.52>74.51) same compression Pareto
+5451245vit_tiny_patch16_22474.17-7.330.6044.374x3.8532.597xdepth_plus_ffnint8discarddepth50+FFN90+int8: lower acc than #39, int8 size unchanged (measurement bug)
+5451245vit_tiny_patch16_22478.52-2.986.8863.070x5.4411.837xdepth_plus_ffnnonediscarddepth33+FFN90+10ep: dominated by #37 (79.92% @ 3.069x)
+5451245vit_tiny_patch16_22476.62-4.884.8314.375x3.6802.719xdepth_plus_ffnnonekeepdepth50+FFN90+15ep: dominates #36 (76.62>74.51 same compression)
+5451245vit_tiny_patch16_22473.93-7.571.80911.685x4.3262.315xdepth_plus_ffnint8discarddepth50+FFN90+10ep+int8: dominated by #42
+5451245vit_tiny_patch16_22472.00-9.503.4616.107x2.7963.786xdepth_plus_ffnnonediscarddepth67+FFN90+15ep: dominated by #42 (76.24%@11.685x higher compression better acc)
+5451245vit_tiny_patch16_22476.24-5.261.80911.685x4.4702.367xdepth_plus_ffnint8keepdepth50+FFN90+15ep+int8: new Pareto 11.7x compression
+770a61evit_tiny_patch16_22477.25-4.252.3568.972x6.1131.635xdepth_plus_ffnint8keepdepth25+FFN90+10ep+int8: new Pareto 9x, dominates #39
+770a61e	vit_tiny_patch16_224	71.91	-9.59	1.445	14.628x	2.900	3.447x	depth_plus_ffn	int8	keep	depth67+FFN90+15ep+int8: PARETO 14.628x @71.91% -- re-classified (old #09 28x bug; true=3.537x)
+770a61evit_tiny_patch16_22469.78-11.722.7767.615x1.9105.241xdepth_plus_ffnnonediscarddepth83+FFN90+15ep: dominated by #42 (76.24%@11.685x)
+770a61evit_tiny_patch16_22485.333.832.9037.281x7.8331.277xffn_structuralint8keepFFN90+15ep+int8: new Pareto 7.3x, dominates #37 (79.92@3.07x)
+770a61evit_tiny_patch16_22478.87-2.632.3568.972x5.8771.703xdepth_plus_ffnint8keepdepth25+FFN90+15ep+int8: new Pareto 9x, dominates #44 (77.25@8.972x)
+770a61evit_tiny_patch16_22490.328.823.4196.183x8.0921.185xffn_structuralint8keepFFN75+15ep+int8: new Pareto 6.2x, dominates #34 (85.74@2.372x)
+770a61evit_tiny_patch16_22496.4314.935.9773.537x10.2050.939xGMPint8keepGMP30+ft+int8 CORRECTED: true 3.537x (old 28.3x was count_nonzero bug), dominates #20/#21/#32
+770a61evit_tiny_patch16_22473.11-8.395.9773.537x9.7340.951xnoneint8discardint8-only no finetune: 73.11% dominated by #09 (96.43@3.537x)
+770a61evit_tiny_patch16_22496.3914.895.1244.125x10.0761.048xffn_structuralint8keepFFN25+15ep+int8: new Pareto 4.125x @96.39%
+770a61evit_tiny_patch16_22494.9113.414.2724.948x8.7711.146xffn_structuralint8keepFFN50+15ep+int8: new Pareto 4.95x @94.91%
+37ca00bvit_tiny_patch16_22481.490.0110.5971.995x72.2630.129xnonefp16discardfp16-only no finetune: dominated by #09 (96.43@3.537x) — more compressed AND more accurate
+37ca00bvit_tiny_patch16_22496.550.838.9052.374x65.7220.143xffn_structuralfp16keepFFN25+15ep+fp16: new Pareto 2.374x @96.55%, fills 1x→3.537x gap
+37ca00bvit_tiny_patch16_22491.865.523.7255.675x7.8781.207xffn_structuralint8keepFFN66+15ep+int8: new Pareto 5.675x @91.86%, fills 4.948x→6.183x gap
+eeaa18cvit_tiny_patch16_22495.10-2.287.2132.931x63.1420.152xffn_structuralfp16discardFFN50+15ep+fp16: dominated by #09 (96.43@3.537x has both higher acc AND more compression)
+eeaa18cvit_tiny_patch16_22496.36-1.024.8494.359x9.1101.032xffn_structuralint8keepFFN33+15ep+int8: Pareto 4.359x @96.36%, fills 4.125x→4.948x gap
+eeaa18cvit_tiny_patch16_22469.16-12.221.26216.750x2.1074.371xdepth_plus_ffnint8keepdepth75+FFN90+15ep+int8: Pareto 16.75x @69.16%, extends frontier
+463755dQwen/Qwen2-0.5B17.410.001884.6941.000x19.7171.000xnonenonekeepQwen2-0.5B baseline: PPL=17.41, size=1884MB, latency=19.72ms/tok
+463755dQwen/Qwen2-0.5B17.4061-0.0011942.4012.000x19.7960.996xnonefp16keepQwen2-0.5B fp16: PPL=17.41 (+0.00), 2.0x compression
+463755dQwen/Qwen2-0.5B17.53400.1278990.6641.902x86.8850.738xnoneint8keepQwen2-0.5B int8 (bnb): PPL=17.53 (+0.13), 1.902x; embed_tokens stays fp32 limits ratio
+463755dQwen/Qwen2-0.5B27.08159.67441543.3501.221x15.5851.291xdepthnonediscarddepth25+1ep: PPL=27.08 (+9.67), dominated by fp16 (PPL=17.41@2.0x)
+463755dQwen/Qwen2-0.5B41.752024.3449792.7762.377x17.7321.132xffn_widthfp16discardFFN25+1ep+fp16 (naive importance): PPL=41.75 (+24.3), dominated by fp16 (PPL=17.41@2.0x)
+463755dQwen/Qwen2-0.5B48.052430.6452792.7762.377x18.4761.097xffn_widthfp16discardFFN25+3ep+fp16 (SwiGLU import fix): PPL=48.05 (+30.6), dominated by fp16 (17.41@2.0x)
+qwen2	13	depth10+ft1ep+fp16	19.0458	17.4072	+1.6386	885.506	2.128x	discard (dominated by head25+int8 18.69@2.881x)
+qwen2	15	head25+ft1ep+fp16	18.5593	17.4072	+1.1522		2.045x	keep
+qwen2	16	head50+ft1ep+fp16	30.5903	17.4072	+13.1831		2.093x	discard
+qwen2	18	depth20+ft1ep+fp16	25.6272	17.4072	+8.2200		2.355x	discard (dominated by depth10+int8)
+qwen2	17	head25+depth10+ft1ep+fp16	25.8440	17.4072	+8.4369		2.176x	discard
+qwen2	10	depth25+ft1ep+fp16	32.1677	17.4072	+14.7605		2.442x	discard (dominated by depth10+int8)	reclassified from discard: fp16@2.0x doesn't dominate (lower compression)
+qwen219depth30+ft1ep+fp1634.154717.4072+16.74752.536xdiscarddominated by depth10+int8 (19.20@2.877x)
+qwen220depth10+ft1ep+int819.196717.4062+1.79052.877xdiscard (dominated by head25+int8 19.20@2.877x)
+qwen2	21	depth20+ft1ep+int8	26.1209	17.4062	+8.7147		2.896x	discard (dominated by nf4 19.88@2.958x)
+qwen2	22	depth25+ft1ep+int8	31.9199	17.4062	+14.5136		2.877x	discard	dominated by depth10+int8 (19.20@2.877x, same compression)
+qwen223head25+depth10+ft1ep+int826.257617.4062+8.85142.893xdiscarddominated by depth20+int8 (26.12@2.896x)
+qwen224head25+ft1ep+int818.685117.4062+1.27892.881xkeepdominates depth10+int8 AND depth10+fp16
+qwen225nf419.875517.4072+2.46832.958xkeepdominates depth20+int8
+qwen226head25+ft1ep+nf421.426817.4072+4.01962.970xkeep
+qwen227depth10+ft1ep+nf421.851417.4072+4.44422.991xkeep
+qwen228depth25+ft1ep+nf436.525817.4072+19.11873.060xkeep
+qwen229depth50+ft1ep+nf4104.137217.4072+86.73003.170xkeeppractically unusable but Pareto
+qwen230head43+ft1ep+nf426.470617.4072+9.06342.976xdiscarddominated by depth10+nf4 (21.85@2.991x)
+qwen231head57+ft1ep+nf434.803617.4072+17.39642.983xdiscarddominated by depth10+nf4 (21.85@2.991x)
+qwen232depth15+ft1ep+nf428.813417.4072+11.40633.025xkeepfills 2.991-3.060 gap
+qwen233head25+depth10+ft1ep+nf430.254817.4072+12.84773.003xdiscarddominated by #32 depth15+nf4 (28.81@3.025x, better PPL+compression)
+qwen2_7b01fp16_baseline9.14569.1456+0.00001.000xkeepbaseline (fp16 load, 14525MB)
+qwen2_7b02nf49.55319.1456+0.40755.330xkeepexcellent Pareto: 5.33x with only +0.41 PPL
+qwen2_7b04head25+nf430.27829.1456+21.13255.427xdiscarddominated by depth10+nf4 (15.40@5.677x)
+qwen2_7b05depth10+nf415.39649.1456+6.25075.677xkeepPareto: depth prune recovers better than head without ft
+qwen2_7b06head25+fp1629.16779.1456+20.02201.028xkeeptechnically Pareto; 1.028x only (head shrink on fp16 model)
+qwen2_7b07depth20+nf433.04899.1456+23.90336.073xkeepPareto; unusable quality but new compression level
+qwen2_7b08depth30+nf485.33239.1456+76.18666.368xkeeptechnically Pareto
+qwen2_7b09head10+nf418.02459.1456+8.87885.378xdiscarddominated by depth10+nf4 (15.40@5.677x)
+qwen2_7b10head10+depth10+nf483.47879.1456+74.33315.726xdiscarddominated by depth20+nf4 (33.05@6.073x)
+qwen2_7b11int8_baselineTIMEOUT9.1456N/AN/Askipint8 70s/batch = 7.5h eval, unusable for 7B proxy
+0e87b04	eva02_base_patch14_448	98.00	0.00	329.506	1.000x	N/A	1.00x	none	none	keep	EVA02 baseline CIFAR-10 head-only finetune

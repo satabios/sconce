@@ -38,10 +38,12 @@ def load_model(cfg):
 
     if source == "timm":
         import timm
+        img_size = cfg.get("img_size", 224)
         model = timm.create_model(
             model_name,
             pretrained=pretrained,
             num_classes=num_classes,
+            img_size=img_size,
         )
     elif source == "hf":
         from transformers import AutoModelForImageClassification
@@ -520,8 +522,130 @@ def prune_ffn_structural(model, ffn_sparsity=0.5):
 
 
 # ---------------------------------------------------------------------------
-# Depth pruning (remove full transformer blocks based on block importance)
+# EVA02 structural pruning (separate q/k/v/proj, SwiGLU fc1_g/fc1_x/fc2)
 # ---------------------------------------------------------------------------
+
+def _is_eva(model):
+    """Detect EVA-style attention (separate q_proj/k_proj/v_proj, no fused qkv)."""
+    if not hasattr(model, "blocks") or len(list(model.blocks)) == 0:
+        return False
+    attn = list(model.blocks)[0].attn
+    has_real_qkv = isinstance(getattr(attn, "qkv", None), nn.Linear)
+    return hasattr(attn, "q_proj") and isinstance(getattr(attn, "q_proj", None), nn.Linear) and not has_real_qkv
+
+
+def prune_attention_structural_eva(model, head_sparsity=0.33):
+    """Head structural pruning for EVA02 (separate q/k/v/proj projections)."""
+    if not hasattr(model, "blocks"):
+        return model
+
+    for block in model.blocks:
+        attn = block.attn
+        num_heads = attn.num_heads
+        head_dim = attn.head_dim
+        inner_dim = num_heads * head_dim
+
+        n_prune = max(0, int(num_heads * head_sparsity))
+        n_keep = max(1, num_heads - n_prune)
+        if n_keep == num_heads:
+            continue
+
+        # Score heads by proj output-column importance
+        proj_w = attn.proj.weight.data  # (embed_dim, inner_dim)
+        head_importance = torch.stack([
+            proj_w[:, h * head_dim:(h + 1) * head_dim].abs().mean()
+            for h in range(num_heads)
+        ])
+        keep_idx = head_importance.topk(n_keep, largest=True).indices.sort().values.tolist()
+        keep_rows = []
+        for h in keep_idx:
+            keep_rows.extend(range(h * head_dim, (h + 1) * head_dim))
+        keep_rows = torch.tensor(keep_rows, dtype=torch.long)
+
+        embed_dim = attn.q_proj.in_features
+        new_inner = n_keep * head_dim
+
+        for src_name in ("q_proj", "v_proj"):
+            src = getattr(attn, src_name)
+            new_l = nn.Linear(embed_dim, new_inner, bias=(src.bias is not None))
+            with torch.no_grad():
+                new_l.weight.copy_(src.weight.data[keep_rows, :])
+                if src.bias is not None:
+                    new_l.bias.copy_(src.bias.data[keep_rows])
+            setattr(attn, src_name, new_l)
+
+        # k_proj has no bias in EVA02
+        k = attn.k_proj
+        new_k = nn.Linear(embed_dim, new_inner, bias=(k.bias is not None))
+        with torch.no_grad():
+            new_k.weight.copy_(k.weight.data[keep_rows, :])
+            if k.bias is not None:
+                new_k.bias.copy_(k.bias.data[keep_rows])
+        attn.k_proj = new_k
+
+        new_proj = nn.Linear(new_inner, embed_dim, bias=(attn.proj.bias is not None))
+        with torch.no_grad():
+            new_proj.weight.copy_(attn.proj.weight.data[:, keep_rows])
+            if attn.proj.bias is not None:
+                new_proj.bias.copy_(attn.proj.bias.data)
+        attn.proj = new_proj
+        attn.num_heads = n_keep
+
+    print(f"  EVA attention structural: kept {n_keep}/{num_heads} heads per block")
+    return model
+
+
+def prune_ffn_structural_eva(model, ffn_sparsity=0.5):
+    """FFN structural pruning for EVA02 SwiGLU (fc1_g, fc1_x, fc2)."""
+    if not hasattr(model, "blocks"):
+        return model
+
+    for block in model.blocks:
+        mlp = block.mlp
+        fc1_g = mlp.fc1_g
+        fc1_x = mlp.fc1_x
+        fc2 = mlp.fc2
+
+        intermediate_dim = fc1_g.out_features
+        n_keep = max(1, int(intermediate_dim * (1.0 - ffn_sparsity)))
+
+        # Score by combined gate*up importance (similar to SwiGLU in LLM runner)
+        importance = (fc1_g.weight.data.abs().mean(dim=1) *
+                      fc1_x.weight.data.abs().mean(dim=1) *
+                      fc2.weight.data.abs().mean(dim=0))
+        keep_idx = importance.topk(n_keep, largest=True).indices.sort().values
+
+        in_f = fc1_g.in_features
+        out_f = fc2.out_features
+
+        for src_name in ("fc1_g", "fc1_x"):
+            src = getattr(mlp, src_name)
+            new_l = nn.Linear(in_f, n_keep, bias=(src.bias is not None))
+            with torch.no_grad():
+                new_l.weight.copy_(src.weight.data[keep_idx, :])
+                if src.bias is not None:
+                    new_l.bias.copy_(src.bias.data[keep_idx])
+            setattr(mlp, src_name, new_l)
+
+        new_fc2 = nn.Linear(n_keep, out_f, bias=(fc2.bias is not None))
+        with torch.no_grad():
+            new_fc2.weight.copy_(fc2.weight.data[:, keep_idx])
+            if fc2.bias is not None:
+                new_fc2.bias.copy_(fc2.bias.data)
+        mlp.fc2 = new_fc2
+
+        # Also resize the layernorm inside SwiGLU
+        if hasattr(mlp, "norm") and mlp.norm is not None:
+            old_norm = mlp.norm
+            new_norm = nn.LayerNorm(n_keep, eps=old_norm.eps)
+            with torch.no_grad():
+                new_norm.weight.copy_(old_norm.weight.data[keep_idx])
+                new_norm.bias.copy_(old_norm.bias.data[keep_idx])
+            mlp.norm = new_norm
+
+    print(f"  EVA FFN structural: kept {n_keep}/{intermediate_dim} neurons per block")
+    return model
+
 
 def prune_depth(model, depth_sparsity=0.25):
     """
@@ -554,7 +678,7 @@ def prune_depth(model, depth_sparsity=0.25):
     remove_set = set(idx for _, idx in block_importance[:n_remove])
     kept_blocks = [b for i, b in enumerate(blocks) if i not in remove_set]
 
-    model.blocks = nn.Sequential(*kept_blocks)
+    model.blocks = nn.ModuleList(kept_blocks)
     removed_indices = sorted(remove_set)
     print(f"  Depth pruning: removed {n_remove}/{n_blocks} blocks "
           f"(indices {removed_indices}), kept {n_keep}")
@@ -678,7 +802,10 @@ def main():
     elif prune_mode == "attention_structural":
         head_sparsity = cfg.get("head_sparsity", 0.33)
         print(f"\nAttention structural pruning — head_sparsity={head_sparsity}")
-        compressed_model = prune_attention_structural(compressed_model, head_sparsity)
+        if _is_eva(compressed_model):
+            compressed_model = prune_attention_structural_eva(compressed_model, head_sparsity)
+        else:
+            compressed_model = prune_attention_structural(compressed_model, head_sparsity)
 
     elif prune_mode == "ffn":
         ffn_sparsity = cfg.get("ffn_sparsity", 0.25)
@@ -688,14 +815,21 @@ def main():
     elif prune_mode == "ffn_structural":
         ffn_sparsity = cfg.get("ffn_sparsity", 0.5)
         print(f"\nFFN structural pruning — ffn_sparsity={ffn_sparsity}")
-        compressed_model = prune_ffn_structural(compressed_model, ffn_sparsity)
+        if _is_eva(compressed_model):
+            compressed_model = prune_ffn_structural_eva(compressed_model, ffn_sparsity)
+        else:
+            compressed_model = prune_ffn_structural(compressed_model, ffn_sparsity)
 
     elif prune_mode == "combined_structural":
         head_sparsity = cfg.get("head_sparsity", 0.33)
         ffn_sparsity = cfg.get("ffn_sparsity", 0.5)
         print(f"\nCombined structural: attn head_sparsity={head_sparsity}, ffn_sparsity={ffn_sparsity}")
-        compressed_model = prune_attention_structural(compressed_model, head_sparsity)
-        compressed_model = prune_ffn_structural(compressed_model, ffn_sparsity)
+        if _is_eva(compressed_model):
+            compressed_model = prune_attention_structural_eva(compressed_model, head_sparsity)
+            compressed_model = prune_ffn_structural_eva(compressed_model, ffn_sparsity)
+        else:
+            compressed_model = prune_attention_structural(compressed_model, head_sparsity)
+            compressed_model = prune_ffn_structural(compressed_model, ffn_sparsity)
 
     elif prune_mode == "depth":
         depth_sparsity = cfg.get("depth_sparsity", 0.25)
@@ -707,7 +841,10 @@ def main():
         ffn_sparsity = cfg.get("ffn_sparsity", 0.5)
         print(f"\nDepth+FFN structural: depth_sparsity={depth_sparsity}, ffn_sparsity={ffn_sparsity}")
         compressed_model = prune_depth(compressed_model, depth_sparsity)
-        compressed_model = prune_ffn_structural(compressed_model, ffn_sparsity)
+        if _is_eva(compressed_model):
+            compressed_model = prune_ffn_structural_eva(compressed_model, ffn_sparsity)
+        else:
+            compressed_model = prune_ffn_structural(compressed_model, ffn_sparsity)
 
     elif prune_mode == "none":
         pass  # baseline only

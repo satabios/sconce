@@ -1,0 +1,18 @@
+{
+  "_comment": "EVA02 ffn33 structural: remove 33% FFN width + 5ep finetune",
+  "model": "eva02_base_patch14_448",
+  "model_source": "timm",
+  "num_classes": 10,
+  "pretrained": true,
+  "dataset": "cifar10",
+  "img_size": 448,
+  "batch_size": 32,
+  "num_workers": 4,
+  "finetune_epochs": 0,
+  "checkpoint": "/tmp/sconce_checkpoints/eva02_base_cifar10.pth",
+  "prune_mode": "ffn_structural",
+  "ffn_sparsity": 0.33,
+  "finetune_after_prune": true,
+  "finetune_after_prune_epochs": 5,
+  "finetune_lr": 1e-4
+}
