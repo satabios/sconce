@@ -453,6 +453,48 @@ def prune_ffn_structural(model, ffn_sparsity=0.5):
 
 
 # ---------------------------------------------------------------------------
+# Depth pruning (remove full transformer blocks based on block importance)
+# ---------------------------------------------------------------------------
+
+def prune_depth(model, depth_sparsity=0.25):
+    """
+    Remove entire transformer blocks (depth pruning).
+    Scores blocks by mean L1 norm of all their parameters.
+    Keeps the highest-importance blocks, removes the rest.
+    Works on timm ViT (model.blocks as nn.Sequential).
+    """
+    if not hasattr(model, "blocks"):
+        print("  [Depth pruning] model has no .blocks, skipping")
+        return model
+
+    blocks = list(model.blocks)
+    n_blocks = len(blocks)
+    n_remove = max(0, int(n_blocks * depth_sparsity))
+    n_keep = n_blocks - n_remove
+
+    if n_remove == 0:
+        print("  [Depth pruning] nothing to remove")
+        return model
+
+    # Score each block by mean L1 norm of all parameters
+    block_importance = []
+    for i, block in enumerate(blocks):
+        score = sum(p.data.abs().mean().item() for p in block.parameters())
+        block_importance.append((score, i))
+
+    # Sort by importance (ascending) — remove least important
+    block_importance.sort(key=lambda x: x[0])
+    remove_set = set(idx for _, idx in block_importance[:n_remove])
+    kept_blocks = [b for i, b in enumerate(blocks) if i not in remove_set]
+
+    model.blocks = nn.Sequential(*kept_blocks)
+    removed_indices = sorted(remove_set)
+    print(f"  Depth pruning: removed {n_remove}/{n_blocks} blocks "
+          f"(indices {removed_indices}), kept {n_keep}")
+    return model
+
+
+# ---------------------------------------------------------------------------
 # PTQ int8 (CPU-only, via PyTorch static quant)
 # ---------------------------------------------------------------------------
 
@@ -576,6 +618,18 @@ def main():
         ffn_sparsity = cfg.get("ffn_sparsity", 0.5)
         print(f"\nCombined structural: attn head_sparsity={head_sparsity}, ffn_sparsity={ffn_sparsity}")
         compressed_model = prune_attention_structural(compressed_model, head_sparsity)
+        compressed_model = prune_ffn_structural(compressed_model, ffn_sparsity)
+
+    elif prune_mode == "depth":
+        depth_sparsity = cfg.get("depth_sparsity", 0.25)
+        print(f"\nDepth pruning — depth_sparsity={depth_sparsity}")
+        compressed_model = prune_depth(compressed_model, depth_sparsity)
+
+    elif prune_mode == "depth_plus_ffn":
+        depth_sparsity = cfg.get("depth_sparsity", 0.25)
+        ffn_sparsity = cfg.get("ffn_sparsity", 0.5)
+        print(f"\nDepth+FFN structural: depth_sparsity={depth_sparsity}, ffn_sparsity={ffn_sparsity}")
+        compressed_model = prune_depth(compressed_model, depth_sparsity)
         compressed_model = prune_ffn_structural(compressed_model, ffn_sparsity)
 
     elif prune_mode == "none":
