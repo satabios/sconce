@@ -339,7 +339,7 @@ def ptq_nf4(model):
                     compute_dtype=torch.float16,
                 )
                 new.weight = bnb.nn.Params4bit(
-                    child.weight.data.float(),
+                    child.weight.data,
                     requires_grad=False,
                     quant_type="nf4",
                 )
@@ -375,6 +375,7 @@ def finetune(model, tokenizer, config, device):
     lr = config.get("finetune_lr", 2e-5)
     seq_len = config.get("seq_len", 512)
     batch_size = config.get("batch_size", 4)
+    grad_accum = config.get("grad_accumulation_steps", 1)
     max_tokens = config.get("finetune_max_tokens", 200_000)
 
     dataset = WikiText2Dataset(tokenizer, split="train", seq_len=seq_len, max_tokens=max_tokens)
@@ -383,23 +384,28 @@ def finetune(model, tokenizer, config, device):
 
     model.train()
     model.to(device)
+    # Gradient checkpointing reduces activation memory for large models
+    if hasattr(model, "gradient_checkpointing_enable"):
+        model.gradient_checkpointing_enable()
     model_dtype = next(model.parameters()).dtype
     optimizer = torch.optim.AdamW(model.parameters(), lr=lr)
 
     for epoch in range(epochs):
         total_loss = 0.0
-        for batch in tqdm(loader, desc=f"finetune epoch {epoch+1}/{epochs}", leave=False):
+        optimizer.zero_grad()
+        for step, batch in enumerate(tqdm(loader, desc=f"finetune epoch {epoch+1}/{epochs}", leave=False)):
             input_ids = batch["input_ids"].to(device)
             labels = batch["labels"].to(device)
             if model_dtype != torch.float32:
-                pass  # LM heads use long tensor; only activations need dtype
+                pass
             out = model(input_ids, labels=labels)
-            loss = out.loss
-            optimizer.zero_grad()
+            loss = out.loss / grad_accum
             loss.backward()
-            torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
-            optimizer.step()
-            total_loss += loss.item()
+            total_loss += loss.item() * grad_accum
+            if (step + 1) % grad_accum == 0 or (step + 1) == len(loader):
+                torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+                optimizer.step()
+                optimizer.zero_grad()
         print(f"  epoch {epoch+1} loss: {total_loss / len(loader):.4f}")
 
     return model

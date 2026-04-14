@@ -1,0 +1,15 @@
+{
+  "_comment": "Qwen2-7B head25 + 1ep + fp16 (already loaded fp16). Tests pruning-only regime.",
+  "model": "Qwen/Qwen2-7B",
+  "load_in_fp16": true,
+  "prune_mode": "attention_heads",
+  "head_sparsity": 0.25,
+  "finetune_after_prune": false,
+  "quant": "fp16",
+  "seq_len": 512,
+  "batch_size": 1,
+  "num_workers": 2,
+  "eval_max_tokens": 200000,
+  "finetune_max_tokens": 100000,
+  "grad_accumulation_steps": 8
+}

@@ -1,0 +1,12 @@
+{
+  "_comment": "Qwen2-7B fp16 practical baseline. fp32 ~30GB doesnt fit 24GB GPU.",
+  "model": "Qwen/Qwen2-7B",
+  "load_in_fp16": true,
+  "prune_mode": "none",
+  "quant": "none",
+  "seq_len": 512,
+  "batch_size": 2,
+  "num_workers": 2,
+  "eval_max_tokens": 200000,
+  "finetune_max_tokens": 100000
+}

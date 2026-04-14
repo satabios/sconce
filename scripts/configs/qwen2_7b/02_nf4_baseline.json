@@ -1,0 +1,12 @@
+{
+  "_comment": "Qwen2-7B nf4 no pruning. ~4-bit weights → ~3x vs fp16.",
+  "model": "Qwen/Qwen2-7B",
+  "load_in_fp16": true,
+  "prune_mode": "none",
+  "quant": "nf4",
+  "seq_len": 512,
+  "batch_size": 2,
+  "num_workers": 2,
+  "eval_max_tokens": 200000,
+  "finetune_max_tokens": 100000
+}

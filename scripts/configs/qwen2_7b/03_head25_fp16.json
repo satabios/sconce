@@ -1,0 +1,16 @@
+{
+  "_comment": "Qwen2-7B head25 (28→20 Q heads, 4 KV groups) + fp16.",
+  "model": "Qwen/Qwen2-7B",
+  "load_in_fp16": true,
+  "prune_mode": "attention_heads",
+  "head_sparsity": 0.25,
+  "finetune_after_prune": true,
+  "finetune_after_prune_epochs": 1,
+  "finetune_lr": 2e-5,
+  "quant": "fp16",
+  "seq_len": 512,
+  "batch_size": 2,
+  "num_workers": 2,
+  "eval_max_tokens": 200000,
+  "finetune_max_tokens": 100000
+}

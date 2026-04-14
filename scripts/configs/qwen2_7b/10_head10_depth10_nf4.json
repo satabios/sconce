@@ -1,0 +1,15 @@
+{
+  "model": "Qwen/Qwen2-7B",
+  "load_in_fp16": true,
+  "finetune_after_prune": false,
+  "seq_len": 512,
+  "batch_size": 2,
+  "num_workers": 2,
+  "eval_max_tokens": 200000,
+  "finetune_max_tokens": 100000,
+  "_comment": "depth10+head10+nf4 zero-shot combo",
+  "prune_mode": "head_plus_depth",
+  "head_sparsity": 0.1,
+  "depth_sparsity": 0.1,
+  "quant": "nf4"
+}
