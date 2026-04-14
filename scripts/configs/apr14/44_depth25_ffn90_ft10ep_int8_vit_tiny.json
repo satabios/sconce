@@ -1,5 +1,5 @@
 {
-  "_comment": "Depth 50% + FFN structural 90% + 10ep finetune + int8 quantization",
+  "_comment": "Depth 25% + FFN90 + 10ep + int8 — fill gap between 3.07x structural and 11.7x (depth50+int8)",
   "model": "vit_tiny_patch16_224",
   "model_source": "timm",
   "num_classes": 10,
@@ -11,7 +11,7 @@
   "finetune_epochs": 0,
   "checkpoint": "/tmp/sconce_checkpoints/vit_tiny_cifar10.pth",
   "prune_mode": "depth_plus_ffn",
-  "depth_sparsity": 0.50,
+  "depth_sparsity": 0.25,
   "ffn_sparsity": 0.90,
   "finetune_after_prune": true,
   "finetune_after_prune_epochs": 10,

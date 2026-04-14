@@ -13,9 +13,7 @@ import torch
 import torch.nn as nn
 from tqdm import tqdm
 
-Byte = 8
-KiB = 1024 * Byte
-MiB = 1024 * KiB
+MiB = 1024 * 1024  # bytes per mebibyte
 
 
 # ---------------------------------------------------------------------------

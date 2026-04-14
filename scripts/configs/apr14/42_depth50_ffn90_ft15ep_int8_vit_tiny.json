@@ -1,5 +1,5 @@
 {
-  "_comment": "Depth 50% + FFN structural 90% + 10ep finetune + int8 quantization",
+  "_comment": "Depth 50% + FFN structural 90% + 15ep finetune + int8 — fill gap between 4x structural and 28x int8-only",
   "model": "vit_tiny_patch16_224",
   "model_source": "timm",
   "num_classes": 10,
@@ -14,7 +14,7 @@
   "depth_sparsity": 0.50,
   "ffn_sparsity": 0.90,
   "finetune_after_prune": true,
-  "finetune_after_prune_epochs": 10,
+  "finetune_after_prune_epochs": 15,
   "finetune_lr": 1e-4,
   "quant": "int8"
 }

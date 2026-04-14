@@ -1,5 +1,5 @@
 {
-  "_comment": "Depth 50% + FFN structural 90% + 10ep finetune + int8 quantization",
+  "_comment": "Depth 83% (10/12 blocks removed) + FFN90 + 15ep — extreme structural, 2 blocks remaining",
   "model": "vit_tiny_patch16_224",
   "model_source": "timm",
   "num_classes": 10,
@@ -11,10 +11,9 @@
   "finetune_epochs": 0,
   "checkpoint": "/tmp/sconce_checkpoints/vit_tiny_cifar10.pth",
   "prune_mode": "depth_plus_ffn",
-  "depth_sparsity": 0.50,
+  "depth_sparsity": 0.83,
   "ffn_sparsity": 0.90,
   "finetune_after_prune": true,
-  "finetune_after_prune_epochs": 10,
-  "finetune_lr": 1e-4,
-  "quant": "int8"
+  "finetune_after_prune_epochs": 15,
+  "finetune_lr": 1e-4
 }
