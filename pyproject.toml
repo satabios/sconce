@@ -9,4 +9,5 @@ description = "sconce: Compression and Deployment made Easy"
 authors = [{ name = "Sathyaprakash Narayanan", email = "snaray17@ucsc.edu" }]
 urls = { code = "https://github.com/satabios/sconce" }
 
-dynamic = ["dependencies" ,"readme","requires-python","classifiers","keywords", "license"]
+requires-python = ">=3.8"
+dynamic = ["dependencies", "readme", "classifiers", "keywords", "license"]
