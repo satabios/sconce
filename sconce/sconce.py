@@ -12,6 +12,7 @@ from snntorch import functional as SF
 from .pruner import prune
 from .quanter import quantization
 from .perf import performance
+from .transformer_pruner import find_transformer_layers, transformer_sensitivity_scan, transformer_structured_prune
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -29,7 +30,7 @@ MiB = 1024 * KiB
 GiB = 1024 * MiB
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-if device == "cuda":
+if device.type == "cuda":
 	torch.cuda.synchronize()
 
 
@@ -95,6 +96,11 @@ class sconce(quantization, performance, prune):
 		self.best_sparse_model_checkpoint = {}
 		self.degradation_value = 1.2
 		self.degradation_value_local = 1.2
+		# Transformer structural pruning config (prune_mode == "transformer")
+		self.transformer_scan_step   = 0.1
+		self.transformer_scan_start  = 0.1
+		self.transformer_scan_end    = 0.9
+		self.transformer_degradation = 1.2
 		self.model = None
 		self.criterion = None
 		self.optimizer = None
@@ -125,6 +131,12 @@ class sconce(quantization, performance, prune):
 		
 		self.device = None
 	
+	def _detect_prune_mode(self) -> str:
+		"""Infer prune_mode from model architecture when not explicitly set."""
+		if find_transformer_layers(self.model):
+			return "transformer"
+		return "CWP"
+
 	def forward_pass_snn(self, data, mem_out_rec=None):
 		"""
 		Perform a forward pass through the spiking neural network (SNN).
@@ -314,17 +326,16 @@ class sconce(quantization, performance, prune):
 		#Pruning
 		sensitivity_start_time, sensitivity_start_end = 0, 0
 		original_experiment_name = self.experiment_name
+
+		if not self.prune_mode:
+			self.prune_mode = self._detect_prune_mode()
+			if verbose:
+				print(f"Auto-detected prune_mode: {self.prune_mode}")
 		if self.snn:
 			original_dense_model = self.model
 		
 		else:
 			original_dense_model = copy.deepcopy(self.model)
-		
-		input_shape = list(next(iter(self.dataloader["test"]))[0].size())
-		input_shape[0] = 1
-		
-		current_device = next(original_dense_model.parameters()).device
-		dummy_input = torch.randn(input_shape).to(current_device)
 		
 		dense_model_size = self.get_model_size(
 			model=self.model, count_nonzero_only=True
@@ -337,7 +348,7 @@ class sconce(quantization, performance, prune):
 		if self.prune_mode == "GMP":
 			print("Granular-Magnitude Pruning")
 			sensitivity_start_time = time.time()
-			self.sensitivity_scan(
+			self.sensitivity_scan_parallel(
 				dense_model_accuracy=dense_validation_acc, verbose=False
 			)
 			sensitivity_start_end = time.time()
@@ -345,16 +356,6 @@ class sconce(quantization, performance, prune):
 				"Sensitivity Scan Time(mins):",
 				(sensitivity_start_end - sensitivity_start_time) / 60,
 			)
-			
-			# Sparsity
-			# for each Layer: {'backbone.conv0.weight': 0.45000000000000007, 'backbone.conv1.weight': 0.7500000000000002,
-			#                  'backbone.conv2.weight': 0.7000000000000002, 'backbone.conv3.weight': 0.6500000000000001,
-			#                  'backbone.conv4.weight': 0.6000000000000002, 'backbone.conv5.weight': 0.7000000000000002,
-			#                  'backbone.conv6.weight': 0.7000000000000002, 'backbone.conv7.weight': 0.8500000000000002,
-			#                  'classifier.weight': 0.9500000000000003}
-			
-			# self.sparsity_dict = {'0.weight': 0.6500000000000001, '3.weight': 0.5000000000000001, '7.weight': 0.7000000000000002}
-			# self.sparsity_dict = {'backbone.conv0.weight': 0.20000000000000004, 'backbone.conv1.weight': 0.45000000000000007, 'backbone.conv2.weight': 0.25000000000000006, 'backbone.conv3.weight': 0.25000000000000006, 'backbone.conv4.weight': 0.25000000000000006, 'backbone.conv5.weight': 0.25000000000000006, 'backbone.conv6.weight': 0.3500000000000001, 'backbone.conv7.weight': 0.3500000000000001, 'classifier.weight': 0.7000000000000002}
 			
 			self.GMP_Pruning()  # FineGrained Pruning
 			self.callbacks = [lambda: self.GMP_apply()]
@@ -364,7 +365,7 @@ class sconce(quantization, performance, prune):
 		elif self.prune_mode == "CWP":
 			print("\n Channel-Wise Pruning")
 			sensitivity_start_time = time.time()
-			self.sensitivity_scan(
+			self.sensitivity_scan_parallel(
 				dense_model_accuracy=dense_validation_acc, verbose=False
 			)
 			sensitivity_start_end = time.time()
@@ -373,12 +374,39 @@ class sconce(quantization, performance, prune):
 				(sensitivity_start_end - sensitivity_start_time) / 60, "\n"
 			)
 			
-			# self.sparsity_dict = {'backbone.conv0.weight': 0.15000000000000002, 'backbone.conv1.weight': 0.15, 'backbone.conv2.weight': 0.15, 'backbone.conv3.weight': 0.15000000000000002, 'backbone.conv4.weight': 0.20000000000000004, 'backbone.conv5.weight': 0.20000000000000004, 'backbone.conv6.weight': 0.45000000000000007}
 			print("Sparsity for each Layer: ", self.sparsity_dict.items())
 
 			self.CWP_Pruning()  # Channelwise Pruning
 			self.fine_tune = True
-		
+
+		elif self.prune_mode == "transformer":
+			print("Transformer Structural Pruning")
+			sensitivity_start_time = time.time()
+
+			def _eval_fn(m, loader, dev):
+				_, acc = self.evaluate_model(m, loader, dev)
+				return float(acc) * 100.0
+
+			sparsity_plan = transformer_sensitivity_scan(
+				model=self.model,
+				dataloader=self.dataloader,
+				dense_acc=dense_validation_acc,
+				evaluate_fn=_eval_fn,
+				scan_step=self.transformer_scan_step,
+				scan_start=self.transformer_scan_start,
+				scan_end=self.transformer_scan_end,
+				degradation_value=self.transformer_degradation,
+				verbose=verbose,
+			)
+			sensitivity_start_end = time.time()
+			print(
+				"Transformer Sensitivity Scan Time (mins):",
+				(sensitivity_start_end - sensitivity_start_time) / 60,
+			)
+			print("Transformer Sparsity Plan:", sparsity_plan)
+
+			transformer_structured_prune(self.model, sparsity_plan, self.device)
+			self.fine_tune = True
 
 		print(
 			"\nPruning Time Consumed (mins):", (time.time() - sensitivity_start_end) / 60
@@ -389,10 +417,7 @@ class sconce(quantization, performance, prune):
 		)
 		
 		pruned_model = copy.deepcopy(self.model)
-		
-		current_device = next(pruned_model.parameters()).device
-		dummy_input = torch.randn(input_shape).to(current_device)
-		
+
 		pruned_model_size = self.get_model_size(
 			model=pruned_model, count_nonzero_only=True
 		)

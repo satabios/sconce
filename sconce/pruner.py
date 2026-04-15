@@ -1,3 +1,8 @@
+import queue
+import subprocess
+import threading
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
 import torch
 import numpy as np
 from tqdm import tqdm
@@ -5,21 +10,183 @@ import copy
 import torch.nn as nn
 from collections import OrderedDict, defaultdict
 from typing import Union, List
-import torch_pruning as tp
+
+try:
+    import torch_pruning as tp
+    _TORCH_PRUNING_AVAILABLE = True
+except ImportError:
+    tp = None
+    _TORCH_PRUNING_AVAILABLE = False
+
+
+def _nvidia_smi_free_gb() -> list[tuple[int, float]]:
+    """Return [(gpu_id, free_gb), ...] via nvidia-smi. Empty list if unavailable."""
+    try:
+        out = subprocess.check_output(
+            ["nvidia-smi", "--query-gpu=index,memory.free",
+             "--format=csv,noheader,nounits"],
+            text=True, stderr=subprocess.DEVNULL,
+        )
+        result = []
+        for line in out.strip().splitlines():
+            parts = line.split(",")
+            if len(parts) == 2:
+                result.append((int(parts[0].strip()), int(parts[1].strip()) / 1024))
+        return result
+    except Exception:
+        return []
+
+
+def _measure_model_vram_gb(model, activation_multiplier: float = 1.5) -> float:
+    """Estimate model VRAM footprint in GB × multiplier (parameter + buffer byte count)."""
+    param_bytes = sum(p.numel() * p.element_size() for p in model.parameters())
+    buf_bytes   = sum(b.numel() * b.element_size() for b in model.buffers())
+    return (param_bytes + buf_bytes) / (1024 ** 3) * activation_multiplier
+
+
+def _build_gpu_worker_pool(
+    gpu_list: list[tuple[int, float]],
+    model: nn.Module,
+    safety_net_gb: float,
+    activation_multiplier: float,
+    verbose: bool,
+    label: str,
+) -> tuple[queue.Queue, int, float]:
+    """Build a GPU worker queue from *gpu_list*.
+
+    Allocates ``max(1, floor((free_gb - safety_net_gb) / model_vram_gb))`` workers
+    per GPU.  Prints the allocation table when *verbose* is True.
+
+    Returns:
+        (gpu_queue, total_slots, model_vram_gb)
+    """
+    model_vram_gb = _measure_model_vram_gb(model, activation_multiplier)
+    gpu_queue: queue.Queue = queue.Queue()
+    alloc_rows = []
+    for gpu_id, free_gb in gpu_list:
+        n_workers = max(1, int((free_gb - safety_net_gb) / model_vram_gb))
+        for _ in range(n_workers):
+            gpu_queue.put(gpu_id)
+        alloc_rows.append((gpu_id, free_gb, n_workers))
+    total_slots = gpu_queue.qsize()
+    if verbose:
+        print(f"\n[{label}]  model_vram={model_vram_gb:.2f} GB  safety_net={safety_net_gb} GB")
+        print(f"  {'GPU':>4}  {'free_GB':>8}  {'workers':>8}")
+        for gpu_id, free_gb, nw in alloc_rows:
+            print(f"  {gpu_id:>4}  {free_gb:>8.1f}  {nw:>8}")
+    return gpu_queue, total_slots, model_vram_gb
+
+
+def _collect_conv_bn(
+    model: nn.Module,
+) -> tuple[list[nn.Conv2d], list[nn.BatchNorm2d]]:
+    """Return (all_convs, all_bns) collected in traversal order from *model*."""
+    all_convs: list[nn.Conv2d] = []
+    all_bns: list[nn.BatchNorm2d] = []
+
+    def _walk(obj):
+        if isinstance(obj, nn.Conv2d):
+            all_convs.append(obj)
+        elif isinstance(obj, nn.BatchNorm2d):
+            all_bns.append(obj)
+        elif isinstance(obj, list):
+            for child in obj:
+                _walk(child)
+        elif isinstance(obj, OrderedDict):
+            for child in obj.values():
+                _walk(child)
+        elif hasattr(obj, "children"):
+            for child in obj.children():
+                _walk(child)
+
+    _walk(model)
+    return all_convs, all_bns
+
+
+# Module types eligible for structured (CWP-style) pruning.
+# Covers CNN (Conv1d/2d/3d) and Transformer (Linear) layers.
+PRUNABLE_MODULES = (nn.Linear, nn.Conv1d, nn.Conv2d, nn.Conv3d)
+
+
+def _get_example_inputs(dataloader, device=None):
+    """Return a batch-size-1 example input from *dataloader*.
+
+    Handles three common batch formats:
+    - ``(Tensor, label)``  — standard classification / image
+    - ``dict``             — HuggingFace-style (input_ids, attention_mask, …)
+    - bare ``Tensor``      — unlabelled datasets
+
+    Returns a ``Tensor`` or ``dict[str, Tensor]``.
+    """
+    batch = next(iter(dataloader))
+
+    if isinstance(batch, dict):
+        x = {k: v[:1] for k, v in batch.items() if isinstance(v, torch.Tensor)}
+        if device is not None:
+            x = {k: v.to(device) for k, v in x.items()}
+        return x
+
+    if isinstance(batch, (list, tuple)):
+        x = batch[0]
+    else:
+        x = batch
+
+    x = x[:1]
+    if device is not None:
+        x = x.to(device)
+    return x
+
+
+def _structured_zero_prune(module: nn.Module, sparsity: float) -> None:
+    """Zero out the lowest-importance output rows/channels of a prunable module.
+
+    Works for **any** ``nn.Linear``, ``nn.Conv1d/2d/3d`` — no dependency graph
+    needed and no dimension changes, so the model's forward pass stays valid.
+    This makes it suitable for Transformer layers (Q/K/V/O projections, FFN
+    up/down projections) where explicit coupling rules are hard to infer.
+
+    Importance = L2 norm of each output unit across all input dimensions.
+
+    Args:
+        module:   ``nn.Linear`` or ``nn.Conv*`` instance.
+        sparsity: fraction [0, 1] of outputs to zero.
+    """
+    if not isinstance(module, PRUNABLE_MODULES):
+        return
+    with torch.no_grad():
+        w = module.weight                              # [out, in, ...]
+        importance = w.view(w.shape[0], -1).norm(dim=1)
+        n_prune = round(w.shape[0] * sparsity)
+        if n_prune <= 0:
+            return
+        prune_idx = importance.argsort()[:n_prune]    # lowest importance first
+        module.weight[prune_idx] = 0.0
+        if getattr(module, 'bias', None) is not None:
+            module.bias[prune_idx] = 0.0
+
+
+def _cwp_prune_module(model, current_module, sparsity, example_inputs):
+    """Apply structured pruning to *current_module* inside *model*.
+
+    Tries ``torch_pruning.MetaPruner`` first (handles dependency propagation
+    automatically for both CNN and Transformer graphs).  Falls back to
+    ``_structured_zero_prune`` when torch_pruning is unavailable — safe for
+    all architectures at the cost of not reducing layer dimensions.
+    """
+    if _TORCH_PRUNING_AVAILABLE:
+        pruner = tp.pruner.MetaPruner(
+            model,
+            example_inputs,
+            importance=tp.importance.MagnitudeImportance(p=2, group_reduction='mean'),
+            pruning_ratio=0,
+            pruning_ratio_dict={current_module: sparsity},
+        )
+        pruner.step()
+    else:
+        _structured_zero_prune(current_module, sparsity)
+
 
 class prune:
-
-    def get_input_channel_importance_channel(self,weight, dim=1):
-        in_channels = weight.shape[dim]
-        importances = []
-        for i_c in range(in_channels):
-            if dim == 1:
-                channel_weight = weight.detach()[:, i_c]
-            else:
-                channel_weight = weight.detach()[i_c]
-            importance = torch.norm(channel_weight)
-            importances.append(importance.view(1))
-        return torch.cat(importances)
 
     # @torch.no_grad()
     def sensitivity_scan(
@@ -46,7 +213,6 @@ class prune:
 
         self.sparsity_dict = {}
         sparsities = np.flip(np.arange(start=scan_start, stop=scan_end, step=scan_step))
-        accuracies = []
 
         # Create a deep copy of the model first
         original_model = copy.deepcopy(self.model)
@@ -67,9 +233,9 @@ class prune:
             named_all_weights = [
                 (name, module)
                 for name, module in original_model.named_modules()
-                if isinstance(module, nn.Conv2d)
+                if isinstance(module, PRUNABLE_MODULES)
             ]
-            example_inputs = next(iter(self.dataloader['test']))[0][:1, :].to(model_device)
+            example_inputs = _get_example_inputs(self.dataloader['test'], model_device)
 
         layer_iter = tqdm(named_all_weights, desc="layer", leave=False)
 
@@ -86,24 +252,7 @@ class prune:
                 # Retrieve the current parameter/module from the fresh model copy
                 if self.prune_mode == "CWP":
                     current_module = dict(self.model.named_modules())[name]
-                    # channels = current_module.out_channels
-                    # n_keep = int(round(channels * (1-sparsity)))  # Keep (1 - sparsity) channels
-                    # if n_keep <= 0:
-                    #     continue
-                    # # Calculate channel importance using the current module's weights
-                    # importance = self.get_input_channel_importance_channel(current_module.weight, dim=0)
-                    # prune_indices = torch.argsort(importance)[n_keep:]
-
-                    # Build dependency graph and prune
-                    pruner = tp.pruner.MetaPruner(
-                        self.model,
-                        example_inputs,
-                        importance=tp.importance.MagnitudeImportance(p=2, group_reduction='mean'),
-                        pruning_ratio=0,
-                        pruning_ratio_dict={current_module:sparsity},
-                        # round_to=8,
-                    )
-                    pruner.step()
+                    _cwp_prune_module(self.model, current_module, sparsity, example_inputs)
                     hit_flag = True
 
                 elif self.prune_mode == "GMP":
@@ -131,137 +280,154 @@ class prune:
                     else:
                         accuracy.append(acc)
 
-            # Reset model to original after testing all sparsities for the current layer
-            self.model = copy.deepcopy(original_model)
-
         # Restore original model and prune mode
         self.model = original_model
         self.prune_mode = original_prune_mode
         return self.sparsity_dict
-    # def sensitivity_scan(
-    #         self,
-    #         dense_model_accuracy,
-    #         scan_step=0.05,
-    #         scan_start=0.1,
-    #         scan_end=1.0,
-    #         verbose=True,
-    # ):
-    #     """
-    #     Scans the sensitivity of the model to weight pruning by gradually increasing the sparsity of each layer's weights
-    #     and measuring the resulting accuracy. Returns a dictionary mapping layer names to the sparsity values that resulted
-    #     in the highest accuracy for each layer.
-    #
-    #     :param dense_model_accuracy: the accuracy of the original dense model
-    #     :param scan_step: the step size for the sparsity scan
-    #     :param scan_start: the starting sparsity for the scan
-    #     :param scan_end: the ending sparsity for the scan
-    #     :param verbose: whether to print progress information during the scan
-    #     :return: a dictionary mapping layer names to the sparsity values that resulted in the highest accuracy for each layer
-    #     """
-    #
-    #     def get_input_channel_importance(weight, dim=1):
-    #         in_channels = weight.shape[dim]
-    #         importances = []
-    #         for i_c in range(in_channels):
-    #             if (dim == 1):
-    #                 channel_weight = weight.detach()[:, i_c]
-    #             else:
-    #                 channel_weight = weight.detach()[i_c]
-    #             importance = torch.norm(channel_weight)
-    #             importances.append(importance.view(1))
-    #         return torch.cat(importances)
-    #
-    #     self.sparsity_dict = {}
-    #     sparsities = np.flip(np.arange(start=scan_start, stop=scan_end, step=scan_step))
-    #     accuracies = []
-    #     named_all_weights = [
-    #         (name, param)
-    #         for (name, param) in self.model.named_parameters()
-    #         if param.dim() > 1
-    #     ]
-    #     named_conv_weights = [
-    #         (name, param)
-    #         for (name, param) in self.model.named_parameters()
-    #         if param.dim() > 2
-    #     ]
-    #     param_names = [i[0] for i in named_all_weights]
-    #     original_model = copy.deepcopy(self.model)
-    #     # original_dense_model_accuracy = self.evaluate()
-    #     conv_layers = [
-    #         module for module in self.model.modules() if (isinstance(module, nn.Conv2d))
-    #     ]
-    #     linear_layers = [
-    #         module for module in self.model.modules() if (isinstance(module, nn.Linear))
-    #     ]
-    #
-    #     if self.prune_mode == "CWP":
-    #         model_device = next(self.model.parameters()).device
-    #         named_all_weights = tuple( (name, module) for name, module in self.model.named_modules() if isinstance(module, nn.Conv2d))
-    #         example_inputs = next(iter(self.dataloader['test']))[0][:1, :].to(model_device)
-    #
-    #
-    #     layer_iter = tqdm(named_all_weights, desc="layer", leave=False)
-    #     original_prune_mode = self.prune_mode
-    #     for i_layer, (name, param) in enumerate(layer_iter):
-    #         # param_clone = param.detach().clone()
-    #         accuracy = []
-    #         desc = None
-    #         if verbose:
-    #             desc = f"scanning {i_layer}/{len(named_all_weights)} weight - {name}"
-    #             picker = tqdm(sparsities, desc)
-    #         else:
-    #             picker = sparsities
-    #         hit_flag = False
-    #
-    #         for sparsity in picker:
-    #             if self.prune_mode == "GMP":
-    #                 sparse_list = np.zeros(len(named_all_weights))
-    #                 sparse_list[i_layer] = sparsity
-    #                 local_sparsity_dict = dict(zip(param_names, sparse_list))
-    #                 self.GMP_Pruning(
-    #                     prune_dict=local_sparsity_dict
-    #                 )  # FineGrained Pruning
-    #                 self.callbacks = [lambda: self.GMP_apply()]
-    #                 hit_flag = True
-    #
-    #             elif (
-    #                     self.prune_mode == "CWP"
-    #             ):
-    #                 channels = param.out_channels  # Same as Input Channels of Next Layers
-    #                 n_keep = int(round(channels * (sparsity)))
-    #                 indices = torch.argsort(get_input_channel_importance(param.weight, dim=0))
-    #                 DG = tp.DependencyGraph().build_dependency(self.model, example_inputs=example_inputs)
-    #                 group = DG.get_pruning_group(param, tp.prune_conv_out_channels, idxs=indices[:n_keep])
-    #                 group.prune()
-    #
-    #                 hit_flag = True
-    #             ## TODO:
-    #             ## Add conv CWP and linear CWP
-    #
-    #             if hit_flag == True:
-    #
-    #                 acc = self.evaluate(Tqdm=False) - dense_model_accuracy
-    #
-    #                 self.model = copy.deepcopy(original_model)
-    #                 if abs(acc) <= self.degradation_value:
-    #                     self.sparsity_dict[name] = sparsity
-    #                     self.model = copy.deepcopy(original_model)
-    #                     break
-    #                 elif sparsity == scan_start:
-    #                     accuracy = np.asarray(accuracy)
-    #
-    #                     if np.max(accuracy) > -0.60:  # Allowed Degradation
-    #                         acc_x = np.where(accuracy == np.max(accuracy))[0][0]
-    #                         best_possible_sparsity = sparsities[acc_x]
-    #
-    #                     else:
-    #                         best_possible_sparsity = 0
-    #                     self.sparsity_dict[name] = best_possible_sparsity
-    #                     self.model = copy.deepcopy(original_model)
-    #                 else:
-    #                     accuracy.append(acc)
-    #                     hit_flag = False
-    #                 self.model = copy.deepcopy(original_model)
+
+    def sensitivity_scan_parallel(
+            self,
+            dense_model_accuracy,
+            scan_step=0.05,
+            scan_start=0.1,
+            scan_end=1.0,
+            verbose=True,
+            safety_net_gb=2.0,
+            activation_multiplier=1.5,
+    ):
+        """GPU-parallel sensitivity scan.
+
+        Same interface as sensitivity_scan() but dispatches all
+        (layer, sparsity) jobs across all available GPUs concurrently.
+        Falls back to serial scan if no CUDA GPUs are found.
+
+        Extra args:
+            safety_net_gb: VRAM headroom reserved per GPU (default 2 GB).
+            activation_multiplier: factor applied to measured model VRAM to
+                account for activation buffers during eval (default 1.5).
+        """
+        if self.snn:
+            # SNN forward pass not yet supported in parallel path.
+            return self.sensitivity_scan(dense_model_accuracy, scan_step, scan_start, scan_end, verbose)
+
+        if not torch.cuda.is_available():
+            return self.sensitivity_scan(dense_model_accuracy, scan_step, scan_start, scan_end, verbose)
+
+        self.sparsity_dict = {}
+        sparsities = list(np.flip(np.arange(start=scan_start, stop=scan_end, step=scan_step)))
+        original_model = copy.deepcopy(self.model)
+        original_prune_mode = self.prune_mode
+
+        # ── Build layer list (mirrors serial version) ──────────────────────
+        if self.prune_mode == "CWP":
+            named_all_weights = [
+                (name, module)
+                for name, module in original_model.named_modules()
+                if isinstance(module, PRUNABLE_MODULES)
+            ]
+            example_inputs_cpu = _get_example_inputs(self.dataloader['test'])
+        else:
+            named_all_weights = [
+                (name, param)
+                for name, param in original_model.named_parameters()
+                if param.dim() > 1
+            ]
+            example_inputs_cpu = None
+
+        layer_names = [n for n, _ in named_all_weights]
+
+        # ── GPU discovery + worker allocation ──────────────────────────────
+        gpu_list = _nvidia_smi_free_gb()
+        if not gpu_list:
+            return self.sensitivity_scan(dense_model_accuracy, scan_step, scan_start, scan_end, verbose)
+
+        gpu_queue, total_slots, _ = _build_gpu_worker_pool(
+            gpu_list, original_model, safety_net_gb, activation_multiplier,
+            verbose, "parallel sensitivity scan",
+        )
+        total_jobs = len(layer_names) * len(sparsities)
+        if verbose:
+            print(f"  Total slots: {total_slots}  |  jobs: {total_jobs}  ({len(layer_names)} layers × {len(sparsities)} sparsities)")
+
+        # ── Worker function ────────────────────────────────────────────────
+        results: list[tuple[str, float, float]] = []  # (layer_name, sparsity, acc_drop)
+        results_lock = threading.Lock()
+        print_lock = threading.Lock()
+
+        def _worker(layer_name: str, sparsity: float) -> None:
+            gpu_id = gpu_queue.get()
+            device = torch.device(f"cuda:{gpu_id}")
+            try:
+                model_copy = copy.deepcopy(original_model).to(device)
+
+                if original_prune_mode == "CWP":
+                    # Move example_inputs to worker device — handles both Tensor and dict
+                    if isinstance(example_inputs_cpu, dict):
+                        ex_in = {k: v.to(device) for k, v in example_inputs_cpu.items()}
+                    else:
+                        ex_in = example_inputs_cpu.to(device)
+                    current_module = dict(model_copy.named_modules())[layer_name]
+                    _cwp_prune_module(model_copy, current_module, sparsity, ex_in)
+
+                elif original_prune_mode == "GMP":
+                    for pname, param in model_copy.named_parameters():
+                        if pname == layer_name and param.dim() > 1:
+                            self.fine_grained_prune(param, sparsity)
+                            break
+
+                _, acc_tensor = self.evaluate_model(model_copy, self.dataloader['test'], device)
+                acc_pct = float(acc_tensor) * 100.0
+                drop = acc_pct - dense_model_accuracy
+
+                with results_lock:
+                    results.append((layer_name, sparsity, drop))
+                if verbose:
+                    with print_lock:
+                        print(f"  [GPU {gpu_id}] {layer_name}  sp={sparsity:.3f}  drop={drop:+.2f}%")
+
+            except Exception as exc:
+                with print_lock:
+                    print(f"  [GPU {gpu_id}] {layer_name}  sp={sparsity:.3f}  ERROR: {exc}")
+            finally:
+                try:
+                    del model_copy
+                except Exception:
+                    pass
+                torch.cuda.empty_cache()
+                gpu_queue.put(gpu_id)
+
+        # ── Dispatch ───────────────────────────────────────────────────────
+        all_jobs = [(name, sp) for name in layer_names for sp in sparsities]
+        with ThreadPoolExecutor(max_workers=total_slots) as pool:
+            futures = [pool.submit(_worker, name, sp) for name, sp in all_jobs]
+            for f in as_completed(futures):
+                exc = f.exception()
+                if exc is not None and verbose:
+                    with print_lock:
+                        print(f"  [worker exception] {exc}")
+
+        # ── Post-process: build sparsity_dict ─────────────────────────────
+        layer_results: dict[str, list[tuple[float, float]]] = defaultdict(list)
+        for (lname, sp, drop) in results:
+            layer_results[lname].append((sp, drop))
+
+        for layer_name in layer_names:
+            data = sorted(layer_results.get(layer_name, []), key=lambda x: x[0], reverse=True)
+            best_sp = 0.0
+            best_partial: tuple[float, float] | None = None
+            for sp, drop in data:
+                if abs(drop) <= self.degradation_value / 3:
+                    best_sp = sp
+                    break
+                if best_partial is None or drop > best_partial[1]:
+                    best_partial = (sp, drop)
+            if best_sp == 0.0 and best_partial is not None and best_partial[1] > -0.60:
+                best_sp = best_partial[0]
+            self.sparsity_dict[layer_name] = best_sp
+
+        self.model = original_model
+        self.prune_mode = original_prune_mode
+        return self.sparsity_dict
 
     def fine_grained_prune(self, tensor: torch.Tensor, sparsity: float) -> torch.Tensor:
         """
@@ -282,16 +448,11 @@ class prune:
 
         num_elements = tensor.numel()
 
-        # Step 1: calculate the #zeros (please use round())
         num_zeros = round(num_elements * sparsity)
-        # Step 2: calculate the importance of weight
         importance = tensor.abs()
-        # Step 3: calculate the pruning threshold
         threshold = importance.view(-1).kthvalue(num_zeros).values
-        # Step 4: get binary mask (1 for nonzeros, 0 for zeros)
         mask = torch.gt(importance, threshold)
 
-        # Step 5: apply mask to prune the tensor
         tensor.mul_(mask)
 
         return mask
@@ -368,26 +529,8 @@ class prune:
                 self.find_instance(value, object_of_importance, sparsity)
 
     def get_input_channel_importance(self, weight):
-        """
-        Computes the importance of each input channel in a weight tensor.
-
-        Args:
-          weight (torch.Tensor): The weight tensor to compute channel importance for.
-
-        Returns:
-          torch.Tensor: A tensor containing the importance of each input channel.
-        """
-
-        in_channels = weight.shape[1]
-        importances = []
-        # compute the importance for each input channel
-        for i_c in range(weight.shape[1]):
-            channel_weight = weight.detach()[:, i_c]
-
-            importance = torch.norm(channel_weight)
-
-            importances.append(importance.view(1))
-        return torch.cat(importances)
+        """Return L2-norm importance per input channel of *weight* [out, in, ...]."""
+        return weight.detach().view(weight.shape[0], weight.shape[1], -1).norm(dim=(0, 2))
 
     @torch.no_grad()
     def apply_channel_sorting(self):
@@ -402,29 +545,7 @@ class prune:
         model = copy.deepcopy(self.model)  # do not modify the original model
         # fetch all the conv and bn layers from the backbone
 
-        all_convs = []
-        all_bns = []
-
-        # Universal Layer Seeking by Parsing
-        def find_instance(obj, object_of_importance):
-            if isinstance(obj, object_of_importance):
-                if object_of_importance == nn.Conv2d:
-                    all_convs.append(obj)
-                elif object_of_importance == nn.BatchNorm2d:
-                    all_bns.append(obj)
-                return None
-            elif isinstance(obj, list):
-                for internal_obj in obj:
-                    find_instance(internal_obj, object_of_importance)
-            elif hasattr(obj, "__class__"):
-                for internal_obj in obj.children():
-                    find_instance(internal_obj, object_of_importance)
-            elif isinstance(obj, OrderedDict):
-                for key, value in obj.items():
-                    find_instance(value, object_of_importance)
-
-        find_instance(obj=model, object_of_importance=nn.Conv2d)
-        find_instance(obj=model, object_of_importance=nn.BatchNorm2d)
+        all_convs, all_bns = _collect_conv_bn(model)
 
         # iterate through conv layers
         for i_conv in range(len(all_convs) - 1):
@@ -465,13 +586,6 @@ class prune:
 
         return int(round(channels * (1.0 - prune_ratio)))
 
-    def get_num_channels_to_keep(self, channels: int, prune_ratio: float) -> int:
-        """A function to calculate the number of layers to PRESERVE after pruning
-        Note that preserve_rate = 1. - prune_ratio
-        """
-
-        return int(round(channels * (1.0 - prune_ratio)))
-
     @torch.no_grad()
     def channel_prune_layerwise(
             self, model: nn.Module, prune_ratio: Union[List, float], i_layer
@@ -484,32 +598,9 @@ class prune:
         # sanity check of provided prune_ratio
         assert isinstance(prune_ratio, (float, list))
 
-        all_convs = []
-        all_bns = []
-
-        # Universal Layer Seeking by Parsing
-        def find_instance(obj, object_of_importance):
-            if isinstance(obj, object_of_importance):
-                if object_of_importance == nn.Conv2d:
-                    all_convs.append(obj)
-                elif object_of_importance == nn.BatchNorm2d:
-                    all_bns.append(obj)
-                return None
-            elif isinstance(obj, list):
-                for internal_obj in obj:
-                    find_instance(internal_obj, object_of_importance)
-            elif hasattr(obj, "__class__"):
-                for internal_obj in obj.children():
-                    find_instance(internal_obj, object_of_importance)
-            elif isinstance(obj, OrderedDict):
-                for key, value in obj.items():
-                    find_instance(value, object_of_importance)
-
         # we prune the convs in the backbone with a uniform ratio
         new_model = copy.deepcopy(model)  # prevent overwrite
-        find_instance(obj=new_model, object_of_importance=nn.Conv2d)
-        find_instance(obj=new_model, object_of_importance=nn.BatchNorm2d)
-        n_conv = len(all_convs)
+        all_convs, all_bns = _collect_conv_bn(new_model)
         # note that for the ratios, it affects the previous conv output and next
         # conv input, i.e., conv0 - ratio0 - conv1 - ratio1-...
 
@@ -551,31 +642,9 @@ class prune:
         # sanity check of provided prune_ratio
         assert isinstance(prune_ratio, (float, list))
 
-        all_convs = []
-        all_bns = []
-
-        # Universal Layer Seeking by Parsing
-        def find_instance(obj, object_of_importance):
-            if isinstance(obj, object_of_importance):
-                if object_of_importance == nn.Conv2d:
-                    all_convs.append(obj)
-                elif object_of_importance == nn.BatchNorm2d:
-                    all_bns.append(obj)
-                return None
-            elif isinstance(obj, list):
-                for internal_obj in obj:
-                    find_instance(internal_obj, object_of_importance)
-            elif hasattr(obj, "__class__"):
-                for internal_obj in obj.children():
-                    find_instance(internal_obj, object_of_importance)
-            elif isinstance(obj, OrderedDict):
-                for key, value in obj.items():
-                    find_instance(value, object_of_importance)
-
         # we prune the convs in the backbone with a uniform ratio
         new_model = copy.deepcopy(model)  # prevent overwrite
-        find_instance(obj=new_model, object_of_importance=nn.Conv2d)
-        find_instance(obj=new_model, object_of_importance=nn.BatchNorm2d)
+        all_convs, all_bns = _collect_conv_bn(new_model)
         n_conv = len(all_convs)
         # note that for the ratios, it affects the previous conv output and next
         # conv input, i.e., conv0 - ratio0 - conv1 - ratio1-...
@@ -633,16 +702,25 @@ class prune:
         Returns the pruned model.
         """
         model_device = next(self.model.parameters()).device
-        example_inputs = next(iter(self.dataloader['test']))[0][:1,].to(model_device)
-        conv_modules = [ (name, module) for name, module in self.model.named_modules() if isinstance(module, nn.Conv2d)]
-        ratio_dict = {module: sparsity for (name, module), (name, sparsity) in zip(conv_modules,self.sparsity_dict.items())}
+        example_inputs = _get_example_inputs(self.dataloader['test'], model_device)
+        prune_modules = [
+            (name, module)
+            for name, module in self.model.named_modules()
+            if isinstance(module, PRUNABLE_MODULES)
+        ]
+        ratio_dict = {module: sparsity for (name, module), (name, sparsity) in zip(prune_modules, self.sparsity_dict.items())}
 
-        pruner = tp.pruner.MetaPruner(
-            self.model,
-            example_inputs,
-            importance=tp.importance.MagnitudeImportance(p=2, group_reduction='mean'),
-            pruning_ratio=0,
-            pruning_ratio_dict = ratio_dict,
-            round_to=8,
-        )
-        pruner.step()
+        if _TORCH_PRUNING_AVAILABLE:
+            pruner = tp.pruner.MetaPruner(
+                self.model,
+                example_inputs,
+                importance=tp.importance.MagnitudeImportance(p=2, group_reduction='mean'),
+                pruning_ratio=0,
+                pruning_ratio_dict=ratio_dict,
+                round_to=8,
+            )
+            pruner.step()
+        else:
+            # torch_pruning not available: apply structured zeroing per module
+            for module, sparsity in ratio_dict.items():
+                _structured_zero_prune(module, sparsity)
