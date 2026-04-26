@@ -2,7 +2,7 @@ from .sconce import sconce
 from .perf import performance
 from .quanter import quantization
 from .pruner import prune
-from .transformer_pruner import (
+from .pruner import (
     find_transformer_layers,
     transformer_sensitivity_scan,
     transformer_structured_prune,

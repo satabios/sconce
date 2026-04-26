@@ -9,16 +9,7 @@ import snntorch
 from prettytable import PrettyTable
 import numpy as np
 
-Byte = 8
-KiB = 1024 * Byte
-MiB = 1024 * KiB
-GiB = 1024 * MiB
-
-# Suppress all warnings
-import warnings
-warnings.filterwarnings("ignore")
-warnings.filterwarnings("default")
-warnings.filterwarnings("ignore", category=DeprecationWarning)
+from .utils import Byte, KiB, MiB, GiB  # noqa: F401
 
 class performance:
     def __init__(self):

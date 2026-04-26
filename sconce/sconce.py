@@ -10,9 +10,10 @@ from collections import namedtuple
 from snntorch import functional as SF
 
 from .pruner import prune
+from .pruner import find_transformer_layers, transformer_sensitivity_scan, transformer_structured_prune
 from .quanter import quantization
 from .perf import performance
-from .transformer_pruner import find_transformer_layers, transformer_sensitivity_scan, transformer_structured_prune
+from .utils import Byte, KiB, MiB, GiB  # noqa: F401
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -23,11 +24,6 @@ warnings.filterwarnings("ignore", category=ImportWarning)
 random.seed(321)
 np.random.seed(432)
 torch.manual_seed(223)
-
-Byte = 8
-KiB = 1024 * Byte
-MiB = 1024 * KiB
-GiB = 1024 * MiB
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 if device.type == "cuda":

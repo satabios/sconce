@@ -1,22 +1,20 @@
-import torch.ao.quantization.quantize_fx as quantize_fx
 import copy
-import warnings
 import torch
+import torch.ao.quantization.quantize_fx as quantize_fx
 from torch.ao.quantization import (
     get_default_qat_qconfig_mapping,
     QConfigMapping,
 )
-from torch.ao.quantization.observer import default_observer, default_per_channel_weight_observer
+from torch.ao.quantization.observer import (
+    default_observer,
+    default_per_channel_weight_observer,
+    MinMaxObserver,
+    PerChannelMinMaxObserver,
+)
 from torch.ao.quantization.qconfig import QConfig
 from torch.ao.quantization.quantize_fx import prepare_qat_fx, convert_fx, fuse_fx
-import copy
 
-from torch.ao.quantization.observer import MinMaxObserver, PerChannelMinMaxObserver
-from torch.ao.quantization.qconfig import QConfig
-
-warnings.filterwarnings("ignore")
-warnings.filterwarnings("default")
-warnings.filterwarnings("ignore", category=DeprecationWarning)
+# Warning suppression is handled centrally in utils.py (imported at package init).
 
 
 class quantization:
