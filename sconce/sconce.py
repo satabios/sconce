@@ -9,8 +9,7 @@ from snntorch import utils
 from collections import namedtuple
 from snntorch import functional as SF
 
-from .pruner import prune
-from .pruner import find_transformer_layers, transformer_sensitivity_scan, transformer_structured_prune
+from .pruner import prune, TransformerPruner
 from .quanter import quantization
 from .perf import performance
 from .utils import Byte, KiB, MiB, GiB  # noqa: F401
@@ -129,7 +128,7 @@ class sconce(quantization, performance, prune):
 	
 	def _detect_prune_mode(self) -> str:
 		"""Infer prune_mode from model architecture when not explicitly set."""
-		if find_transformer_layers(self.model):
+		if TransformerPruner._find_transformer_layers(self.model):
 			return "transformer"
 		return "CWP"
 
@@ -383,15 +382,10 @@ class sconce(quantization, performance, prune):
 				_, acc = self.evaluate_model(m, loader, dev)
 				return float(acc) * 100.0
 
-			sparsity_plan = transformer_sensitivity_scan(
-				model=self.model,
-				dataloader=self.dataloader,
+			tp = self._make_transformer_pruner()
+			sparsity_plan = tp.sensitivity_scan(
 				dense_acc=dense_validation_acc,
 				evaluate_fn=_eval_fn,
-				scan_step=self.transformer_scan_step,
-				scan_start=self.transformer_scan_start,
-				scan_end=self.transformer_scan_end,
-				degradation_value=self.transformer_degradation,
 				verbose=verbose,
 			)
 			sensitivity_start_end = time.time()
@@ -401,7 +395,7 @@ class sconce(quantization, performance, prune):
 			)
 			print("Transformer Sparsity Plan:", sparsity_plan)
 
-			transformer_structured_prune(self.model, sparsity_plan, self.device)
+			tp.prune(sparsity_plan)
 			self.fine_tune = True
 
 		print(
