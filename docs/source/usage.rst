@@ -11,14 +11,15 @@ Run the following to install:
 
 .. code-block:: bash
 
-  $ python
-  $ pip install sconce
+  $ uv venv --python 3.12
+  $ source .venv/bin/activate
+  $ uv pip install sconce
 
 To install sconce from source instead::
 
   $ git clone https://github.com/satabios/sconce
   $ cd sconce
-  $ python setup.py install
+  $ uv sync --all-groups
 
 
 To install sconce with conda::

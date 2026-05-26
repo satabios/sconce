@@ -1,15 +1,31 @@
 import torch
 import torch.nn as nn
-import matplotlib.pyplot as plt
 from torchprofile import profile_macs
 import os
+import tempfile
 import onnxruntime as ort
 import time
-import snntorch
 from prettytable import PrettyTable
 import numpy as np
 
 from .utils import Byte, KiB, MiB, GiB  # noqa: F401
+
+try:
+    import snntorch
+except ImportError:
+    snntorch = None
+
+
+def _sync_if_cuda(device=None):
+    if not torch.cuda.is_available():
+        return
+    if device is None:
+        torch.cuda.synchronize()
+        return
+    dev = torch.device(device)
+    if dev.type == "cuda":
+        torch.cuda.synchronize(dev)
+
 
 class performance:
     def __init__(self):
@@ -53,6 +69,11 @@ class performance:
         for model, model_file_name in zip(model_list, file_name_list):
             # # Parse through snn model and send to cpu
             if self.snn:
+                if snntorch is None:
+                    raise ImportError(
+                        "SNN profiling requires snntorch. Install it with `uv sync --extra snn` "
+                        "or `uv pip install 'sconce[snn]'`."
+                    )
                 if isinstance(model, nn.Sequential):
                     for layer_id in range(len(model)):
                         layer = model[layer_id]
@@ -60,8 +81,8 @@ class performance:
                             layer.mem = layer.mem.to("cpu")
                 else:
                     for module in model.modules():
-                        if isinstance((layer), snntorch._neurons.leaky.Leaky):
-                            layer.mem = layer.mem.to("cpu")
+                        if isinstance((module), snntorch._neurons.leaky.Leaky):
+                            module.mem = module.mem.to("cpu")
 
             table_data["accuracy"].append(
                 round(self.evaluate(model=model, device="cpu"), 3)
@@ -237,13 +258,13 @@ class performance:
         with torch.no_grad():
             for _ in range(num_warmups):
                 _ = model(x)
-        torch.cuda.synchronize()
+        _sync_if_cuda(device)
 
         with torch.no_grad():
             start_time = time.time()
             for _ in range(num_samples):
                 _ = model(x)
-                torch.cuda.synchronize()
+                _sync_if_cuda(device)
             end_time = time.time()
         elapsed_time = end_time - start_time
         elapsed_time_ave = elapsed_time / num_samples
@@ -304,15 +325,23 @@ class performance:
         Returns:
             float: The size of the model's weights in megabytes.
         """
-        torch.save(mdl.state_dict(), "tmp.pt")
-        mdl_size = round(os.path.getsize("tmp.pt") / 1e6, 3)
-        os.remove("tmp.pt")
+        with tempfile.NamedTemporaryFile(suffix=".pt", delete=False) as f:
+            tmp_path = f.name
+        try:
+            torch.save(mdl.state_dict(), tmp_path)
+            mdl_size = round(os.path.getsize(tmp_path) / 1e6, 3)
+        finally:
+            os.remove(tmp_path)
         return mdl_size
 
     def print_model_size(self, mdl):
-        torch.save(mdl.state_dict(), "tmp.pt")
-        print("%.2f MB" % (os.path.getsize("tmp.pt") / 1e6))
-        os.remove("tmp.pt")
+        with tempfile.NamedTemporaryFile(suffix=".pt", delete=False) as f:
+            tmp_path = f.name
+        try:
+            torch.save(mdl.state_dict(), tmp_path)
+            print("%.2f MB" % (os.path.getsize(tmp_path) / 1e6))
+        finally:
+            os.remove(tmp_path)
 
     def get_num_parameters(self, model: nn.Module, count_nonzero_only=False) -> int:
         """
@@ -363,6 +392,11 @@ class performance:
         dummy_input = dummy_input.to("cpu")
 
         if self.snn:
+            if snntorch is None:
+                raise ImportError(
+                    "SNN latency profiling requires snntorch. Install it with `uv sync --extra snn` "
+                    "or `uv pip install 'sconce[snn]'`."
+                )
             if isinstance(model, nn.Sequential):
                 for layer_id in range(len(model)):
                     layer = model[layer_id]
@@ -376,12 +410,12 @@ class performance:
         # warmup
         for _ in range(n_warmup):
             _ = model(dummy_input)
-        torch.cuda.synchronize()
+        _sync_if_cuda("cpu")
         # real test
         t1 = time.time()
         for _ in range(n_test):
             _ = model(dummy_input)
-            torch.cuda.synchronize()
+            _sync_if_cuda("cpu")
         t2 = time.time()
         return (t2 - t1) / n_test  # average latency in ms
 
@@ -396,6 +430,8 @@ class performance:
         Returns:
           None
         """
+        import matplotlib.pyplot as plt
+
         fig, axes = plt.subplots(3, 3, figsize=(10, 6))
         axes = axes.ravel()
         plot_index = 0

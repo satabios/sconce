@@ -170,7 +170,14 @@ def prune_ffn_width(model, sparsity):
 
 
 def _prune_linear_rows(linear, keep_idx):
-    new = nn.Linear(linear.in_features, len(keep_idx), bias=linear.bias is not None)
+    keep_idx = keep_idx.to(linear.weight.device)
+    new = nn.Linear(
+        linear.in_features,
+        len(keep_idx),
+        bias=linear.bias is not None,
+        device=linear.weight.device,
+        dtype=linear.weight.dtype,
+    )
     new.weight = nn.Parameter(linear.weight.data[keep_idx].clone())
     if linear.bias is not None:
         new.bias = nn.Parameter(linear.bias.data[keep_idx].clone())
@@ -178,7 +185,14 @@ def _prune_linear_rows(linear, keep_idx):
 
 
 def _prune_linear_cols(linear, keep_idx):
-    new = nn.Linear(len(keep_idx), linear.out_features, bias=linear.bias is not None)
+    keep_idx = keep_idx.to(linear.weight.device)
+    new = nn.Linear(
+        len(keep_idx),
+        linear.out_features,
+        bias=linear.bias is not None,
+        device=linear.weight.device,
+        dtype=linear.weight.dtype,
+    )
     new.weight = nn.Parameter(linear.weight.data[:, keep_idx].clone())
     if linear.bias is not None:
         new.bias = nn.Parameter(linear.bias.data.clone())
@@ -260,11 +274,14 @@ def prune_attention_heads(model, sparsity):
         row_idx = torch.tensor(
             [i for h in keep_idx_all for i in range(h * head_dim, (h + 1) * head_dim)],
             dtype=torch.long,
+            device=q_weight.device,
         )
 
         # Update q_proj: rows correspond to output Q channels
         new_q = nn.Linear(attn.q_proj.in_features, len(row_idx),
-                          bias=attn.q_proj.bias is not None)
+                          bias=attn.q_proj.bias is not None,
+                          device=attn.q_proj.weight.device,
+                          dtype=attn.q_proj.weight.dtype)
         new_q.weight = nn.Parameter(q_weight[row_idx].clone())
         if attn.q_proj.bias is not None:
             new_q.bias = nn.Parameter(attn.q_proj.bias.data[row_idx].clone())
@@ -272,7 +289,9 @@ def prune_attention_heads(model, sparsity):
 
         # Update o_proj: cols correspond to input Q channels
         new_o = nn.Linear(len(row_idx), attn.o_proj.out_features,
-                          bias=attn.o_proj.bias is not None)
+                          bias=attn.o_proj.bias is not None,
+                          device=attn.o_proj.weight.device,
+                          dtype=attn.o_proj.weight.dtype)
         new_o.weight = nn.Parameter(o_weight[:, row_idx].clone())
         if attn.o_proj.bias is not None:
             new_o.bias = nn.Parameter(attn.o_proj.bias.data.clone())

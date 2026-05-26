@@ -15,32 +15,12 @@ rm -rf build/
 rm -rf .eggs/
 
 #Run Tests
-flake8 sconce test
-black sconce test
+uv run flake8 sconce scripts
+uv run black sconce scripts
 
 echo "Version-To-Update?"
 read value
-version="version = \"${value}\""
-if [[ $(uname) == "Darwin" ]]; then
-    # macOS
-    echo "Running on macOS"
-    # Run your macOS command here
-    sed -i "" "7s/.*/$version/" pyproject.toml
-    sed -i "" "15s/.*/$version/" setup.py
-   
-elif [[ $(uname) == "Linux" ]]; then
-    # Linux
-    echo "Running on Linux"
-    # Run your Linux command here
-    sed -i "7s/.*/$version/" pyproject.toml
-    sed -i "15s/.*/$version/" setup.py
-else
-    # Assume Windows (or any other OS)
-    echo "Running on Windows or another OS"
-    # Run your Windows or other OS command here
-    sed -i "7s/.*/$version/" pyproject.toml
-    sed -i "15s/.*/$version/" setup.py
-fi
+uv version "$value"
 
 
 
@@ -54,12 +34,10 @@ fi
 
 
 #Build Docs
-cd docs/
-make html
-cd ../
+uv run sphinx-build -b html docs/source docs/_build/html
 
 #Build Package
-python3 setup.py clean --all sdist bdist_wheel
+uv build
 # twine upload dist/* --verbose
 
 #Push to GitHub

@@ -286,13 +286,17 @@ Requirements
 ^^^^^^^^^^^^^^^^^^^^^^^^
 The following packages need to be installed to use sconce:
 
-* torch >= 1.1.0
+* Python >= 3.10
+* torch >= 2.12, < 2.13
 * numpy >= 1.17
 * torchprofile
 * matplotlib
-* snntorch
+* torchvision >= 0.27, < 0.28 for vision experiments
+* torchaudio >= 2.11, < 2.12 for audio experiments
+* transformers >= 5.9, < 6 for Hugging Face experiments
+* snntorch is optional for SNN workflows only: install with ``uv sync --extra snn``
 
-They are automatically installed if sconce is installed using the pip command. Ensure the correct version of torch is installed for your system to enable CUDA compatibility. 
+They are automatically installed if sconce is installed using the uv commands below. PyTorch publishes CUDA-enabled wheels through the standard Python package index; the current lock resolves PyTorch's CUDA 13 runtime packages on Linux. If your driver or deployment target requires a different CUDA runtime, follow PyTorch's install selector for that environment before running experiments.
 
 ✌️
 
@@ -303,18 +307,24 @@ Run the following to install:
 
 .. code-block:: bash
 
-  $ conda create -n sconce python=3.11 -y
-  $ conda activate sconce
-  $ pip install --upgrade pip
-  $ pip install -Uq git+https://github.com/satabios/sconce
+  $ uv venv --python 3.12
+  $ source .venv/bin/activate
+  $ uv pip install git+https://github.com/satabios/sconce
+
+For local development:
+
+.. code-block:: bash
+
+  $ git clone https://github.com/satabios/sconce
+  $ cd sconce
+  $ uv sync --all-groups
 
 .. code-block:: bash
 
   # For Colab/Kaggle/Jupyter-like....
   $ % apt-get install python3.11-distutils
   $ % update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 1
-  $ pip install --upgrade pip
-  $ pip install -Uq git+https://github.com/satabios/sconce
+  $ uv pip install --system git+https://github.com/satabios/sconce
 
 
 API & Examples 

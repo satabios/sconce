@@ -19,13 +19,10 @@ git push -u origin main
 
 
 
-cd docs/
-make html
-cd ../
+uv run sphinx-build -b html docs/source docs/_build/html
 
 
 echo "Message to Push?"
 read message
 git_push "$message"
-
 

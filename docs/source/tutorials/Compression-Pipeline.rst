@@ -2,11 +2,11 @@
  Compression Pipeline
 ===============================
 
-!pip install sconce -q
+!uv pip install --system sconce -q
 
 .. code:: ipython3
 
-    !pip install sconce --quiet
+    !uv pip install --system sconce --quiet
 
 
 .. parsed-literal::
@@ -462,7 +462,7 @@ Spiking Neural Network Compression
 
 .. code:: ipython3
 
-    !pip install snntorch -q
+    !uv pip install --system snntorch -q
 
 .. code:: ipython3
 
@@ -615,5 +615,4 @@ Spiking Neural Network Compression
     Accuracies (%)  97.115          95.974          -1.142         
     Fine-Tuned Sparse model has size=0.05 MiB = 43.13% of Original model size
     Fine-Tuned Pruned Model Validation Accuracy: 95.9735576923077
-
 

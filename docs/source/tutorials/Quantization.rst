@@ -27,9 +27,9 @@ the same as what we used in the Lab 0 tutorial.
 .. code:: ipython3
 
     print('Installing torchprofile...')
-    !pip install torchprofile 1>/dev/null
+    !uv pip install --system torchprofile 1>/dev/null
     print('Installing fast-pytorch-kmeans...')
-    ! pip install fast-pytorch-kmeans 1>/dev/null
+    !uv pip install --system fast-pytorch-kmeans 1>/dev/null
     print('All required packages have been successfully installed!')
 
 
@@ -1891,4 +1891,3 @@ accuracy as the ``fp32`` counterpart.
 .. parsed-literal::
 
     int8 model has accuracy=92.90%
-

@@ -5,9 +5,14 @@ import numpy as np
 import torch
 from torch import nn
 from tqdm import tqdm
-from snntorch import utils
 from collections import namedtuple
-from snntorch import functional as SF
+
+try:
+	from snntorch import functional as SF
+	from snntorch import utils as snn_utils
+except ImportError:
+	SF = None
+	snn_utils = None
 
 from .pruner import prune, TransformerPruner
 from .quanter import quantization
@@ -144,9 +149,15 @@ class sconce(quantization, performance, prune):
 			If mem_out_rec is not None, returns a tuple containing the spike outputs and membrane potentials
 			as tensors. Otherwise, returns only the spike outputs as a tensor.
 		"""
+		if snn_utils is None or SF is None:
+			raise ImportError(
+				"SNN support requires snntorch. Install it with `uv sync --extra snn` "
+				"or `uv pip install 'sconce[snn]'`."
+			)
+
 		spk_rec = []
 		mem_rec = []
-		utils.reset(self.model)  # resets hidden states for all LIF neurons in net
+		snn_utils.reset(self.model)  # resets hidden states for all LIF neurons in net
 		
 		for step in range(self.snn_num_steps):  # data.size(0) = number of time steps
 			spk_out, mem_out = self.model(data)
@@ -195,6 +206,11 @@ class sconce(quantization, performance, prune):
 
 				# Forward pass
 				if self.snn:
+					if SF is None:
+						raise ImportError(
+							"SNN support requires snntorch. Install it with `uv sync --extra snn` "
+							"or `uv pip install 'sconce[snn]'`."
+						)
 					outputs = self.forward_pass_snn(inputs)
 					SF.accuracy_rate(outputs, targets) / 100
 				else:
@@ -284,6 +300,11 @@ class sconce(quantization, performance, prune):
 				#     total = len(images)
 				#     return
 				if self.snn:
+					if SF is None:
+						raise ImportError(
+							"SNN support requires snntorch. Install it with `uv sync --extra snn` "
+							"or `uv pip install 'sconce[snn]'`."
+						)
 					outputs = self.forward_pass_snn(images, mem_out_rec=None)
 					correct += SF.accuracy_rate(outputs, labels) * outputs.size(1)
 					total += outputs.size(1)
@@ -291,7 +312,7 @@ class sconce(quantization, performance, prune):
 				else:
 					outputs = self.model(images)
 					_, predicted = torch.max(outputs.data, 1)
-					total += labels.size(0) - 1
+					total += labels.size(0)
 					correct += (predicted == labels).sum().item()
 			
 			acc = 100 * correct / total

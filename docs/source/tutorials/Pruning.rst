@@ -5,7 +5,7 @@
 .. code:: ipython3
 
     print('Installing torchprofile...')
-    !pip install torchprofile 1>/dev/null
+    !uv pip install --system torchprofile 1>/dev/null
     print('All required packages have been successfully installed!')
 
 
@@ -1584,4 +1584,3 @@ the model size, computation, and latency of the pruned model.
     Latency (ms) 5.6       3.2             1.7                5.5             1.0      
     MACs (M)     606       305             2.0                606             1.0      
     Param (M)    9.23      5.01            1.8                1.76            5.2      
-
